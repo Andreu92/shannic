@@ -1,0 +1,7 @@
+{
+  "name": "Musicube",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}

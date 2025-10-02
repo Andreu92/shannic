@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Shannic</string>
+    <string name="title_activity_main">Shannic</string>
+    <string name="package_name">com.andreu92.shannic</string>
+    <string name="custom_url_scheme">com.andreu92.shannic</string>
+</resources>

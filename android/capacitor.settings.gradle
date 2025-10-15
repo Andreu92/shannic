@@ -14,8 +14,11 @@ project(':capacitor-keyboard').projectDir = new File('../node_modules/@capacitor
 include ':capacitor-status-bar'
 project(':capacitor-status-bar').projectDir = new File('../node_modules/@capacitor/status-bar/android')
 
-include ':shannic-audio-player'
-project(':shannic-audio-player').projectDir = new File('../../shannic-audio-player/android')
+include ':capgo-inappbrowser'
+project(':capgo-inappbrowser').projectDir = new File('../node_modules/@capgo/inappbrowser/android')
 
 include ':shannic-audio-client'
 project(':shannic-audio-client').projectDir = new File('../../shannic-audio-client/android')
+
+include ':shannic-audio-player'
+project(':shannic-audio-player').projectDir = new File('../../shannic-audio-player/android')

@@ -44,6 +44,9 @@ const i18n = createI18n({
         placeholder: "Busca algo... :)",
         start: "Qué te apetece escuchar?",
       },
+      spotify: {
+        link: "Vincular spotify"
+      }
     },
   },
 });

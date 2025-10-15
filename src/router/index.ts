@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
 import Home from "@/views/Home.vue";
 import Search from "@/views/Search.vue";
+import Favorites from "@/views/Favorites.vue";
 import Layout from "@/components/layout/Tabs.vue";
 
 const routes: Array<RouteRecordRaw> = [
@@ -27,7 +28,7 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: "favorites",
-        component: Home,
+        component: Favorites,
       },
       {
         path: "playlists",

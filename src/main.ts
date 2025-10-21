@@ -41,8 +41,11 @@ const i18n = createI18n({
         playlists: "Listas",
       },
       search: {
-        placeholder: "Busca algo... :)",
+        placeholder: "Busca en la nube... :)",
         start: "Qué te apetece escuchar?",
+      },
+      favorites: {
+        placeholder: "Busca en tus favoritos... :)"
       },
       spotify: {
         link: "Vincular spotify"

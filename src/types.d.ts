@@ -32,12 +32,13 @@ export interface SearchResult {
 
 export interface Audio extends SearchResult {
   duration: number,
-  url: string
+  url: string,
+  expirationDate: number
 }
 
 export interface SpotifyAuthToken {
   clientId: string,
   accessToken: string,
   accessTokenExpirationTimestampMs: number,
-  isAnonymous: boolean,
+  isAnonymous: boolean
 }

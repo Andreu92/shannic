@@ -22,14 +22,14 @@ if (import.meta.env.DEV) {
   storage = getRxStorageDexie();
 }
 
-const KEY_DATABASE = Symbol("shannicdb");
+const KEY_DATABASE = Symbol("shannic_db");
 
 export function useDatabase(): RxShannicDatabase {
   return inject(KEY_DATABASE) as RxShannicDatabase;
 }
 
 export async function createDatabase(): Promise<Plugin> {
-  const db = await createRxDatabase<RxShannicCollections>({
+  const db: RxShannicDatabase = await createRxDatabase<RxShannicCollections>({
     name: "shannic",
     storage: storage,
   });
@@ -42,6 +42,14 @@ export async function createDatabase(): Promise<Plugin> {
       schema: playlistSchema,
     },
   });
+
+  db.playlists.insertIfNotExists(
+    {
+      id: "1",
+      title: "favorites",
+      createdAt: Date.now(),
+    }
+  );
 
   return {
     install(app: any) {

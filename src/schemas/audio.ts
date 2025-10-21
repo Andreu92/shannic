@@ -16,6 +16,8 @@ export const audioSchemaLiteral = {
     author: { type: "string", maxLength: 255 },
     artitst: { type: "string", maxLength: 255 },
     duration: { type: "integer", minimum: 0 },
+    url: { type: "string", format: "uri" },
+    expirationDate: { type: "integer", minimum: 0 },
     thumbnails: {
       type: "array",
       items: {
@@ -28,18 +30,10 @@ export const audioSchemaLiteral = {
         required: ["url", "width", "height"],
       },
     },
-    media: {
-      type: "object",
-      properties: {
-        url: { type: "string", format: "uri" },
-        expirationDate: { type: "integer", minimum: 0 },
-      },
-      required: ["url", "expirationDate"],
-    },
     createdAt: { type: "integer", minimum: 0 },
     updatedAt: { type: "integer", minimum: 0 },
   },
-  required: ["id", "title", "author", "duration", "thumbnails", "media", "createdAt"],
+  required: ["id", "title", "author", "duration", "url", "expirationDate", "thumbnails", "createdAt"],
   indexes: ["title", "author"],
 } as const;
 

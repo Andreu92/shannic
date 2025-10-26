@@ -26,7 +26,7 @@ import "@ionic/vue/css/display.css";
 import "@ionic/vue/css/palettes/dark.class.css";
 
 /* Theme variables */
-import "./theme/variables.scss";
+import "./theme/styles.scss";
 
 const i18n = createI18n({
   legacy: false,
@@ -45,7 +45,9 @@ const i18n = createI18n({
         start: "Qué te apetece escuchar?",
       },
       favorites: {
-        placeholder: "Busca en tus favoritos... :)"
+        placeholder: "Busca en tus favoritos... :)",
+        start: "Aún no tienes favoritos? :O",
+        start2: "Busca o vincula tu spotify"
       },
       spotify: {
         link: "Vincular spotify"

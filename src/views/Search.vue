@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import {
   IonPage,
   IonSearchbar,
+  IonSpinner,
   IonContent,
   IonList,
   IonItem,
@@ -17,37 +18,32 @@ import {
 import { heart, heartOutline } from "ionicons/icons";
 
 import AppHeader from "@/components/layout/AppHeader.vue";
-import { SearchResult, Audio, PlaylistCollection, PlaylistDocument, AudioCollection } from "@/types";
+import { SearchResult, Audio, PlaylistDocument } from "@/types";
 import headphones from "@/assets/img/headphones2.svg"
 import { useI18n } from "vue-i18n";
 
 import { AudioPlayer } from "@shannic/audio-player";
 import { useAudioClient } from "@/composables/useAudioClient";
-import { useDatabase } from '@/database';
-
-const FAVORITES_ID = "1";
+import { useAudioService } from "@/composables/useAudioService";
 
 const { t } = useI18n();
-const db = useDatabase();
+const loading = ref<boolean>(false);
 
 const AudioClient = useAudioClient();
+const AudioService = useAudioService();
+
 let query: string | null | undefined = null;
 const search_results = ref<SearchResult[]>([]);
 
-const playlists: PlaylistCollection = db.playlists;
-const favorite_playlist = ref<PlaylistDocument | null>();
-
-onMounted(() => {
-  playlists.findOne(FAVORITES_ID).$.subscribe(favorites => {
-    favorite_playlist.value = favorites;
-  });
-})
+const favorite_playlist = ref<PlaylistDocument | null>(null);
 
 const search = async (e: SearchbarCustomEvent) => {
   AudioClient.clearToken();
   query = e.detail.value;
   if (query) {
+    loading.value = true;
     search_results.value = await AudioClient.search(query);
+    loading.value = false;
   } else {
     search_results.value = [];
   }
@@ -59,6 +55,7 @@ const searchContinuation = async (e: InfiniteScrollCustomEvent) => {
   e.target.complete();
 }
 
+//Refactor
 const play = async (id: string) => {
   const audio = await AudioClient.get(id);
   AudioPlayer.play(audio as Required<Audio>);
@@ -72,57 +69,29 @@ const isFavorite = (id: string): boolean => {
 }
 
 const toggleFav = async (id: string) => {
-  const favorite_playlist = await playlists.findOne(FAVORITES_ID).exec();
-
-  if (!favorite_playlist) return;
-
-  const favorites = favorite_playlist?.audios || [];
-  let newAudios = [...favorites];
-
-  const isFav = favorites.some(o => o.audioId === id);
+  const isFav = await AudioService.isFavorite(id);
   if (isFav) {
-    const toRemove = newAudios.find(o => o.audioId === id);
-    if (toRemove) {
-      const removedPos = toRemove.position;
-      newAudios = newAudios
-        .filter(o => o.audioId !== id)
-        .map(o =>
-          o.position > removedPos
-            ? { ...o, position: o.position - 1 }
-            : o
-        );
-    }
+    AudioService.removeFavorite(id);
   } else {
-    const audio = await AudioClient.get(id);
-    const audioCollection: AudioCollection = db.audios;
-
-    audioCollection.insertIfNotExists({
-      ...audio,
-      createdAt: Date.now()
-    });
-
-    const maxPos = newAudios.length
-      ? Math.max(...newAudios.map(t => t.position))
-      : -1;
-
-    newAudios.push({
-      audioId: id,
-      position: maxPos + 1
-    });
+    AudioService.addFavorite(id);
   }
-
-  favorite_playlist.incrementalPatch({
-    audios: newAudios
-  });
 }
+
+onMounted(() => {
+  AudioService.onChangeFavorites((favorites: PlaylistDocument) => {
+    favorite_playlist.value = favorites;
+  });
+});
 </script>
 
 <template>
   <ion-page>
     <AppHeader />
     <ion-content fullscreen class="ion-padding">
-      <ion-searchbar :placeholder="t('search.placeholder')" @ion-change="search"
-        @ion-clear="search_results = []"></ion-searchbar>
+      <div style="position: relative;">
+        <ion-searchbar :placeholder="t('search.placeholder')" @ion-change="search" @ion-clear="search_results = []" />
+        <ion-spinner v-if="loading" name="dots" class="searchbar-loading"></ion-spinner>
+      </div>
       <ion-list v-if="search_results.length">
         <ion-item v-for="result in search_results" :key="result.id" @click="play(result.id)">
           <ion-thumbnail>
@@ -139,7 +108,7 @@ const toggleFav = async (id: string) => {
           </div>
         </ion-item>
         <ion-infinite-scroll @ionInfinite="searchContinuation">
-          <ion-infinite-scroll-content></ion-infinite-scroll-content>
+          <ion-infinite-scroll-content loading-spinner="dots"></ion-infinite-scroll-content>
         </ion-infinite-scroll>
       </ion-list>
       <div v-else class="search-something">
@@ -154,44 +123,6 @@ const toggleFav = async (id: string) => {
 ion-thumbnail {
   --size: 45px;
   --border-radius: 10px;
-}
-
-.audio-info {
-  flex: 1;
-  overflow: hidden;
-  min-width: 0;
-  margin: 0 10px;
-}
-
-.audio-title,
-.audio-artist {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.audio-artist,
-.audio-duration {
-  color: var(--ion-color-medium);
-}
-
-.audio-title {
-  font-size: 0.9rem;
-}
-
-.audio-artist {
-  font-size: 0.8rem;
-}
-
-.audio-duration {
-  font-size: 0.6875rem;
-  margin-right: 10px;
-}
-
-.audio-actions {
-  display: flex;
-  gap: 5px;
-  font-size: 20px;
 }
 
 .search-something {

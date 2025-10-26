@@ -14,7 +14,7 @@ if (Capacitor.isNativePlatform()) {
         style: value == false ? Style.Light : Style.Dark,
       });
       StatusBar.setBackgroundColor({
-        color: value == false ? "#FFFFFF" : "#1c1c1c",
+        color: value == false ? "#FFFFFF" : "#1f1f1f",
       });
     },
     { immediate: true }

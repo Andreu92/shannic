@@ -14,7 +14,7 @@ export const audioSchemaLiteral = {
     id: { type: "string", maxLength: 100 },
     title: { type: "string", maxLength: 255 },
     author: { type: "string", maxLength: 255 },
-    artitst: { type: "string", maxLength: 255 },
+    artist: { type: "string", maxLength: 255 },
     duration: { type: "integer", minimum: 0 },
     url: { type: "string", format: "uri" },
     expirationDate: { type: "integer", minimum: 0 },

@@ -1,4 +1,4 @@
-import { Audio, SearchResult } from "@/types";
+import { SearchResult, Audio } from "@/types";
 import { AudioClient, Search } from "@shannic/audio-client";
 
 export const useAudioClient = () => {

@@ -3,7 +3,7 @@ import { RouteRecordRaw } from "vue-router";
 import Home from "@/views/Home.vue";
 import Search from "@/views/Search.vue";
 import Favorites from "@/views/Favorites.vue";
-import Layout from "@/components/layout/Tabs.vue";
+import Tabs from "@/components/layout/Tabs.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -12,7 +12,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: "/",
-    component: Layout,
+    component: Tabs,
     children: [
       {
         path: "",

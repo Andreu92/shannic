@@ -1,5 +1,10 @@
 import { inject, Plugin } from "vue";
-import { createRxDatabase, addRxPlugin, RxStorage } from "rxdb";
+import {
+  createRxDatabase,
+  addRxPlugin,
+  RxStorage,
+  removeRxDatabase,
+} from "rxdb";
 import { getRxStorageDexie, RxStorageDexie } from "rxdb/plugins/storage-dexie";
 
 import { audioSchema } from "@/schemas/audio";
@@ -29,6 +34,8 @@ export function useDatabase(): RxShannicDatabase {
 }
 
 export async function createDatabase(): Promise<Plugin> {
+  await removeRxDatabase("shannic", storage);
+
   const db: RxShannicDatabase = await createRxDatabase<RxShannicCollections>({
     name: "shannic",
     storage: storage,
@@ -43,13 +50,11 @@ export async function createDatabase(): Promise<Plugin> {
     },
   });
 
-  db.playlists.insertIfNotExists(
-    {
-      id: "1",
-      title: "favorites",
-      createdAt: Date.now(),
-    }
-  );
+  db.playlists.insertIfNotExists({
+    id: "1",
+    title: "favorites",
+    createdAt: Date.now(),
+  });
 
   return {
     install(app: any) {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IonPage, IonContent, IonSearchbar, IonSpinner, SearchbarCustomEvent, IonList, IonItem, IonThumbnail, IonImg, IonIcon, IonChip, IonLabel } from "@ionic/vue";
+import { IonPage, IonContent, IonSearchbar, IonSpinner, SearchbarCustomEvent, IonList, IonItem, IonThumbnail, IonImg, IonIcon, IonChip, IonLabel, onIonViewWillEnter } from "@ionic/vue";
 import { search as search_icon } from "ionicons/icons";
 
 import broken_heart from "@/assets/img/broken-heart.svg"
@@ -23,16 +23,22 @@ const audio_service = useAudioService();
 let query: string | null | undefined = null;
 const favorites = ref<AudioDocument[]>([]);
 
-const favorite_playlist = ref<PlaylistDocument | null>(null);
-
-const initFavorites = async () => {
-  favorites.value = await audio_service.getFavorites();
-}
-
 const search = async (e: SearchbarCustomEvent) => {
   query = e.detail.value;
   loading.value = true;
-  favorites.value = await audio_service.getFavorites(query || undefined);
+  /*favorites.value = await audio_service.getFavoriteAudios(query || undefined);
+      const selector: any = {
+        id: { $in: favorite_ids.map((o) => o.audioId) },
+      };
+  
+      if (query && query.trim() !== "") {
+        selector.title = { $regex: query, $options: "i" };
+        selector.artist = { $regex: query, $options: "i" };
+      }
+  
+      const favorites: AudioDocument[] = await audios.find({ selector }).exec();
+  
+      return favorites;*/
   loading.value = false;
 }
 
@@ -50,11 +56,9 @@ const fetchSpotifyFavoriteTracks = async () => {
   console.log(await spotify.getFavoriteTracks());
 }
 
-onMounted(async () => {
-  await initFavorites();
-  audio_service.onChangeFavorites((favorites: PlaylistDocument) => {
-    favorite_playlist.value = favorites;
-  });
+onIonViewWillEnter(async () => {
+  console.log("Favorites will enter");
+  favorites.value = await audio_service.getFavoriteAudios();
 });
 </script>
 
@@ -64,7 +68,7 @@ onMounted(async () => {
     <ion-content fullscreen class="ion-padding">
       <div v-if="favorites.length">
         <div style="position: relative;">
-          <ion-searchbar :placeholder="t('favorites.placeholder')" @ion-change="search" @ion-clear="initFavorites" />
+          <ion-searchbar :placeholder="t('favorites.placeholder')" @ion-change="search" />
           <ion-spinner v-if="loading" name="dots" class="searchbar-loading"></ion-spinner>
         </div>
         <ion-list v-if="favorites.length">

@@ -58,8 +58,8 @@ export const playlistSchemaLiteral = {
 
 const schemaTyped = toTypedRxJsonSchema(playlistSchemaLiteral);
 
-export type Playlist = ExtractDocumentTypeFromTypedRxJsonSchema<
+export type RxPlaylist = ExtractDocumentTypeFromTypedRxJsonSchema<
   typeof schemaTyped
 >;
 
-export const playlistSchema: RxJsonSchema<Playlist> = playlistSchemaLiteral;
+export const playlistSchema: RxJsonSchema<RxPlaylist> = playlistSchemaLiteral;

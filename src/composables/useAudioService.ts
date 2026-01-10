@@ -1,12 +1,14 @@
 import {
-  Audio,
   PlaylistCollection,
   PlaylistDocument,
   AudioCollection,
   AudioDocument,
+  Audio,
+  Favorite,
 } from "@/types";
 import { useDatabase } from "@/database";
 import { useAudioClient } from "@/composables/useAudioClient";
+import { RxAudio } from "@/schemas/audio";
 
 export const useAudioService = () => {
   const FAVORITES_ID = "1";
@@ -37,7 +39,7 @@ export const useAudioService = () => {
     if (Date.now() >= audio.expirationDate) {
       const updated_audio: Audio = await audio_client.get(id);
 
-      await audio.incrementalModify((audioDoc) => {
+      await audio.incrementalModify((audioDoc: RxAudio) => {
         audioDoc.title = updated_audio.title;
         audioDoc.author = updated_audio.author;
         audioDoc.artist = updated_audio.artist;
@@ -53,45 +55,36 @@ export const useAudioService = () => {
     return audio;
   };
 
-  const getFavorites = async (query?: string): Promise<AudioDocument[]> => {
+  const getFavorites = async (): Promise<Favorite[]> => {
     const favorite_playlist: PlaylistDocument | null = await playlists
       .findOne(FAVORITES_ID)
       .exec();
 
-    if (!favorite_playlist) return [];
+    return favorite_playlist?.audios ?? [];
+  };
 
-    const favorite_ids = favorite_playlist?.audios || [];
-
-    const selector: any = {
-      id: { $in: favorite_ids.map((o) => o.audioId) },
-    };
-
-    if (query && query.trim() !== "") {
-      selector.title = { $regex: query, $options: "i" };
-      selector.artist = { $regex: query, $options: "i" };
-    }
-
-    const favorites: AudioDocument[] = await audios.find({ selector }).exec();
-
-    return favorites;
+  const getFavoriteAudios = async (): Promise<AudioDocument[]> => {
+    const favorites: Favorite[] = await getFavorites();
+    const favorite_audios: Map<string, AudioDocument> = await audios
+      .findByIds(favorites.map((o) => o.audioId))
+      .exec();
+    return Array.from(favorite_audios.values());
   };
 
   const isFavorite = async (id: string): Promise<boolean> => {
-    const favorite_playlist: PlaylistDocument | null = await playlists
-      .findOne(FAVORITES_ID)
-      .exec();
-
-    if (!favorite_playlist) return false;
-
-    const favorites = favorite_playlist?.audios || [];
+    const favorites: Favorite[] = await getFavorites();
     return favorites.some((o) => o.audioId === id);
+  };
+
+  const toggleFavorite = async (id: string) => {
+    const isFav = await isFavorite(id);
+    if (isFav) removeFavorite(id);
+    else addFavorite(id);
   };
 
   const addFavorite = async (id: string) => {
     const already_exists = await exists(id);
-    if (!already_exists) {
-      create(id);
-    }
+    if (!already_exists) create(id);
 
     const favorite_playlist: PlaylistDocument | null = await playlists
       .findOne(FAVORITES_ID)
@@ -140,9 +133,11 @@ export const useAudioService = () => {
   return {
     get,
     getFavorites,
+    getFavoriteAudios,
     isFavorite,
     addFavorite,
     removeFavorite,
+    toggleFavorite,
     onChangeFavorites,
   };
 };

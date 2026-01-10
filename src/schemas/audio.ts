@@ -1,7 +1,7 @@
 import {
   toTypedRxJsonSchema,
   ExtractDocumentTypeFromTypedRxJsonSchema,
-  RxJsonSchema
+  RxJsonSchema,
 } from "rxdb";
 
 export const audioSchemaLiteral = {
@@ -25,22 +25,40 @@ export const audioSchemaLiteral = {
         properties: {
           url: { type: "string", format: "uri" },
           width: { type: "integer", minimum: 0 },
-          height: { type: "integer", minimum: 0 },
+          height: { type: "integer", minimum: 0 }
         },
-        required: ["url", "width", "height"],
+        required: ["url", "width", "height"]
+      }
+    },
+    colors: {
+      type: "object",
+      properties: {
+        background: { type: "string", maxLength: 10 },
+        text: { type: "string", maxLength: 10 },
+        body: { type: "string", maxLength: 10 }
       },
+      required: ["background", "text", "body"]
     },
     createdAt: { type: "integer", minimum: 0 },
-    updatedAt: { type: "integer", minimum: 0 },
+    updatedAt: { type: "integer", minimum: 0 }
   },
-  required: ["id", "title", "author", "duration", "url", "expirationDate", "thumbnails", "createdAt"],
+  required: [
+    "id",
+    "title",
+    "author",
+    "duration",
+    "url",
+    "expirationDate",
+    "thumbnails",
+    "createdAt",
+  ],
   indexes: ["title", "author"],
 } as const;
 
 const schemaTyped = toTypedRxJsonSchema(audioSchemaLiteral);
 
-export type Audio = ExtractDocumentTypeFromTypedRxJsonSchema<
+export type RxAudio = ExtractDocumentTypeFromTypedRxJsonSchema<
   typeof schemaTyped
 >;
 
-export const audioSchema: RxJsonSchema<Audio> = audioSchemaLiteral;
+export const audioSchema: RxJsonSchema<RxAudio> = audioSchemaLiteral;

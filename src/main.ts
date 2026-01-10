@@ -1,10 +1,10 @@
 import { createApp } from "vue";
-import App from "@/App.vue";
-import router from "@/router";
-
+import { createPinia } from "pinia";
 import { IonicVue } from "@ionic/vue";
 import { createI18n } from "vue-i18n";
 
+import App from "@/App.vue";
+import router from "@/router";
 import { createDatabase } from "@/database";
 
 /* Core CSS required for Ionic components to work properly */
@@ -47,17 +47,22 @@ const i18n = createI18n({
       favorites: {
         placeholder: "Busca en tus favoritos... :)",
         start: "Aún no tienes favoritos? :O",
-        start2: "Busca o vincula tu spotify"
+        start2: "Busca o vincula tu spotify",
       },
       spotify: {
-        link: "Vincular spotify"
-      }
+        link: "Vincular spotify",
+      },
     },
   },
 });
 
 const database = createDatabase();
-const app = createApp(App).use(IonicVue).use(i18n).use(router);
+const pinia = createPinia();
+const app = createApp(App)
+  .use(IonicVue)
+  .use(i18n)
+  .use(router)
+  .use(pinia);
 
 database.then((db) => {
   app.use(db);

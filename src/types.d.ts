@@ -1,12 +1,12 @@
 import { RxCollection, RxDocument } from "rxdb";
-import { Audio } from "@/schemas/audio";
-import { Playlist } from "@/schemas/playlist";
+import { RxAudio } from "@/schemas/audio";
+import { RxPlaylist } from "@/schemas/playlist";
 
-export type AudioDocument = RxDocument<Audio, {}>;
-export type AudioCollection = RxCollection<Audio, {}, {}>;
+export type AudioDocument = RxDocument<RxAudio, {}>;
+export type AudioCollection = RxCollection<RxAudio, {}, {}>;
 
-export type PlaylistDocument = RxDocument<Playlist, {}>;
-export type PlaylistCollection = RxCollection<Playlist, {}, {}>;
+export type PlaylistDocument = RxDocument<RxPlaylist, {}>;
+export type PlaylistCollection = RxCollection<RxPlaylist, {}, {}>;
 
 export interface RxShannicCollections {
   audios: AudioCollection;
@@ -31,9 +31,19 @@ export interface SearchResult {
 }
 
 export interface Audio extends SearchResult {
+  expirationDate: number,
   duration: number,
   url: string,
-  expirationDate: number
+  colors?: {
+    background: string,
+    text: string,
+    body: string
+  }
+}
+
+export interface Favorite {
+  audioId: string,
+  position: number
 }
 
 export interface SpotifyAuthToken {

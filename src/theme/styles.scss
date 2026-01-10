@@ -42,11 +42,6 @@
   text-overflow: ellipsis;
 }
 
-.audio-artist,
-.audio-duration {
-  color: var(--ion-color-medium);
-}
-
 .audio-title {
   font-size: 0.9rem;
 }
@@ -58,6 +53,7 @@
 .audio-duration {
   font-size: 0.6875rem;
   margin-right: 10px;
+  color: var(--ion-color-medium);
 }
 
 .audio-actions {

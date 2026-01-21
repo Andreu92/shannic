@@ -1,32 +1,32 @@
 <script setup lang="ts">
 import type {
-  IonToggleCustomEvent,
-  ToggleChangeEventDetail,
+	IonToggleCustomEvent,
+	ToggleChangeEventDetail,
 } from "@ionic/core";
 import {
-  IonIcon,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonButtons,
-  IonToggle,
-  IonImg,
+	IonButtons,
+	IonHeader,
+	IonIcon,
+	IonImg,
+	IonTitle,
+	IonToggle,
+	IonToolbar,
 } from "@ionic/vue";
 import { moonOutline, sunnyOutline } from "ionicons/icons";
-import logoLightTheme from "@/assets/img/logo-light-theme.png";
 import logoDarkTheme from "@/assets/img/logo-dark-theme.png";
+import logoLightTheme from "@/assets/img/logo-light-theme.png";
 import { useLayout } from "@/composables/useLayout";
 
 const layout = useLayout();
 
 const toggleDarkPalette = (
-  event: IonToggleCustomEvent<ToggleChangeEventDetail<any>>
+	event: IonToggleCustomEvent<ToggleChangeEventDetail<boolean>>,
 ) => {
-  layout.isDarkTheme = event.detail.checked;
-  document.documentElement.classList.toggle(
-    "ion-palette-dark",
-    event.detail.checked
-  );
+	layout.isDarkTheme = event.detail.checked;
+	document.documentElement.classList.toggle(
+		"ion-palette-dark",
+		event.detail.checked,
+	);
 };
 </script>
 
@@ -34,7 +34,7 @@ const toggleDarkPalette = (
   <ion-header>
     <ion-toolbar>
       <ion-title>
-        <ion-img class="logo" :src="layout.isDarkTheme ? logoDarkTheme : logoLightTheme" />
+        <ion-img style="width: 90px;" :src="layout.isDarkTheme ? logoDarkTheme : logoLightTheme" />
       </ion-title>
       <ion-buttons slot="end">
         <div class="toggle-dark-mode">
@@ -48,10 +48,6 @@ const toggleDarkPalette = (
 </template>
 
 <style lang="css" scoped>
-.logo {
-  width: 90px;
-}
-
 .toggle-dark-mode {
   font-size: 18px;
   display: flex;

@@ -1,102 +1,127 @@
+import {
+	type Audio as AudioPlayerAudio,
+	audio_player,
+} from "@shannic/audio-player";
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { AudioPlayer } from "@shannic/audio-player";
-import { Audio } from "@/types";
+import { useAudioService } from "@/composables/useAudioService";
+import { useFavoritesStore } from "@/stores/FavoritesStore";
+import type { AudioDocument } from "@/types";
 
 export const states = {
-  paused: 0,
-  playing: 1,
-  buffering: 2,
+	paused: 0,
+	playing: 1,
+	buffering: 2,
 };
 
 export const usePlayerStore = defineStore("player", () => {
-  const audio = ref<Audio | null>(null);
-  const state = ref<number>(states.paused);
-  const repeat = ref<boolean>(false);
-  const currentPosition = ref<number>(0);
-  const isDragging = ref<boolean>(false);
-  const isFavorite = ref<boolean>(false);
+	const audio_service = useAudioService();
+	const favorites_store = useFavoritesStore();
+	const audio = ref<AudioDocument | null>(null);
+	const state = ref<number>(states.paused);
+	const repeat = ref<boolean>(false);
+	const currentPosition = ref<number>(0);
+	const isDragging = ref<boolean>(false);
 
-  const reset = () => {
-    audio.value = null;
-    repeat.value = false;
-    currentPosition.value = 0;
-  };
+	const reset = () => {
+		audio.value = null;
+		repeat.value = false;
+		currentPosition.value = 0;
+	};
 
-  const initListeners = () => {
-    AudioPlayer.addListener(
-      "onCurrentPositionChange",
-      (data: { position: number }) => {
-        if (!isDragging.value) {
-          currentPosition.value = data.position;
-        }
-      }
-    );
-    AudioPlayer.addListener("onStop", () => {
-      reset();
-    });
-    AudioPlayer.addListener("onBuffering", () => {
-      state.value = states.buffering;
-    });
-    AudioPlayer.addListener("onPlay", () => {
-      state.value = states.playing;
-    });
-    AudioPlayer.addListener("onPause", () => {
-      state.value = states.paused;
-    });
-    AudioPlayer.addListener("onToggleRepeat", () => {
-      repeat.value = !repeat.value;
-    });
-  };
+	const initListeners = () => {
+		audio_player.addListener(
+			"onCurrentPositionChange",
+			(data: { position: number }) => {
+				if (!isDragging.value) {
+					currentPosition.value = data.position;
+				}
+			},
+		);
+		audio_player.addListener("onStop", () => {
+			reset();
+		});
+		audio_player.addListener("onBuffering", () => {
+			state.value = states.buffering;
+		});
+		audio_player.addListener("onPlay", () => {
+			state.value = states.playing;
+		});
+		audio_player.addListener("onPause", () => {
+			state.value = states.paused;
+		});
+		audio_player.addListener(
+			"onToggleRepeat",
+			(data: { repeating: boolean }) => {
+				repeat.value = data.repeating;
+			},
+		);
+		audio_player.addListener(
+			"onToggleFavorite",
+			(_data: { favorite: boolean }) => {
+				if (audio.value) favorites_store.toggleFavorite(audio.value.id);
+			},
+		);
+	};
 
-  const play = () => {
-    state.value = states.playing;
-    AudioPlayer.resume();
-  };
+	const play = async (id: string, is_favorite: boolean) => {
+		const audio_document: AudioDocument = await audio_service.getAudio(id);
+		const audio_to_play: AudioPlayerAudio = {
+			...audio_document.toMutableJSON(),
+			favorite: is_favorite,
+		};
+		audio.value = audio_document;
+		audio_player.play(audio_to_play);
+	};
 
-  const pause = () => {
-    state.value = states.paused;
-    AudioPlayer.pause();
-  };
+	const resume = () => {
+		state.value = states.playing;
+		audio_player.resume();
+	};
 
-  const seekTo = (position: number) => {
-    currentPosition.value = position;
-    AudioPlayer.seekTo({ position: position });
-  };
+	const pause = () => {
+		state.value = states.paused;
+		audio_player.pause();
+	};
 
-  const stop = () => {
-    AudioPlayer.stop();
-    reset();
-  };
+	const seekTo = (position: number) => {
+		currentPosition.value = position;
+		audio_player.seekTo({ position: position });
+	};
 
-  const skipNext = () => {
-    AudioPlayer.skipNext();
-  };
+	const stop = () => {
+		audio_player.stop();
+		reset();
+	};
 
-  const skipPrevious = () => {
-    AudioPlayer.skipPrevious();
-  };
+	const skipNext = () => {
+		audio_player.skipNext();
+	};
 
-  const toggleRepeat = () => {
-    repeat.value = !repeat.value;
-    AudioPlayer.toggleRepeat();
-  };
+	const skipPrevious = () => {
+		audio_player.skipPrevious();
+	};
 
-  return {
-    audio,
-    state,
-    repeat,
-    currentPosition,
-    isDragging,
-    isFavorite,
-    initListeners,
-    play,
-    pause,
-    seekTo,
-    stop,
-    reset,
-    skipNext,
-    skipPrevious,
-    toggleRepeat,
-  };
+	const toggleRepeat = () => {
+		repeat.value = !repeat.value;
+		audio_player.toggleRepeat({ repeating: repeat.value });
+	};
+
+	return {
+		audio,
+		state,
+		repeat,
+		currentPosition,
+		isDragging,
+		initListeners,
+		play,
+		resume,
+		pause,
+		seekTo,
+		stop,
+		reset,
+		skipNext,
+		skipPrevious,
+		toggleRepeat,
+	};
 });

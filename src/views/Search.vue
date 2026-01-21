@@ -1,81 +1,80 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import {
-  IonPage,
-  IonSearchbar,
-  IonSpinner,
-  IonContent,
-  IonList,
-  IonItem,
-  IonThumbnail,
-  IonImg,
-  IonIcon,
-  SearchbarCustomEvent,
-  IonInfiniteScroll,
-  IonInfiniteScrollContent,
-  InfiniteScrollCustomEvent
+	InfiniteScrollCustomEvent,
+	IonContent,
+	IonIcon,
+	IonImg,
+	IonInfiniteScroll,
+	IonInfiniteScrollContent,
+	IonItem,
+	IonList,
+	IonPage,
+	IonSearchbar,
+	IonSpinner,
+	IonThumbnail,
+	SearchbarCustomEvent,
 } from "@ionic/vue";
 import { heart, heartOutline } from "ionicons/icons";
-
-import AppHeader from "@/components/layout/AppHeader.vue";
-import { SearchResult } from "@/types";
-import headphones from "@/assets/img/headphones2.svg"
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-
-import { Audio } from "@/types";
-import { AudioPlayer, Audio as AudioPlayerAudio } from "@shannic/audio-player";
+import iconDark from "@/assets/img/icon-dark.png";
+import iconLight from "@/assets/img/icon-light.png";
+import AppHeader from "@/components/layout/AppHeader.vue";
 import { useAudioClient } from "@/composables/useAudioClient";
-import { useAudioService } from "@/composables/useAudioService";
+import { useLayout } from "@/composables/useLayout";
+import { useFavoritesStore } from "@/stores/FavoritesStore";
 import { usePlayerStore } from "@/stores/PlayerStore";
-import { useFavoritesStore } from "@/stores/FavoriteStore";
+import { PlaylistAudio, SearchResult } from "@/types";
+import { showToast } from "@/utils";
 
 const { t } = useI18n();
 const loading = ref<boolean>(false);
 
+const layout = useLayout();
+const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
 const audio_client = useAudioClient();
-const audio_service = useAudioService();
 
 let query: string | null | undefined = null;
 const search_results = ref<SearchResult[]>([]);
 
 const search = async (e: SearchbarCustomEvent) => {
-  audio_client.clearToken();
-  query = e.detail.value;
-  if (query) {
-    loading.value = true;
-    search_results.value = await audio_client.search(query);
-    loading.value = false;
-  } else {
-    search_results.value = [];
-  }
-}
+	audio_client.clearToken();
+	query = e.detail.value;
+	if (query) {
+		try {
+			loading.value = true;
+			search_results.value = await audio_client.search(query);
+		} catch (error) {
+			showToast(t("errors.search"));
+			search_results.value = [];
+		} finally {
+			loading.value = false;
+		}
+	} else {
+		search_results.value = [];
+	}
+};
 
 const searchContinuation = async (e: InfiniteScrollCustomEvent) => {
-  const new_results = await audio_client.search(query!);
-  search_results.value.push(...new_results);
-  e.target.complete();
-}
-
-//Refactor
-const play = async (id: string) => {
-  const audio: Audio = await audio_client.get(id);
-  const playerStore = usePlayerStore();
-  playerStore.audio = audio;
-  AudioPlayer.play(audio as Required<AudioPlayerAudio>);
-}
+	try {
+		const new_results = await audio_client.search(query ?? "");
+		search_results.value.push(...new_results);
+	} catch (error) {
+		showToast(t("errors.search"));
+	} finally {
+		e.target.complete();
+	}
+};
 </script>
 
 <template>
   <ion-page>
     <AppHeader />
     <ion-content fullscreen class="ion-padding">
-      <div style="position: relative;">
-        <ion-searchbar :placeholder="t('search.placeholder')" @ion-change="search" @ion-clear="search_results = []" />
-        <ion-spinner v-if="loading" name="dots" class="searchbar-loading"></ion-spinner>
-      </div>
+      <ion-searchbar :placeholder="t('search.placeholder')" @ion-change="search" @ion-clear="search_results = []" />
       <ion-list v-if="search_results.length">
-        <ion-item v-for="result in search_results" :key="result.id" @click="play(result.id)">
+        <ion-item v-for="result of search_results" :key="result.id" @click="player_store.play(result.id, favorites_store.isFavorite(result.id))">
           <ion-thumbnail>
             <ion-img :src="result.thumbnails[result.thumbnails.length - 1].url" />
           </ion-thumbnail>
@@ -86,7 +85,7 @@ const play = async (id: string) => {
           <div class="audio-duration">{{ result.duration }}</div>
           <div class="audio-actions">
             <ion-icon :icon="favorites_store.isFavorite(result.id) ? heart : heartOutline"
-              :color="favorites_store.isFavorite(result.id) ? 'danger' : ''" @click.stop="audio_service.toggleFavorite(result.id)"></ion-icon>
+              :color="favorites_store.isFavorite(result.id) ? 'danger' : ''" @click.stop="favorites_store.toggleFavorite(result.id)"></ion-icon>
           </div>
         </ion-item>
         <ion-infinite-scroll @ionInfinite="searchContinuation">
@@ -94,8 +93,11 @@ const play = async (id: string) => {
         </ion-infinite-scroll>
       </ion-list>
       <div v-else class="search-something">
-        <ion-icon :icon="headphones" style="font-size: 90px; color: var(--ion-color-dark-tint)"></ion-icon>
-        <div>{{ t('search.start') }}</div>
+        <ion-spinner v-if="loading" name="dots" style="width: 50px; height: 50px;"></ion-spinner>
+        <div v-else class="no-results">
+          <ion-img :src="layout.isDarkTheme ? iconLight : iconDark" style="width: 100px;" />
+          <div>{{ t('search.start') }}</div>
+        </div>
       </div>
     </ion-content>
   </ion-page>
@@ -109,9 +111,15 @@ ion-thumbnail {
 
 .search-something {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: calc(100% - 60px);
+}
+
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
 </style>

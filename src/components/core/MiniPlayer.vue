@@ -1,79 +1,87 @@
 <script setup lang="ts">
-import { IonImg, IonThumbnail, IonRange, IonIcon, IonSpinner, createGesture, Gesture, RangeCustomEvent } from "@ionic/vue";
-import { useTemplateRef, watch, reactive } from "vue";
-import { play, pause, playSkipBack, playSkipForward, repeat, infinite, heart, heartOutline } from "ionicons/icons";
+import {
+	createGesture,
+	Gesture,
+	IonIcon,
+	IonImg,
+	IonRange,
+	IonSpinner,
+	IonThumbnail,
+	RangeCustomEvent,
+} from "@ionic/vue";
+import {
+	heart,
+	heartOutline,
+	infinite,
+	pause,
+	play,
+	playSkipBack,
+	playSkipForward,
+	repeat,
+} from "ionicons/icons";
+import { reactive, useTemplateRef, watch } from "vue";
+import { useFavoritesStore } from "@/stores/FavoritesStore";
 import { states, usePlayerStore } from "@/stores/PlayerStore";
-import { useAudioService } from "@/composables/useAudioService";
-import { useFavoritesStore } from "@/stores/FavoriteStore";
+import { formatDuration } from "@/utils";
 
-const audio_service = useAudioService();
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
 const player = useTemplateRef("player");
 const player_coords = reactive({ sX: 0, sY: 0, x: 0, y: 0 });
 let gesture: Gesture | null = null;
-const offsets: Record<string, number | null> = { top: null, left: null };
+const offsets: { top: number; left: number } = { top: 0, left: 0 };
 
 watch(player, (el) => {
-  if (el && gesture == null) {
-    gesture = createGesture({
-      el: el,
-      threshold: 0,
-      gestureName: 'drag-player',
-      priority: 100,
-      canStart: ev => {
-        const target = ev.event.target as HTMLElement;
-        if (target.closest('ion-range') || target.closest('ion-icon')) {
-          return false;
-        }
-        return true;
-      },
+	if (el && gesture == null) {
+		gesture = createGesture({
+			el: el,
+			threshold: 0,
+			gestureName: "drag-player",
+			priority: 100,
+			canStart: (ev) => {
+				const target = ev.event.target as HTMLElement;
+				if (target.closest("ion-range") || target.closest("ion-icon")) {
+					return false;
+				}
+				return true;
+			},
 
-      onStart: ev => {
-        offsets.top = el.offsetTop;
-        offsets.left = el.offsetLeft;
+			onStart: (_ev) => {
+				offsets.top = el.offsetTop;
+				offsets.left = el.offsetLeft;
 
-        player_coords.sX = player_coords.x;
-        player_coords.sY = player_coords.y;
-      },
+				player_coords.sX = player_coords.x;
+				player_coords.sY = player_coords.y;
+			},
 
-      onMove: ev => {
-        const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
+			onMove: (ev) => {
+				const clamp = (v: number, min: number, max: number) =>
+					Math.min(Math.max(v, min), max);
 
-        player_coords.x = clamp(player_coords.sX + ev.deltaX, -offsets.left!, window.innerWidth - el.offsetWidth - offsets.left!);
-        player_coords.y = clamp(player_coords.sY + ev.deltaY, -offsets.top!, window.innerHeight - el.offsetHeight - offsets.top!);
-      }
-    });
+				player_coords.x = clamp(
+					player_coords.sX + ev.deltaX,
+					-offsets.left,
+					window.innerWidth - el.offsetWidth - offsets.left,
+				);
+				player_coords.y = clamp(
+					player_coords.sY + ev.deltaY,
+					-offsets.top,
+					window.innerHeight - el.offsetHeight - offsets.top,
+				);
+			},
+		});
 
-    gesture.enable();
-  } else {
-    gesture?.destroy();
-    gesture = null;
-  }
+		gesture.enable();
+	} else {
+		gesture?.destroy();
+		gesture = null;
+	}
 });
 
-const formatDuration = (ms: number) => {
-  const sec = Math.floor(ms / 1000);
-
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
-
-  if (h > 0) {
-    return [h, m, s].map(v => String(v).padStart(2, "0")).join(":");
-  } else {
-    return [m, s].map(v => String(v).padStart(2, "0")).join(":");
-  }
-}
-
 const handleSeek = (ev: RangeCustomEvent) => {
-  const newPosition = (ev.detail.value as number) * 1000;
-  player_store.seekTo(newPosition);
-}
-
-const toggleFavorite = () => {
-  audio_service.toggleFavorite(player_store.audio!.id);
-}
+	const newPosition = (ev.detail.value as number) * 1000;
+	player_store.seekTo(newPosition);
+};
 </script>
 
 <template>
@@ -98,9 +106,9 @@ const toggleFavorite = () => {
       <ion-icon :src="playSkipBack"></ion-icon>
       <ion-spinner v-if="player_store.state == states.buffering"></ion-spinner>
       <ion-icon v-else :src="player_store.state == states.playing ? pause : play"
-        @click="player_store.state == states.playing ? player_store.pause() : player_store.play()"></ion-icon>
+        @click="player_store.state == states.playing ? player_store.pause() : player_store.resume()"></ion-icon>
       <ion-icon :src="playSkipForward"></ion-icon>
-      <ion-icon :src="favorites_store.isFavorite(player_store.audio!.id) ? heart : heartOutline" @click="toggleFavorite"></ion-icon>
+      <ion-icon :src="favorites_store.isFavorite(player_store.audio!.id) ? heart : heartOutline" @click="favorites_store.toggleFavorite(player_store.audio!.id)"></ion-icon>
     </div>
     <div class="mini-player-audio-range">
       <div>{{ formatDuration(player_store.currentPosition) }}</div>
@@ -119,8 +127,8 @@ ion-thumbnail {
 }
 
 ion-spinner {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 ion-range {

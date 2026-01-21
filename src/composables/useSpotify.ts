@@ -1,71 +1,70 @@
-import { SpotifyAuthToken } from "@/types";
-import { InAppBrowser, UrlEvent } from "@capgo/inappbrowser";
+import { InAppBrowser, type UrlEvent } from "@capgo/inappbrowser";
 import { useI18n } from "vue-i18n";
+import type { SpotifyAuthToken } from "@/types";
 
-const SPOTIFY_API_URL: string = "https://api.spotify.com/v1/me"
+const SPOTIFY_API_URL: string = "https://api.spotify.com/v1/me";
 const SPOTIFY_AUTH_URL: string =
-  "https://accounts.spotify.com/es/v2/login?continue=https%3A%2F%2Fopen.spotify.com%2Fintl-es%2F";
+	"https://accounts.spotify.com/es/v2/login?continue=https%3A%2F%2Fopen.spotify.com%2Fintl-es%2F";
 const SPOTIFY_STATUS_URL: string = "https://accounts.spotify.com/es-ES/status";
 const SPOTIFY_BASE_URL: string = "https://open.spotify.com";
 
-let spotify_token: SpotifyAuthToken | null = null;
-
 const useSpotify = () => {
-  const { t } = useI18n();
-  
-  const getToken = () => {
-    return spotify_token;
-  };
+	let spotify_token: SpotifyAuthToken | null = null;
+	const { t } = useI18n();
 
-  const isTokenExpired = (): boolean => {
-    if (!spotify_token) return true;
-    return spotify_token.accessTokenExpirationTimestampMs >= Date.now();
-  }
+	const getToken = () => {
+		return spotify_token;
+	};
 
-  const getFavoriteTracks = async () => {
-    const all = [];
-    let url = `${SPOTIFY_API_URL}/tracks?limit=50`;
-    while (url) {
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${spotify_token?.accessToken}` },
-      });
-      const json = await res.json();
-      all.push(...json.items);
-      url = json.next;
-    }
-    return all;
-  }
+	const isTokenExpired = (): boolean => {
+		if (!spotify_token) return true;
+		return spotify_token.accessTokenExpirationTimestampMs >= Date.now();
+	};
 
-  const getPlaylists = async () => {
-    const all = [];
-    let url = `${SPOTIFY_API_URL}/playlists?limit=50`;
-    while (url) {
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${spotify_token?.accessToken}` },
-      });
-      const json = await res.json();
-      all.push(...json.items);
-      url = json.next;
-    }
-    return all;
-  }
+	const getFavoriteTracks = async () => {
+		const all = [];
+		let url = `${SPOTIFY_API_URL}/tracks?limit=50`;
+		while (url) {
+			const res = await fetch(url, {
+				headers: { Authorization: `Bearer ${spotify_token?.accessToken}` },
+			});
+			const json = await res.json();
+			all.push(...json.items);
+			url = json.next;
+		}
+		return all;
+	};
 
-  const linkAccount = async () => {
-    InAppBrowser.openWebView({
-      title: t("spotify.link"),
-      toolbarColor: "#121212",
-      toolbarTextColor: "#FFFFFF",
-      url: SPOTIFY_AUTH_URL,
-    });
+	const getPlaylists = async () => {
+		const all = [];
+		let url = `${SPOTIFY_API_URL}/playlists?limit=50`;
+		while (url) {
+			const res = await fetch(url, {
+				headers: { Authorization: `Bearer ${spotify_token?.accessToken}` },
+			});
+			const json = await res.json();
+			all.push(...json.items);
+			url = json.next;
+		}
+		return all;
+	};
 
-    InAppBrowser.addListener("urlChangeEvent", (e: UrlEvent) => {
-      if (e.url.startsWith(SPOTIFY_STATUS_URL)) {
-        InAppBrowser.setUrl({url: SPOTIFY_BASE_URL});
-      }
-      
-      if (e.url.startsWith(SPOTIFY_BASE_URL)) {
-        InAppBrowser.executeScript({
-          code: `(function() {
+	const linkAccount = async () => {
+		InAppBrowser.openWebView({
+			title: t("spotify.link"),
+			toolbarColor: "#121212",
+			toolbarTextColor: "#FFFFFF",
+			url: SPOTIFY_AUTH_URL,
+		});
+
+		InAppBrowser.addListener("urlChangeEvent", (e: UrlEvent) => {
+			if (e.url.startsWith(SPOTIFY_STATUS_URL)) {
+				InAppBrowser.setUrl({ url: SPOTIFY_BASE_URL });
+			}
+
+			if (e.url.startsWith(SPOTIFY_BASE_URL)) {
+				InAppBrowser.executeScript({
+					code: `(function() {
             const originalFetch = window.fetch;
             window.fetch = async function(input, init) {
               const response = await originalFetch.apply(this, arguments);
@@ -78,19 +77,25 @@ const useSpotify = () => {
               return response;
             };
           })();`,
-        });
-      }
-    });
+				});
+			}
+		});
 
-    InAppBrowser.addListener("messageFromWebview", (event) => {
-      if (event.detail?.type == "SPOTIFY_AUTH_SUCCESS") {
-        spotify_token = JSON.parse(event.detail.response);
-        InAppBrowser.close();
-      }
-    });
-  };
+		InAppBrowser.addListener("messageFromWebview", (event) => {
+			if (event.detail?.type === "SPOTIFY_AUTH_SUCCESS") {
+				spotify_token = JSON.parse(event.detail.response);
+				InAppBrowser.close();
+			}
+		});
+	};
 
-  return { getToken, isTokenExpired, linkAccount, getFavoriteTracks, getPlaylists };
+	return {
+		getToken,
+		isTokenExpired,
+		linkAccount,
+		getFavoriteTracks,
+		getPlaylists,
+	};
 };
 
 export default useSpotify;

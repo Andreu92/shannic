@@ -1,9 +1,9 @@
-import { audio_player } from "@shannic/audio-player";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { useAudioService } from "@/composables/useAudioService";
 import { usePlaylistService } from "@/composables/usePlaylistService";
 import { FAVORITES_PLAYLIST_ID } from "@/constants";
+import { player_plugin } from "@/plugins/PlayerPlugin";
 import type { RxAudio } from "@/schemas/audio";
 import { usePlayerStore } from "@/stores/PlayerStore";
 import type { AudioDocument, PlaylistAudio, PlaylistDocument } from "@/types";
@@ -26,13 +26,7 @@ export const useFavoritesStore = defineStore("favorites", () => {
 			await audio_service.getAudiosByIds(
 				playlist.audios?.map((a: PlaylistAudio) => a.audioId) ?? [],
 			)
-		).sort((a, b) => {
-			const posA =
-				favorites.value.find((f) => f.audioId === a.id)?.position ?? 0;
-			const posB =
-				favorites.value.find((f) => f.audioId === b.id)?.position ?? 0;
-			return posA - posB;
-		});
+		).sort((a, b) => sortByPosition(a, b));
 
 		audios.value = audio_document_array.map((d) => d.toMutableJSON());
 	};
@@ -40,7 +34,7 @@ export const useFavoritesStore = defineStore("favorites", () => {
 	const toggleFavorite = async (id: string) => {
 		const is_fav = isFavorite(id);
 		is_fav ? await deleteFavorite(id) : await addFavorite(id);
-		if (player_store.audio) audio_player.toggleFavorite({ favorite: !is_fav });
+		if (player_store.audio) player_plugin.toggleFavorite({ favorite: !is_fav });
 	};
 
 	const addFavorite = async (id: string) => {
@@ -49,6 +43,7 @@ export const useFavoritesStore = defineStore("favorites", () => {
 		favorites.value.push(new_favorite);
 		audio_service.getAudio(id).then((a: AudioDocument) => {
 			audios.value.push(a.toMutableJSON());
+			audios.value.sort((a, b) => sortByPosition(a, b));
 		});
 	};
 
@@ -62,6 +57,12 @@ export const useFavoritesStore = defineStore("favorites", () => {
 
 	const isFavorite = (id: string): boolean => {
 		return favorites.value.some((o) => o.audioId === id);
+	};
+
+	const sortByPosition = (a: RxAudio, b: RxAudio) => {
+		const p1 = favorites.value.find((f) => f.audioId === a.id)?.position ?? 0;
+		const p2 = favorites.value.find((f) => f.audioId === b.id)?.position ?? 0;
+		return p1 - p2;
 	};
 
 	const reorder = async (from: number, to: number) => {

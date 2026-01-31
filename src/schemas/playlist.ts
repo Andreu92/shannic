@@ -3,6 +3,8 @@ import {
 	type RxJsonSchema,
 	toTypedRxJsonSchema,
 } from "rxdb";
+import type { PlaylistDocument } from "@/types";
+import { shuffleArray } from "@/utils";
 
 export const playlistSchemaLiteral = {
 	title: "Playlist schema",
@@ -56,10 +58,28 @@ export const playlistSchemaLiteral = {
 	indexes: ["title"],
 } as const;
 
+export const playlistMethods = {
+	toSortedArray(this: PlaylistDocument): string[] {
+		return (
+			this.audios
+				?.sort((a, b) => a.position - b.position)
+				.map((a) => a.audioId) ?? []
+		);
+	},
+	toShuffledArray(this: PlaylistDocument): string[] {
+		return shuffleArray(this.audios?.map((a) => a.audioId) ?? []);
+	},
+};
+
 const schemaTyped = toTypedRxJsonSchema(playlistSchemaLiteral);
 
 export type RxPlaylist = ExtractDocumentTypeFromTypedRxJsonSchema<
 	typeof schemaTyped
 >;
+
+export type RxPlaylistMethods = {
+	toSortedArray: (this: PlaylistDocument) => string[];
+	toShuffledArray: (this: PlaylistDocument) => string[];
+};
 
 export const playlistSchema: RxJsonSchema<RxPlaylist> = playlistSchemaLiteral;

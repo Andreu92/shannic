@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import {
 	createGesture,
 	Gesture,
@@ -46,7 +47,8 @@ watch(player, (el) => {
 				return true;
 			},
 
-			onStart: (_ev) => {
+			onStart: () => {
+				Haptics.impact({ style: ImpactStyle.Light });
 				offsets.top = el.offsetTop;
 				offsets.left = el.offsetLeft;
 
@@ -86,14 +88,14 @@ const handleSeek = (ev: RangeCustomEvent) => {
 
 <template>
   <div class="mini-player" ref="player" v-if="player_store.audio" :style="{
-    color: player_store.audio!.colors?.text,
-    background: player_store.audio!.colors?.background,
+    color: player_store.audio!.colors.text,
+    background: player_store.audio!.colors.background,
     transform: `translate3d(${player_coords.x}px, ${player_coords.y}px, 0)`
   }">
     <div style="display: flex; gap: 12px;">
       <div style="min-width: 45px;">
         <ion-thumbnail>
-          <ion-img :src="player_store.audio!.thumbnails[player_store.audio!.thumbnails.length - 1].url"></ion-img>
+          <ion-img :src="player_store.audio!.thumbnail.url"></ion-img>
         </ion-thumbnail>
       </div>
       <div class="mini-player-audio-info">
@@ -103,19 +105,19 @@ const handleSeek = (ev: RangeCustomEvent) => {
     </div>
     <div class="mini-player-actions">
       <ion-icon :src="player_store.repeat ? infinite : repeat" @click="player_store.toggleRepeat()"></ion-icon>
-      <ion-icon :src="playSkipBack"></ion-icon>
+      <ion-icon :src="playSkipBack" @click="player_store.skipPrevious()"></ion-icon>
       <ion-spinner v-if="player_store.state == states.buffering"></ion-spinner>
       <ion-icon v-else :src="player_store.state == states.playing ? pause : play"
         @click="player_store.state == states.playing ? player_store.pause() : player_store.resume()"></ion-icon>
-      <ion-icon :src="playSkipForward"></ion-icon>
+      <ion-icon :src="playSkipForward" @click="player_store.skipNext()"></ion-icon>
       <ion-icon :src="favorites_store.isFavorite(player_store.audio!.id) ? heart : heartOutline" @click="favorites_store.toggleFavorite(player_store.audio!.id)"></ion-icon>
     </div>
     <div class="mini-player-audio-range">
-      <div>{{ formatDuration(player_store.currentPosition) }}</div>
-      <ion-range :value="Math.floor(player_store.currentPosition / 1000)" :min="0"
+      <div>{{ formatDuration(player_store.current_position) }}</div>
+      <ion-range :value="Math.floor(player_store.current_position / 1000)" :min="0"
         :max="Math.floor(player_store.audio!.duration / 1000)" @ionKnobMoveStart="player_store.isDragging = true"
         @ionKnobMoveEnd="player_store.isDragging = false" @ionChange="handleSeek"></ion-range>
-      <div>{{ formatDuration(player_store.audio!.duration) }}</div>
+      <div>{{ player_store.audio!.durationText }}</div>
     </div>
   </div>
 </template>
@@ -132,15 +134,15 @@ ion-spinner {
 }
 
 ion-range {
-  --bar-background: #ffffff;
-  --bar-background-active: #ffffff;
-  --knob-background: #ffffff;
+  --bar-background: v-bind(player_store.audio?.colors?.text);
+  --bar-background-active: v-bind(player_store.audio?.colors?.text);
+  --knob-background: v-bind(player_store.audio?.colors?.text);
   --knob-size: 15px;
 }
 
 .mini-player {
   position: fixed;
-  bottom: 75px;
+  bottom: 60px;
   left: 10px;
   right: 10px;
   z-index: 1;

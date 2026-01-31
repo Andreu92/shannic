@@ -1,3 +1,7 @@
+plugins {
+    id("com.chaquo.python")
+}
+
 apply plugin: 'com.android.application'
 
 android {
@@ -11,6 +15,9 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters "arm64-v8a", "x86_64"
+        }
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -21,6 +28,16 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+chaquopy {
+    defaultConfig {
+        version "3.12"
+        pip {
+            install "innertube"
+            install "yt-dlp[default]"
         }
     }
 }
@@ -41,6 +58,16 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    implementation 'androidx.palette:palette:1.0.0'
+    implementation 'com.github.bumptech.glide:glide:5.0.5'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.0'
+    implementation "androidx.media:media:1.7.1"
+    def media3_version = "1.9.1"
+    implementation "androidx.media3:media3-exoplayer:$media3_version"
+    implementation "androidx.media3:media3-datasource-okhttp:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-dash:$media3_version"
 }
 
 apply from: 'capacitor.build.gradle'

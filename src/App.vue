@@ -15,7 +15,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <ion-app>
+  <ion-app >
     <ion-router-outlet></ion-router-outlet>
     <MiniPlayer></MiniPlayer>
   </ion-app>

@@ -1,12 +1,10 @@
-import {
-	type Audio as AudioPlayerAudio,
-	audio_player,
-} from "@shannic/audio-player";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { useAudioService } from "@/composables/useAudioService";
+import { usePlaylistService } from "@/composables/usePlaylistService";
+import { type PlayerAudio, player_plugin } from "@/plugins/PlayerPlugin";
 import { useFavoritesStore } from "@/stores/FavoritesStore";
-import type { AudioDocument } from "@/types";
+import type { AudioDocument, PlayerPlaylist, PlaylistDocument } from "@/types";
 
 export const states = {
 	paused: 0,
@@ -16,105 +14,164 @@ export const states = {
 
 export const usePlayerStore = defineStore("player", () => {
 	const audio_service = useAudioService();
+	const playlist_service = usePlaylistService();
 	const favorites_store = useFavoritesStore();
+
 	const audio = ref<AudioDocument | null>(null);
+	const playlist = ref<PlayerPlaylist | null>(null);
 	const state = ref<number>(states.paused);
+	const fetching_audio = ref<boolean>(false);
 	const repeat = ref<boolean>(false);
-	const currentPosition = ref<number>(0);
+	const current_audio_id = ref<string | null>(null);
+	const current_position = ref<number>(0);
 	const isDragging = ref<boolean>(false);
 
 	const reset = () => {
 		audio.value = null;
+		playlist.value = null;
 		repeat.value = false;
-		currentPosition.value = 0;
+		current_audio_id.value = null;
+		current_position.value = 0;
 	};
 
 	const initListeners = () => {
-		audio_player.addListener(
-			"onCurrentPositionChange",
-			(data: { position: number }) => {
-				if (!isDragging.value) {
-					currentPosition.value = data.position;
-				}
-			},
-		);
-		audio_player.addListener("onStop", () => {
+		player_plugin.addListener("onCurrentPositionChange", (data) => {
+			const { position } = data as { position: number };
+			if (!isDragging.value) {
+				current_position.value = position;
+			}
+		});
+		player_plugin.addListener("onStop", () => {
 			reset();
 		});
-		audio_player.addListener("onBuffering", () => {
+		player_plugin.addListener("onBuffering", () => {
 			state.value = states.buffering;
 		});
-		audio_player.addListener("onPlay", () => {
+		player_plugin.addListener("onPlay", () => {
 			state.value = states.playing;
 		});
-		audio_player.addListener("onPause", () => {
+		player_plugin.addListener("onPause", () => {
 			state.value = states.paused;
 		});
-		audio_player.addListener(
-			"onToggleRepeat",
-			(data: { repeating: boolean }) => {
-				repeat.value = data.repeating;
-			},
-		);
-		audio_player.addListener(
-			"onToggleFavorite",
-			(_data: { favorite: boolean }) => {
-				if (audio.value) favorites_store.toggleFavorite(audio.value.id);
-			},
-		);
+		player_plugin.addListener("onSkipNext", () => {
+			skipNext();
+		});
+		player_plugin.addListener("onSkipPrevious", () => {
+			skipPrevious();
+		});
+		player_plugin.addListener("onToggleRepeat", (data) => {
+			const { repeating } = data as { repeating: boolean };
+			repeat.value = repeating;
+		});
+		player_plugin.addListener("onToggleFavorite", () => {
+			if (audio.value) favorites_store.toggleFavorite(audio.value.id);
+		});
+		player_plugin.addListener("onSourceError", async () => {
+			if (audio.value) {
+				state.value = states.buffering;
+				await audio_service.updateAudio(audio.value.id);
+				play(audio.value.id);
+			}
+		});
 	};
 
-	const play = async (id: string, is_favorite: boolean) => {
-		const audio_document: AudioDocument = await audio_service.getAudio(id);
-		const audio_to_play: AudioPlayerAudio = {
+	const play = async (audio_id: string) => {
+		current_audio_id.value = audio_id;
+		fetching_audio.value = true;
+
+		const audio_document: AudioDocument =
+			await audio_service.getAudio(audio_id);
+
+		fetching_audio.value = false;
+
+		const audio_to_play: PlayerAudio = {
 			...audio_document.toMutableJSON(),
-			favorite: is_favorite,
+			thumbnail: audio_document.thumbnail.url,
+			favorite: favorites_store.isFavorite(audio_id),
 		};
+
 		audio.value = audio_document;
-		audio_player.play(audio_to_play);
+		current_position.value = 0;
+		player_plugin.play(audio_to_play);
+	};
+
+	const playPlaylist = async (
+		playlist_id: string,
+		shuffle: boolean = false,
+	) => {
+		const playlist_document: PlaylistDocument =
+			await playlist_service.getPlaylist(playlist_id);
+
+		playlist.value = {
+			id: playlist_document.id,
+			currentIndex: 0,
+			audios: shuffle
+				? playlist_document.toShuffledArray()
+				: playlist_document.toSortedArray(),
+		};
+
+		play(playlist.value.audios[0]);
 	};
 
 	const resume = () => {
 		state.value = states.playing;
-		audio_player.resume();
+		player_plugin.resume();
 	};
 
 	const pause = () => {
 		state.value = states.paused;
-		audio_player.pause();
+		player_plugin.pause();
 	};
 
 	const seekTo = (position: number) => {
-		currentPosition.value = position;
-		audio_player.seekTo({ position: position });
+		current_position.value = position;
+		player_plugin.seekTo({ position: position });
 	};
 
 	const stop = () => {
-		audio_player.stop();
+		player_plugin.stop();
 		reset();
 	};
 
 	const skipNext = () => {
-		audio_player.skipNext();
+		if (
+			playlist.value &&
+			playlist.value.currentIndex < playlist.value.audios.length - 1
+		) {
+			playlist.value.currentIndex++;
+			play(playlist.value.audios[playlist.value.currentIndex]);
+		}
 	};
 
 	const skipPrevious = () => {
-		audio_player.skipPrevious();
+		if (current_position.value > 1000) {
+			seekTo(0);
+			return;
+		}
+
+		if (playlist.value && playlist.value.currentIndex > 0) {
+			playlist.value.currentIndex--;
+			play(playlist.value.audios[playlist.value.currentIndex]);
+		}
 	};
 
 	const toggleRepeat = () => {
 		repeat.value = !repeat.value;
-		audio_player.toggleRepeat({ repeating: repeat.value });
+		player_plugin.toggleRepeat({ repeating: repeat.value });
 	};
 
 	return {
 		audio,
+		playlist,
 		state,
+		fetching_audio,
 		repeat,
-		currentPosition,
+		current_audio_id,
+		current_position,
 		isDragging,
 		initListeners,
 		play,
+		playPlaylist,
 		resume,
 		pause,
 		seekTo,

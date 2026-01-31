@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
 	alertController,
+	IonButton,
 	IonChip,
 	IonContent,
 	IonIcon,
@@ -18,28 +19,30 @@ import {
 	SearchbarCustomEvent,
 } from "@ionic/vue";
 import {
+	downloadOutline,
+	ellipsisVertical,
 	heart,
 	heartOutline,
+	play,
 	reorderTwoOutline,
 	search as search_icon,
+	shuffle,
 } from "ionicons/icons";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import broken_heart from "@/assets/img/broken-heart.svg";
 import iconDark from "@/assets/img/icon-dark.png";
 import iconLight from "@/assets/img/icon-light.png";
 import no_search_results from "@/assets/img/no-search-results.svg";
 import spotify_icon from "@/assets/img/spotify-icon.svg";
 import AppHeader from "@/components/layout/AppHeader.vue";
-import { useAudioService } from "@/composables/useAudioService";
+import ToggleButton from "@/components/ui/ToggleButton.vue";
 import { useLayout } from "@/composables/useLayout";
 import useSpotify from "@/composables/useSpotify";
+import { FAVORITES_PLAYLIST_ID } from "@/constants";
 import { RxAudio } from "@/schemas/audio";
 import { useFavoritesStore } from "@/stores/FavoritesStore";
 import { usePlayerStore } from "@/stores/PlayerStore";
-import { AudioDocument, PlaylistAudio } from "@/types";
-import { formatDuration, showToast } from "@/utils";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -47,11 +50,11 @@ const { t } = useI18n();
 const layout = useLayout();
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
-const audio_service = useAudioService();
 const spotify = useSpotify();
 
 const query = ref<string>("");
 const reorder_mode = ref(false);
+const shuffle_mode = ref(false);
 
 const search_results = computed(() => {
 	const searchTerm = query.value.trim().toLowerCase();
@@ -126,25 +129,38 @@ onIonViewWillEnter(async () => {
     <AppHeader />
     <ion-content fullscreen class="ion-padding">
       <div v-if="favorites_store.audios.length" style="height: 100%">
-        <ion-searchbar :placeholder="t('favorites.placeholder')" @ion-change="search" @ion-input="clearIfEmpty"
-          @ion-clear="query = ''" />
-        <div>
-          <ion-chip color="primary" @click="reorder_mode = !reorder_mode">
-            <ion-icon :icon="reorderTwoOutline" />
-          </ion-chip>
+        <div class="search-container">
+          <ion-searchbar :placeholder="t('favorites.placeholder')" @ion-change="search" @ion-input="clearIfEmpty" @ion-clear="query = ''" />
+          <ion-icon slot="icon-only" color="dark" :icon="ellipsisVertical" style="font-size: 1.4rem;"></ion-icon>
+        </div>
+        <div class="playlist-actions" v-if="query.trim() === ''">
+          <ion-button fill="clear" shape="round" @click="player_store.playPlaylist(FAVORITES_PLAYLIST_ID, shuffle_mode)">
+            <ion-icon slot="icon-only" color="dark" :icon="play"></ion-icon>
+          </ion-button>
+          <toggle-button :enabled="shuffle_mode" :icon="shuffle" @click="shuffle_mode = !shuffle_mode" />
+          <ion-button fill="clear" shape="round">
+            <ion-icon slot="icon-only" color="dark" :icon="downloadOutline"></ion-icon>
+          </ion-button>
+          <toggle-button :enabled="reorder_mode" :icon="reorderTwoOutline" @click="reorder_mode = !reorder_mode" />
         </div>
         <ion-list v-if="search_results.length">
           <ion-reorder-group :disabled="!reorder_mode || query.trim() !== ''" @ionReorderEnd="handleReorder">
             <ion-reorder v-for="result of search_results" :key="result.id">
-              <ion-item @click="player_store.play(result.id, favorites_store.isFavorite(result.id))">
-                <ion-thumbnail>
-                  <ion-img :src="result.thumbnails[result.thumbnails.length - 1].url" />
-                </ion-thumbnail>
+              <ion-item @click="player_store.play(result.id)">
+                <div class="audio-thumbnail">
+                  <Transition name="fade" mode="out-in">
+                    <ion-spinner v-if="player_store.current_audio_id === result.id && player_store.fetching_audio"
+                      style="width: 45px; height: 45px;" name="dots"></ion-spinner>
+                    <ion-thumbnail v-else>
+                      <ion-img :src="result.thumbnail.url" />
+                    </ion-thumbnail>
+                  </Transition>
+                </div>
                 <div class="audio-info">
                   <div ref="titles" class="audio-title">{{ result.title }}</div>
                   <div class="audio-artist">{{ result.artist }}</div>
                 </div>
-                <div class="audio-duration">{{ formatDuration(result.duration) }}</div>
+                <div class="audio-duration">{{ result.durationText }}</div>
                 <div class="audio-actions">
                   <ion-icon :icon="favorites_store.isFavorite(result.id) ? heart : heartOutline"
                     :color="favorites_store.isFavorite(result.id) ? 'danger' : ''"
@@ -160,7 +176,7 @@ onIonViewWillEnter(async () => {
         </div>
       </div>
       <div v-else class="no-favs">
-        <ion-img :src="layout.isDarkTheme ? iconLight : iconDark" style="width: 100px;" />
+        <ion-img :src="layout.state.isDarkTheme ? iconLight : iconDark" style="width: 100px;" />
         <div style="margin-top: 3px;">{{ t('favorites.start') }}</div>
         <div class="start-actions">
           <ion-chip @click="() => router.replace('/search')">
@@ -168,7 +184,7 @@ onIonViewWillEnter(async () => {
             <ion-label>{{ t('pages.search') }}</ion-label>
           </ion-chip>
           <ion-chip @click="linkSpotify">
-            <ion-icon :icon="spotify_icon" style="font-size: 25px;"></ion-icon>
+            <ion-icon :icon="spotify_icon" style="font-size: 25px; color: black"></ion-icon>
             <ion-label>{{ t('favorites.spotify') }}</ion-label>
           </ion-chip>
         </div>
@@ -181,6 +197,12 @@ onIonViewWillEnter(async () => {
 ion-thumbnail {
   --size: 45px;
   --border-radius: 10px;
+}
+
+.playlist-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .no-favs,
@@ -210,5 +232,10 @@ ion-thumbnail {
   display: flex;
   justify-content: flex-end;
   padding: 8px;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
 }
 </style>

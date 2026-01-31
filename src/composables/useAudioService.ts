@@ -13,7 +13,7 @@ export const useAudioService = () => {
 			.findOne(id)
 			.exec();
 		if (!audio) return await createAudio(id);
-		if (Date.now() >= audio.expirationDate) return await updateAudio(audio, id);
+		if (Date.now() >= audio.expirationDate) return await updateAudio(id);
 		return audio;
 	};
 
@@ -37,10 +37,13 @@ export const useAudioService = () => {
 		});
 	};
 
-	const updateAudio = async (
-		audio: AudioDocument,
-		id: string,
-	): Promise<AudioDocument> => {
+	const updateAudio = async (id: string): Promise<AudioDocument> => {
+		const audio: AudioDocument | null = await audio_collection
+			.findOne(id)
+			.exec();
+
+		if (!audio) throw new Error("Audio not found");
+
 		const updated_audio: Audio = await audio_client.get(id);
 
 		return await audio.incrementalModify((audioDoc: RxAudio) => {
@@ -48,7 +51,8 @@ export const useAudioService = () => {
 			audioDoc.author = updated_audio.author;
 			audioDoc.artist = updated_audio.artist;
 			audioDoc.duration = updated_audio.duration;
-			audioDoc.thumbnails = updated_audio.thumbnails;
+			audioDoc.durationText = updated_audio.durationText;
+			audioDoc.thumbnail = updated_audio.thumbnail;
 			audioDoc.url = updated_audio.url;
 			audioDoc.expirationDate = updated_audio.expirationDate;
 			audioDoc.updatedAt = Date.now();

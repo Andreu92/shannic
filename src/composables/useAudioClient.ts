@@ -1,27 +1,39 @@
+import { Vibrant } from "node-vibrant/browser";
 import {
-	AudioClient,
-	type Audio as AudioClientAudio,
-	type Search,
-} from "@shannic/audio-client";
+	type YoutubeAudio,
+	type YoutubeSearch,
+	youtube_client_plugin,
+} from "@/plugins/YoutubeClientPlugin";
 import type { Audio, SearchResult } from "@/types";
 
 export const useAudioClient = () => {
 	let next_token: string | null | undefined = null;
 
 	const get = async (id: string): Promise<Audio> => {
-		const audio_client_audio: AudioClientAudio = await AudioClient.get({
+		const audio_client_audio: YoutubeAudio = await youtube_client_plugin.get({
 			id: id,
 		});
+
+		const palette = await Vibrant.from(
+			audio_client_audio.thumbnail.base64,
+		).getPalette();
+
+		console.log(palette);
+
 		const audio: Audio = {
 			...audio_client_audio,
 			artist: audio_client_audio.author,
+			colors: {
+				background: palette.Muted?.hex || palette.Vibrant?.hex || "#000000",
+				text: palette.Muted?.titleTextColor || palette.Vibrant?.titleTextColor || "#FFFFFF",
+			},
 		};
 		sanitize(audio);
 		return audio;
 	};
 
 	const search = async (query: string): Promise<SearchResult[]> => {
-		const search_data: Search = await AudioClient.search({
+		const search_data: YoutubeSearch = await youtube_client_plugin.search({
 			query: query,
 			next_token: next_token,
 		});

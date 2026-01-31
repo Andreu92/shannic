@@ -4,4 +4,6 @@
     <string name="title_activity_main">Shannic</string>
     <string name="package_name">com.andreu92.shannic</string>
     <string name="custom_url_scheme">com.andreu92.shannic</string>
+    <string name="notification_channel_id">AudioPlayerChannel</string>
+    <string name="notification_channel_name">Audio Player Channel</string>
 </resources>

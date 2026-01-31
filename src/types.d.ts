@@ -1,12 +1,12 @@
 import type { RxCollection, RxDocument } from "rxdb";
 import type { RxAudio } from "@/schemas/audio";
-import type { RxPlaylist } from "@/schemas/playlist";
+import type { RxPlaylist, RxPlaylistMethods } from "@/schemas/playlist";
 
 export type AudioDocument = RxDocument<RxAudio>;
 export type AudioCollection = RxCollection<RxAudio>;
 
-export type PlaylistDocument = RxDocument<RxPlaylist>;
-export type PlaylistCollection = RxCollection<RxPlaylist>;
+export type PlaylistDocument = RxDocument<RxPlaylist, RxPlaylistMethods>;
+export type PlaylistCollection = RxCollection<RxPlaylist, RxPlaylistMethods>;
 
 export interface RxShannicCollections {
 	audios: AudioCollection;
@@ -15,36 +15,43 @@ export interface RxShannicCollections {
 
 export type RxShannicDatabase = RxDatabase<RxShannicCollections>;
 
-export interface Thumbnail {
-	url: string;
-	height: number;
-	width: number;
-}
-
 export interface SearchResult {
 	id: string;
 	title: string;
 	author: string;
 	artist?: string;
-	thumbnails: Thumbnail[];
+	thumbnail: string;
 	duration: string;
 }
 
-export interface Audio extends SearchResult {
-	duration: number;
-	expirationDate: number;
+export interface Audio {
+	id: string;
+	title: string;
+	author: string;
 	artist: string;
+	duration: number;
+	durationText: string;
+	expirationDate: number;
+	thumbnail: {
+		url: string;
+		base64?: string;
+	}
 	url: string;
-	colors?: {
+	colors: {
 		background: string;
 		text: string;
-		body: string;
-	};
+	}
 }
 
 export interface PlaylistAudio {
 	audioId: string;
 	position: number;
+}
+
+export interface PlayerPlaylist {
+	id: string;
+	currentIndex: number;
+	audios: string[];
 }
 
 export interface SpotifyAuthToken {

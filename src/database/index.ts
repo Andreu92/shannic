@@ -13,7 +13,7 @@ import {
 import { type App, inject, type Plugin } from "vue";
 
 import { audioSchema } from "@/schemas/audio";
-import { playlistSchema } from "@/schemas/playlist";
+import { playlistMethods, playlistSchema } from "@/schemas/playlist";
 import type { RxShannicCollections, RxShannicDatabase } from "@/types";
 
 let storage: RxStorageDexie | RxStorage<DexieStorageInternals, DexieSettings>;
@@ -51,6 +51,7 @@ export async function createDatabase(): Promise<Plugin> {
 		},
 		playlists: {
 			schema: playlistSchema,
+			methods: playlistMethods,
 		},
 	});
 

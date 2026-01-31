@@ -12,10 +12,7 @@ dependencies {
     implementation project(':capacitor-app')
     implementation project(':capacitor-haptics')
     implementation project(':capacitor-keyboard')
-    implementation project(':capacitor-splash-screen')
     implementation project(':capgo-inappbrowser')
-    implementation project(':shannic-audio-client')
-    implementation project(':shannic-audio-player')
 
 }
 

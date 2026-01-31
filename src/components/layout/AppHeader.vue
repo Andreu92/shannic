@@ -22,24 +22,20 @@ const layout = useLayout();
 const toggleDarkPalette = (
 	event: IonToggleCustomEvent<ToggleChangeEventDetail<boolean>>,
 ) => {
-	layout.isDarkTheme = event.detail.checked;
-	document.documentElement.classList.toggle(
-		"ion-palette-dark",
-		event.detail.checked,
-	);
+	event.detail.checked ? layout.setDarkTheme() : layout.setLightTheme();
 };
 </script>
 
 <template>
   <ion-header>
-    <ion-toolbar>
+    <ion-toolbar style="padding-top: 5px;">
       <ion-title>
-        <ion-img style="width: 90px;" :src="layout.isDarkTheme ? logoDarkTheme : logoLightTheme" />
+        <ion-img style="width: 90px;" :src="layout.state.isDarkTheme ? logoDarkTheme : logoLightTheme" />
       </ion-title>
       <ion-buttons slot="end">
         <div class="toggle-dark-mode">
           <ion-icon :src="sunnyOutline" />
-          <ion-toggle @ionChange="toggleDarkPalette" :checked="layout.isDarkTheme" />
+          <ion-toggle @ionChange="toggleDarkPalette" :checked="layout.state.isDarkTheme" />
           <ion-icon :src="moonOutline" />
         </div>
       </ion-buttons>

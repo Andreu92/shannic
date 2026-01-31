@@ -16,28 +16,24 @@ export const audioSchemaLiteral = {
 		author: { type: "string", maxLength: 255 },
 		artist: { type: "string", maxLength: 255 },
 		duration: { type: "integer", minimum: 0 },
+		durationText: { type: "string", maxLength: 20 },
+		thumbnail: {
+			type: "object",
+			properties: {
+				url: { type: "string", format: "uri" },
+				base64: { type: "string" },
+			},
+			required: ["url"],
+		},
 		url: { type: "string", format: "uri" },
 		expirationDate: { type: "integer", minimum: 0 },
-		thumbnails: {
-			type: "array",
-			items: {
-				type: "object",
-				properties: {
-					url: { type: "string", format: "uri" },
-					width: { type: "integer", minimum: 0 },
-					height: { type: "integer", minimum: 0 },
-				},
-				required: ["url", "width", "height"],
-			},
-		},
 		colors: {
 			type: "object",
 			properties: {
 				background: { type: "string", maxLength: 10 },
 				text: { type: "string", maxLength: 10 },
-				body: { type: "string", maxLength: 10 },
 			},
-			required: ["background", "text", "body"],
+			required: ["background", "text"],
 		},
 		createdAt: { type: "integer", minimum: 0 },
 		updatedAt: { type: "integer", minimum: 0 },
@@ -48,12 +44,14 @@ export const audioSchemaLiteral = {
 		"author",
 		"artist",
 		"duration",
+		"durationText",
+		"thumbnail",
 		"url",
 		"expirationDate",
-		"thumbnails",
+		"colors",
 		"createdAt",
 	],
-	indexes: ["title", "author"],
+	indexes: ["title", "author", "artist"],
 } as const;
 
 const schemaTyped = toTypedRxJsonSchema(audioSchemaLiteral);

@@ -24,7 +24,7 @@ import { useAudioClient } from "@/composables/useAudioClient";
 import { useLayout } from "@/composables/useLayout";
 import { useFavoritesStore } from "@/stores/FavoritesStore";
 import { usePlayerStore } from "@/stores/PlayerStore";
-import { PlaylistAudio, SearchResult } from "@/types";
+import { SearchResult } from "@/types";
 import { showToast } from "@/utils";
 
 const { t } = useI18n();
@@ -46,7 +46,7 @@ const search = async (e: SearchbarCustomEvent) => {
 			loading.value = true;
 			search_results.value = await audio_client.search(query);
 		} catch (error) {
-			showToast(t("errors.search"));
+			showToast(t("search.error"));
 			search_results.value = [];
 		} finally {
 			loading.value = false;
@@ -61,7 +61,7 @@ const searchContinuation = async (e: InfiniteScrollCustomEvent) => {
 		const new_results = await audio_client.search(query ?? "");
 		search_results.value.push(...new_results);
 	} catch (error) {
-		showToast(t("errors.search"));
+		showToast(t("search.error"));
 	} finally {
 		e.target.complete();
 	}
@@ -74,10 +74,16 @@ const searchContinuation = async (e: InfiniteScrollCustomEvent) => {
     <ion-content fullscreen class="ion-padding">
       <ion-searchbar :placeholder="t('search.placeholder')" @ion-change="search" @ion-clear="search_results = []" />
       <ion-list v-if="search_results.length">
-        <ion-item v-for="result of search_results" :key="result.id" @click="player_store.play(result.id, favorites_store.isFavorite(result.id))">
-          <ion-thumbnail>
-            <ion-img :src="result.thumbnails[result.thumbnails.length - 1].url" />
-          </ion-thumbnail>
+        <ion-item v-for="result of search_results" :key="result.id" @click="player_store.play(result.id)">
+          <div class="audio-thumbnail">
+            <Transition name="fade" mode="out-in">
+              <ion-spinner v-if="player_store.current_audio_id === result.id && player_store.fetching_audio"
+                style="width: 45px; height: 45px;" name="dots"></ion-spinner>
+              <ion-thumbnail v-else>
+                <ion-img :src="result.thumbnail" />
+              </ion-thumbnail>
+            </Transition>
+          </div>
           <div class="audio-info">
             <div ref="titles" class="audio-title">{{ result.title }}</div>
             <div class="audio-artist">{{ result.artist }}</div>
@@ -95,7 +101,7 @@ const searchContinuation = async (e: InfiniteScrollCustomEvent) => {
       <div v-else class="search-something">
         <ion-spinner v-if="loading" name="dots" style="width: 50px; height: 50px;"></ion-spinner>
         <div v-else class="no-results">
-          <ion-img :src="layout.isDarkTheme ? iconLight : iconDark" style="width: 100px;" />
+          <ion-img :src="layout.state.isDarkTheme ? iconLight : iconDark" style="width: 100px;" />
           <div>{{ t('search.start') }}</div>
         </div>
       </div>

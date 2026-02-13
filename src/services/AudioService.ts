@@ -1,10 +1,10 @@
-import { useAudioClient } from "@/composables/useAudioClient";
+import useYoutubeClient from "@/clients/YoutubeClient";
 import { useDatabase } from "@/database";
 import type { RxAudio } from "@/schemas/audio";
 import type { Audio, AudioCollection, AudioDocument } from "@/types";
 
-export const useAudioService = () => {
-	const audio_client = useAudioClient();
+const useAudioService = () => {
+	const youtube_client = useYoutubeClient();
 	const db = useDatabase();
 	const audio_collection: AudioCollection = db.audios;
 
@@ -12,8 +12,17 @@ export const useAudioService = () => {
 		const audio: AudioDocument | null = await audio_collection
 			.findOne(id)
 			.exec();
-		if (!audio) return await createAudio(id);
-		if (Date.now() >= audio.expirationDate) return await updateAudio(id);
+
+		if (!audio) {
+			const audio: Audio = await youtube_client.get(id);
+			return await createAudio(audio);
+		}
+
+		if (Date.now() >= audio.expires_at) {
+			const audio: Audio = await youtube_client.get(id);
+			return await updateAudio(audio);
+		}
+
 		return audio;
 	};
 
@@ -29,33 +38,30 @@ export const useAudioService = () => {
 		return audios;
 	};
 
-	const createAudio = async (id: string): Promise<AudioDocument> => {
-		const audio: Audio = await audio_client.get(id);
+	const createAudio = async (audio: Audio): Promise<AudioDocument> => {
 		return await audio_collection.insertIfNotExists({
 			...audio,
-			createdAt: Date.now(),
+			created_at: Date.now(),
 		});
 	};
 
-	const updateAudio = async (id: string): Promise<AudioDocument> => {
+	const updateAudio = async (updated_audio: Audio): Promise<AudioDocument> => {
 		const audio: AudioDocument | null = await audio_collection
-			.findOne(id)
+			.findOne(updated_audio.id)
 			.exec();
 
 		if (!audio) throw new Error("Audio not found");
 
-		const updated_audio: Audio = await audio_client.get(id);
-
 		return await audio.incrementalModify((audioDoc: RxAudio) => {
 			audioDoc.title = updated_audio.title;
 			audioDoc.author = updated_audio.author;
-			audioDoc.artist = updated_audio.artist;
 			audioDoc.duration = updated_audio.duration;
-			audioDoc.durationText = updated_audio.durationText;
+			audioDoc.duration_text = updated_audio.duration_text;
 			audioDoc.thumbnail = updated_audio.thumbnail;
 			audioDoc.url = updated_audio.url;
-			audioDoc.expirationDate = updated_audio.expirationDate;
-			audioDoc.updatedAt = Date.now();
+			audioDoc.colors = updated_audio.colors;
+			audioDoc.expires_at = updated_audio.expires_at;
+			audioDoc.updated_at = Date.now();
 			return audioDoc;
 		});
 	};
@@ -67,3 +73,5 @@ export const useAudioService = () => {
 		updateAudio,
 	};
 };
+
+export default useAudioService;

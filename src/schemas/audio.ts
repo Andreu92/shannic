@@ -4,6 +4,16 @@ import {
 	toTypedRxJsonSchema,
 } from "rxdb";
 
+const colorThemeSchema = {
+	type: "object",
+	properties: {
+		main_color: { type: "string", maxLength: 10 },
+		title_text_color: { type: "string", maxLength: 10 },
+		body_text_color: { type: "string", maxLength: 10 },
+	},
+	required: ["main_color", "title_text_color", "body_text_color"],
+} as const;
+
 export const audioSchemaLiteral = {
 	title: "Audio schema",
 	description: "Shannic audio model abstraction",
@@ -14,44 +24,38 @@ export const audioSchemaLiteral = {
 		id: { type: "string", maxLength: 100 },
 		title: { type: "string", maxLength: 255 },
 		author: { type: "string", maxLength: 255 },
-		artist: { type: "string", maxLength: 255 },
 		duration: { type: "integer", minimum: 0 },
-		durationText: { type: "string", maxLength: 20 },
-		thumbnail: {
-			type: "object",
-			properties: {
-				url: { type: "string", format: "uri" },
-				base64: { type: "string" },
-			},
-			required: ["url"],
-		},
+		duration_text: { type: "string", maxLength: 20 },
+		thumbnail: { type: "string", format: "uri" },
 		url: { type: "string", format: "uri" },
-		expirationDate: { type: "integer", minimum: 0 },
+		expires_at: { type: "integer", minimum: 0 },
 		colors: {
 			type: "object",
 			properties: {
-				background: { type: "string", maxLength: 10 },
-				text: { type: "string", maxLength: 10 },
+				dark_muted: colorThemeSchema,
+				dark_vibrant: colorThemeSchema,
+				light_muted: colorThemeSchema,
+				light_vibrant: colorThemeSchema,
+				muted: colorThemeSchema,
+				vibrant: colorThemeSchema,
 			},
-			required: ["background", "text"],
 		},
-		createdAt: { type: "integer", minimum: 0 },
-		updatedAt: { type: "integer", minimum: 0 },
+		created_at: { type: "integer", minimum: 0 },
+		updated_at: { type: "integer", minimum: 0 },
 	},
 	required: [
 		"id",
 		"title",
 		"author",
-		"artist",
 		"duration",
-		"durationText",
+		"duration_text",
 		"thumbnail",
 		"url",
-		"expirationDate",
+		"expires_at",
 		"colors",
-		"createdAt",
+		"created_at",
 	],
-	indexes: ["title", "author", "artist"],
+	indexes: ["title", "author"],
 } as const;
 
 const schemaTyped = toTypedRxJsonSchema(audioSchemaLiteral);

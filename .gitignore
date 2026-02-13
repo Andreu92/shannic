@@ -35,4 +35,4 @@ android/.idea
 /www
 
 # Shannic
-/src/datasets
+.env

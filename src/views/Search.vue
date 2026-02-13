@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Keyboard } from "@capacitor/keyboard";
 import {
 	InfiniteScrollCustomEvent,
 	IonContent,
@@ -19,11 +20,14 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import iconDark from "@/assets/img/icon-dark.png";
 import iconLight from "@/assets/img/icon-light.png";
+import useYoutubeClient from "@/clients/YoutubeClient";
 import AppHeader from "@/components/layout/AppHeader.vue";
-import { useAudioClient } from "@/composables/useAudioClient";
 import { useLayout } from "@/composables/useLayout";
-import { useFavoritesStore } from "@/stores/FavoritesStore";
-import { usePlayerStore } from "@/stores/PlayerStore";
+import { YoutubeSearch } from "@/plugins/YoutubeClientPlugin";
+import { RxAudio } from "@/schemas/audio";
+import useAudioService from "@/services/AudioService";
+import useFavoritesStore from "@/stores/FavoritesStore";
+import usePlayerStore from "@/stores/PlayerStore";
 import { SearchResult } from "@/types";
 import { showToast } from "@/utils";
 
@@ -32,38 +36,63 @@ const loading = ref<boolean>(false);
 
 const layout = useLayout();
 const player_store = usePlayerStore();
+const audio_service = useAudioService();
 const favorites_store = useFavoritesStore();
-const audio_client = useAudioClient();
+const youtube_client = useYoutubeClient();
 
+let audio_id_to_play = ref<string | null>(null);
+let fetching_audio = ref<boolean>(false);
 let query: string | null | undefined = null;
-const search_results = ref<SearchResult[]>([]);
+const search_items = ref<SearchResult[]>([]);
+let next_token: string | null = null;
 
 const search = async (e: SearchbarCustomEvent) => {
-	audio_client.clearToken();
+	Keyboard.hide();
+	search_items.value = [];
 	query = e.detail.value;
 	if (query) {
 		try {
 			loading.value = true;
-			search_results.value = await audio_client.search(query);
+			const search_data: YoutubeSearch = await youtube_client.search(query);
+			search_items.value = search_data.items;
+			next_token = search_data.next_token;
 		} catch (error) {
 			showToast(t("search.error"));
-			search_results.value = [];
+			search_items.value = [];
 		} finally {
 			loading.value = false;
 		}
 	} else {
-		search_results.value = [];
+		search_items.value = [];
 	}
 };
 
 const searchContinuation = async (e: InfiniteScrollCustomEvent) => {
 	try {
-		const new_results = await audio_client.search(query ?? "");
-		search_results.value.push(...new_results);
+		const new_results = await youtube_client.search(query ?? "", next_token);
+		search_items.value.push(...new_results.items);
+		next_token = new_results.next_token;
 	} catch (error) {
 		showToast(t("search.error"));
 	} finally {
 		e.target.complete();
+	}
+};
+
+const play = async (audio: SearchResult) => {
+	audio_id_to_play.value = audio.id;
+	fetching_audio.value = true;
+	const audio_to_play: RxAudio = (
+		await audio_service.getAudio(audio.id)
+	).toMutableJSON();
+	player_store.play([audio_to_play]);
+	fetching_audio.value = false;
+};
+
+const toggleFavorite = async (audio_id: string) => {
+	const is_fav = await favorites_store.toggleFavorite(audio_id);
+	if (player_store.audio && player_store.audio.id === audio_id) {
+		player_store.toggleFavorite(is_fav);
 	}
 };
 </script>
@@ -72,12 +101,12 @@ const searchContinuation = async (e: InfiniteScrollCustomEvent) => {
   <ion-page>
     <AppHeader />
     <ion-content fullscreen class="ion-padding">
-      <ion-searchbar :placeholder="t('search.placeholder')" @ion-change="search" @ion-clear="search_results = []" />
-      <ion-list v-if="search_results.length">
-        <ion-item v-for="result of search_results" :key="result.id" @click="player_store.play(result.id)">
+      <ion-searchbar :placeholder="t('search.placeholder')" @ion-change="search" @ion-clear="search_items = []" />
+      <ion-list v-if="search_items.length" style="margin-top: 10px">
+        <ion-item v-for="result of search_items" :key="result.id" @click="play(result)">
           <div class="audio-thumbnail">
             <Transition name="fade" mode="out-in">
-              <ion-spinner v-if="player_store.current_audio_id === result.id && player_store.fetching_audio"
+              <ion-spinner v-if="audio_id_to_play === result.id && fetching_audio === true"
                 style="width: 45px; height: 45px;" name="dots"></ion-spinner>
               <ion-thumbnail v-else>
                 <ion-img :src="result.thumbnail" />
@@ -86,12 +115,12 @@ const searchContinuation = async (e: InfiniteScrollCustomEvent) => {
           </div>
           <div class="audio-info">
             <div ref="titles" class="audio-title">{{ result.title }}</div>
-            <div class="audio-artist">{{ result.artist }}</div>
+            <div class="audio-artist">{{ result.author }}</div>
           </div>
           <div class="audio-duration">{{ result.duration }}</div>
           <div class="audio-actions">
             <ion-icon :icon="favorites_store.isFavorite(result.id) ? heart : heartOutline"
-              :color="favorites_store.isFavorite(result.id) ? 'danger' : ''" @click.stop="favorites_store.toggleFavorite(result.id)"></ion-icon>
+              :color="favorites_store.isFavorite(result.id) ? 'danger' : ''" @click.stop="toggleFavorite(result.id)"></ion-icon>
           </div>
         </ion-item>
         <ion-infinite-scroll @ionInfinite="searchContinuation">

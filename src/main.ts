@@ -5,6 +5,7 @@ import { createI18n } from "vue-i18n";
 
 import App from "@/App.vue";
 import { createDatabase } from "@/database";
+import { ca, en, es } from "@/lang";
 import router from "@/router";
 
 /* Core CSS required for Ionic components to work properly */
@@ -33,36 +34,9 @@ const i18n = createI18n({
 	locale: "es",
 	fallbackLocale: "es",
 	messages: {
-		es: {
-			generic: {
-				yes: "Sí",
-				no: "No",
-			},
-			pages: {
-				home: "Incio",
-				search: "Buscar",
-				favorites: "Favoritos",
-				playlists: "Listas",
-			},
-			search: {
-				placeholder: "Busca en la nube... :)",
-				start: "Qué te apetece escuchar?",
-				error: "Error al realizar la búsqueda en la nube.",
-			},
-			favorites: {
-				placeholder: "Busca en tus favoritos... :)",
-				noResults: "Vaya! Parece que no encuentro nada.",
-				start: "Aún no tienes favoritos? :O",
-				spotify: "Importar de spotify",
-				delete: {
-					header: "Eliminar favorito",
-					message: "¿Seguro que quieres eliminar {title} de tus favoritos?",
-				},
-			},
-			spotify: {
-				link: "Vincular spotify",
-			},
-		},
+		es: es,
+		en: en,
+		ca: ca,
 	},
 });
 

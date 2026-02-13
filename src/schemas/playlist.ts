@@ -25,11 +25,11 @@ export const playlistSchemaLiteral = {
 			type: "string",
 			maxLength: 1000,
 		},
-		createdAt: {
+		created_at: {
 			type: "integer",
 			minimum: 0,
 		},
-		updatedAt: {
+		updated_at: {
 			type: "integer",
 			minimum: 0,
 		},
@@ -38,10 +38,10 @@ export const playlistSchemaLiteral = {
 			items: {
 				type: "object",
 				properties: {
-					audioId: { type: "string" },
+					audio_id: { type: "string" },
 					position: { type: "integer", minimum: 0 },
 				},
-				required: ["audioId", "position"],
+				required: ["audio_id", "position"],
 			},
 		},
 		thumbnail: {
@@ -54,7 +54,7 @@ export const playlistSchemaLiteral = {
 			required: ["url", "width", "height"],
 		},
 	},
-	required: ["id", "title", "createdAt"],
+	required: ["id", "title", "created_at"],
 	indexes: ["title"],
 } as const;
 
@@ -63,11 +63,11 @@ export const playlistMethods = {
 		return (
 			this.audios
 				?.sort((a, b) => a.position - b.position)
-				.map((a) => a.audioId) ?? []
+				.map((a) => a.audio_id) ?? []
 		);
 	},
 	toShuffledArray(this: PlaylistDocument): string[] {
-		return shuffleArray(this.audios?.map((a) => a.audioId) ?? []);
+		return shuffleArray(this.audios?.map((a) => a.audio_id) ?? []);
 	},
 };
 

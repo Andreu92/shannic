@@ -11,9 +11,10 @@ import {
 	type RxStorageDexie,
 } from "rxdb/plugins/storage-dexie";
 import { type App, inject, type Plugin } from "vue";
-
+import { FAVORITES_PLAYLIST_ID, SPOTIFY_CONFIG_ID } from "@/constants";
 import { audioSchema } from "@/schemas/audio";
 import { playlistMethods, playlistSchema } from "@/schemas/playlist";
+import { spotifySchema } from "@/schemas/spotify";
 import type { RxShannicCollections, RxShannicDatabase } from "@/types";
 
 let storage: RxStorageDexie | RxStorage<DexieStorageInternals, DexieSettings>;
@@ -38,7 +39,9 @@ export function useDatabase(): RxShannicDatabase {
 }
 
 export async function createDatabase(): Promise<Plugin> {
+	//if (import.meta.env.DEV) {
 	await removeRxDatabase("shannic", storage);
+	//}
 
 	const db: RxShannicDatabase = await createRxDatabase<RxShannicCollections>({
 		name: "shannic",
@@ -53,12 +56,19 @@ export async function createDatabase(): Promise<Plugin> {
 			schema: playlistSchema,
 			methods: playlistMethods,
 		},
+		spotify: {
+			schema: spotifySchema,
+		},
 	});
 
 	db.playlists.insertIfNotExists({
-		id: "1",
+		id: FAVORITES_PLAYLIST_ID,
 		title: "favorites",
-		createdAt: Date.now(),
+		created_at: Date.now(),
+	});
+
+	db.spotify.insertIfNotExists({
+		id: SPOTIFY_CONFIG_ID,
 	});
 
 	return {

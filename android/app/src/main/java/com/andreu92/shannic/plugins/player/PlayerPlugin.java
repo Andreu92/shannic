@@ -1,149 +1,313 @@
 package com.andreu92.shannic.plugins.player;
 
-import android.content.Intent;
+import android.content.ComponentName;
+import android.net.Uri;
+import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
+import androidx.core.content.ContextCompat;
+import androidx.media3.common.C;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.MediaMetadata;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.datasource.HttpDataSource;
+import androidx.media3.session.MediaController;
+import androidx.media3.session.SessionCommand;
+import androidx.media3.session.SessionResult;
+import androidx.media3.session.SessionToken;
+
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import com.andreu92.shannic.plugins.youtube.YoutubeService;
 
 @CapacitorPlugin(name = "PlayerPlugin")
 public class PlayerPlugin extends Plugin {
-    private static final String ACTION_PLAY = "ACTION_PLAY";
-    private static final String ACTION_PAUSE = "ACTION_PAUSE";
-    private static final String ACTION_RESUME = "ACTION_RESUME";
-    private static final String ACTION_TOGGLE_REPEAT = "ACTION_TOGGLE_REPEAT";
-    private static final String ACTION_TOGGLE_FAVORITE = "ACTION_TOGGLE_FAVORITE";
-    private static final String ACTION_STOP = "ACTION_STOP";
-    private static final String ACTION_SEEK_TO = "ACTION_SEEK_TO";
+    private final YoutubeService youtubeService = YoutubeService.getInstance();
+    private MediaController mediaController;
+    private ListenableFuture<MediaController> controllerFuture;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+    public record PlayerAudioItem(
+        @JsonProperty("id") String id,
+        @JsonProperty("title") String title,
+        @JsonProperty("author") String author,
+        @JsonProperty("duration") Long duration,
+        @JsonProperty("thumbnail") String thumbnail,
+        @JsonProperty("url") String url,
+        @JsonProperty("expires_at") Long expires_at,
+        @JsonProperty("favorite") Boolean favorite
+    ) implements Serializable {}
+
+    @OptIn(markerClass = UnstableApi.class)
+    @Override
+    public void load() {
+        super.load();
+
+        SessionToken sessionToken = new SessionToken(
+                getContext(),
+                new ComponentName(getContext(), PlayerService.class)
+        );
+
+        controllerFuture = new MediaController.Builder(getContext(), sessionToken)
+                .setListener(new MediaController.Listener() {
+                    @NonNull
+                    @Override
+                    public ListenableFuture<SessionResult> onCustomCommand(
+                        @NonNull MediaController controller,
+                        @NonNull SessionCommand command,
+                        @NonNull Bundle args
+                    ){
+                        if (command.customAction.equals(PlayerActions.ACTION_TOGGLE_FAVORITE))
+                            notifyListeners("onToggleFavorite", null);
+
+                        return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));
+                    }
+                })
+                .buildAsync();
+
+        controllerFuture.addListener(() -> {
+            try {
+                mediaController = controllerFuture.get();
+
+                mediaController.addListener(new Player.Listener() {
+                    @Override
+                    public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
+                        if (mediaItem == null || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) return;
+
+                        JSObject data = new JSObject();
+                        data.put("index", mediaController.getCurrentMediaItemIndex());
+                        notifyListeners("onMediaItemChanged", data);
+
+                        //Pre refresh if necessary
+                        /*int nextMediaItemIndex = mediaController.getNextMediaItemIndex();
+                        if (nextMediaItemIndex != C.INDEX_UNSET) {
+                            executorService.execute(() -> refreshAudioUrl(mediaController.getMediaItemAt(nextMediaItemIndex), nextMediaItemIndex));
+                        }
+
+                        int previousMediaItemIndex = mediaController.getPreviousMediaItemIndex();
+                        if (previousMediaItemIndex != C.INDEX_UNSET) {
+                            executorService.execute(() -> refreshAudioUrl(mediaController.getMediaItemAt(previousMediaItemIndex), previousMediaItemIndex));
+                        }*/
+                    }
+
+                    @Override
+                    public void onIsPlayingChanged(boolean isPlaying) {
+                        refreshPlaybackState(isPlaying);
+                    }
+
+                    @Override
+                    public void onPlaybackStateChanged(int playbackState) {
+                        if (playbackState == Player.STATE_BUFFERING) {
+                            notifyListeners("onBuffering", null);
+                        }
+                        if (playbackState == Player.STATE_READY) {
+                            refreshPlaybackState(mediaController.isPlaying());
+                        }
+                    }
+
+                    @Override
+                    public void onRepeatModeChanged(int repeatMode) {
+                        JSObject data = new JSObject();
+                        data.put("repeating", repeatMode == Player.REPEAT_MODE_ONE);
+                        notifyListeners("onToggleRepeat", data);
+                    }
+
+                    @Override
+                    public void onPlayerError(@NonNull PlaybackException error) {
+                        if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS) {
+                            Throwable cause = error.getCause();
+                            if (cause instanceof HttpDataSource.InvalidResponseCodeException httpError) {
+                                int responseCode = httpError.responseCode;
+                                if (responseCode == 403) {
+                                    notifyListeners("onSourceError", null);
+                                }
+                            }
+                        }
+                    }
+                });
+
+            } catch (ExecutionException | InterruptedException ignored) {}
+        }, ContextCompat.getMainExecutor(getContext()));
+    }
+
+    private void refreshPlaybackState(boolean isPlaying) {
+        JSObject data = new JSObject();
+        data.put("position", mediaController.getCurrentPosition());
+        if (isPlaying) notifyListeners("onPlay", data);
+        else notifyListeners("onPause", data);
+    }
+
+    private void refreshAudioUrl(MediaItem itemToRefresh, int index) {
+        try {
+            if (itemToRefresh.localConfiguration == null) return;
+
+            String expires_at_str = itemToRefresh.localConfiguration.uri.getQueryParameter("expire");
+            if (expires_at_str == null) return;
+
+            long expires_at = Long.parseLong(expires_at_str);
+            if (expires_at < System.currentTimeMillis()) {
+                YoutubeService.AudioItem item = youtubeService.get(itemToRefresh.mediaId);
+                MediaItem oldItem = mediaController.getMediaItemAt(index);
+                MediaItem newItem = oldItem.buildUpon().setUri(item.url()).build();
+                mediaController.replaceMediaItem(index, newItem);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    @OptIn(markerClass = UnstableApi.class)
     @PluginMethod()
-    public void play(PluginCall call) throws JsonProcessingException, ExecutionException, InterruptedException {
-        String id = call.getString("id");
-        String title = call.getString("title");
-        String artist = call.getString("artist");
-        String author = call.getString("author");
-        String url = call.getString("url");
-        String thumbnail = call.getString("thumbnail");
-        Long duration = call.getDouble("duration", 0D).longValue();
-        Boolean isFavorite = call.getBoolean("favorite", false);
+    public void play(PluginCall call) throws JsonProcessingException {
+        JSArray js_audio_items_array = call.getArray("audio_items");
+        boolean shuffle = Boolean.TRUE.equals(call.getBoolean("shuffle", false));
 
-        Intent intent = new Intent(getContext(), PlayerService.class);
-        intent.setAction(ACTION_PLAY);
-        intent.putExtra("id", id);
-        intent.putExtra("title", title);
-        intent.putExtra("artist", artist);
-        intent.putExtra("author", author);
-        intent.putExtra("url", url);
-        intent.putExtra("duration", duration);
-        intent.putExtra("favorite", isFavorite);
-        intent.putExtra("thumbnail", thumbnail);
+        JsonMapper mapper = JsonMapper.builder()
+                .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.ALWAYS))
+                .visibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .build();
 
-        getContext().startForegroundService(intent);
+        ArrayList<PlayerAudioItem> audioItems = mapper.readValue(js_audio_items_array.toString(), new TypeReference<>() {});
+        ArrayList<MediaItem> mediaItems = new ArrayList<>();
 
-        call.resolve();
+        for (PlayerAudioItem item : audioItems) {
+            Bundle extras = new Bundle();
+            extras.putBoolean("favorite", item.favorite());
+
+            MediaItem mediaItem =
+                    new MediaItem.Builder()
+                            .setMediaId(item.id())
+                            .setCustomCacheKey(item.id())
+                            .setUri(item.url())
+                            .setMediaMetadata(
+                                    new MediaMetadata.Builder()
+                                            .setArtist(item.author())
+                                            .setTitle(item.title())
+                                            .setArtworkUri(Uri.parse(item.thumbnail()))
+                                            .setExtras(extras)
+                                            .build())
+                            .build();
+
+            mediaItems.add(mediaItem);
+        }
+
+        getActivity().runOnUiThread(() -> {
+            refreshAudioUrl(mediaItems.get(0), 0);
+            mediaController.setMediaItems(mediaItems);
+            mediaController.setShuffleModeEnabled(shuffle);
+            mediaController.prepare();
+            mediaController.play();
+            call.resolve();
+        });
     }
 
     @PluginMethod()
     public void resume(PluginCall call) {
-        Intent intent = new Intent(getContext(), PlayerService.class);
-        intent.setAction(ACTION_RESUME);
-        getContext().startForegroundService(intent);
-        call.resolve();
+        getActivity().runOnUiThread(() -> {
+            mediaController.play();
+            call.resolve();
+        });
     }
 
     @PluginMethod()
     public void pause(PluginCall call) {
-        Intent intent = new Intent(getContext(), PlayerService.class);
-        intent.setAction(ACTION_PAUSE);
-        getContext().startForegroundService(intent);
-        call.resolve();
+        getActivity().runOnUiThread(() -> {
+            mediaController.pause();
+            call.resolve();
+        });
     }
 
     @PluginMethod()
     public void seekTo(PluginCall call) {
-        Long position = call.getDouble("position", 0D).longValue();
-        Intent intent = new Intent(getContext(), PlayerService.class);
-        intent.setAction(ACTION_SEEK_TO);
-        intent.putExtra("position", position);
-        getContext().startForegroundService(intent);
-        call.resolve();
+        long position = call.getDouble("position", 0D).longValue();
+        getActivity().runOnUiThread(() -> {
+            mediaController.seekTo(position);
+            call.resolve();
+        });
     }
 
     @PluginMethod()
     public void toggleRepeat(PluginCall call) {
-        Boolean repeating = call.getBoolean("repeating", false);
-        Intent intent = new Intent(getContext(), PlayerService.class);
-        intent.setAction(ACTION_TOGGLE_REPEAT);
-        intent.putExtra("repeating", repeating);
-        getContext().startForegroundService(intent);
-        call.resolve();
+        getActivity().runOnUiThread(() -> {
+            Boolean repeating = call.getBoolean("repeating", false);
+            mediaController.setRepeatMode(repeating ? Player.REPEAT_MODE_ONE : Player.REPEAT_MODE_OFF);
+            call.resolve();
+        });
+    }
+
+    @PluginMethod()
+    public void skipPrevious(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            SessionCommand customCommand = new SessionCommand(PlayerActions.ACTION_SKIP_TO_PREVIOUS, Bundle.EMPTY);
+            mediaController.sendCustomCommand(customCommand, Bundle.EMPTY);
+            call.resolve();
+        });
+    }
+
+    @PluginMethod()
+    public void skipNext(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            SessionCommand customCommand = new SessionCommand(PlayerActions.ACTION_SKIP_TO_NEXT, Bundle.EMPTY);
+            mediaController.sendCustomCommand(customCommand, Bundle.EMPTY);
+            call.resolve();
+        });
     }
 
     @PluginMethod()
     public void toggleFavorite(PluginCall call) {
-        Boolean isFavorite = call.getBoolean("favorite", false);
-        Intent intent = new Intent(getContext(), PlayerService.class);
-        intent.setAction(ACTION_TOGGLE_FAVORITE);
-        intent.putExtra("favorite", isFavorite);
-        getContext().startForegroundService(intent);
-        call.resolve();
+        getActivity().runOnUiThread(() -> {
+            SessionCommand customCommand = new SessionCommand(PlayerActions.ACTION_TOGGLE_FAVORITE, Bundle.EMPTY);
+            mediaController.sendCustomCommand(customCommand, Bundle.EMPTY);
+            call.resolve();
+        });
+    }
+
+    @PluginMethod
+    public void getCurrentPosition(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            JSObject data = new JSObject();
+            data.put("position", mediaController.getCurrentPosition());
+            call.resolve(data);
+        });
     }
 
     @PluginMethod()
     public void stop(PluginCall call) {
-        Intent intent = new Intent(getContext(), PlayerService.class);
-        getContext().stopService(intent);
-        call.resolve();
-    }
-
-    public void onPlay() {
-        notifyListeners("onPlay", null);
-    }
-
-    public void onPause() {
-        notifyListeners("onPause", null);
-    }
-
-    public void onStop() {
-        notifyListeners("onStop", null);
-    }
-
-    public void onBuffering() {
-        notifyListeners("onBuffering", null);
-    }
-
-    public void onCurrentPositionChange(long position) {
-        JSObject data = new JSObject();
-        data.put("position", position);
-        notifyListeners("onCurrentPositionChange", data);
-    }
-
-    public void onSkipToNext() {
-        notifyListeners("onSkipNext", null);
-    }
-
-    public void onSkipToPrevious() {
-        notifyListeners("onSkipPrevious", null);
-    }
-
-    public void onToggleRepeat(boolean repeating) {
-        JSObject data = new JSObject();
-        data.put("repeating", repeating);
-        notifyListeners("onToggleRepeat", data);
-    }
-
-    public void onToggleFavorite(boolean isFavorite) {
-        JSObject data = new JSObject();
-        data.put("favorite", isFavorite);
-        notifyListeners("onToggleFavorite", data);
-    }
-
-    public void onSourceError() {
-        notifyListeners("onSourceError", null);
+        getActivity().runOnUiThread(() -> {
+            if (mediaController != null) {
+                mediaController.stop();
+                mediaController.release();
+                mediaController = null;
+                call.resolve();
+            }
+        });
     }
 }

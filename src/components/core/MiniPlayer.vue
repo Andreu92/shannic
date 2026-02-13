@@ -20,17 +20,35 @@ import {
 	playSkipForward,
 	repeat,
 } from "ionicons/icons";
-import { reactive, useTemplateRef, watch } from "vue";
-import { useFavoritesStore } from "@/stores/FavoritesStore";
-import { states, usePlayerStore } from "@/stores/PlayerStore";
+import { computed, reactive, useTemplateRef, watch } from "vue";
+import { useLayout } from "@/composables/useLayout";
+import { DEFAULT_COLOR_THEME } from "@/constants";
+import useFavoritesStore from "@/stores/FavoritesStore";
+import usePlayerStore, { states } from "@/stores/PlayerStore";
+import type { ColorTheme } from "@/types";
 import { formatDuration } from "@/utils";
 
+const layout = useLayout();
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
 const player = useTemplateRef("player");
 const player_coords = reactive({ sX: 0, sY: 0, x: 0, y: 0 });
 let gesture: Gesture | null = null;
 const offsets: { top: number; left: number } = { top: 0, left: 0 };
+
+const color_theme = computed<ColorTheme>(() => {
+	let color_theme: ColorTheme | undefined = layout.state.isDarkTheme
+		? player_store.audio?.colors.vibrant || player_store.audio?.colors.muted
+		: player_store.audio?.colors.dark_vibrant ||
+			player_store.audio?.colors.dark_muted;
+
+	return (
+		color_theme ??
+		(player_store.audio?.colors.vibrant ||
+			player_store.audio?.colors.muted ||
+			DEFAULT_COLOR_THEME)
+	);
+});
 
 watch(player, (el) => {
 	if (el && gesture == null) {
@@ -84,23 +102,28 @@ const handleSeek = (ev: RangeCustomEvent) => {
 	const newPosition = (ev.detail.value as number) * 1000;
 	player_store.seekTo(newPosition);
 };
+
+const toggleFavorite = async (audio_id: string) => {
+	const is_fav = await favorites_store.toggleFavorite(audio_id);
+	player_store.toggleFavorite(is_fav);
+};
 </script>
 
 <template>
   <div class="mini-player" ref="player" v-if="player_store.audio" :style="{
-    color: player_store.audio!.colors.text,
-    background: player_store.audio!.colors.background,
+    color: color_theme.title_text_color,
+    background: color_theme.main_color,
     transform: `translate3d(${player_coords.x}px, ${player_coords.y}px, 0)`
   }">
     <div style="display: flex; gap: 12px;">
       <div style="min-width: 45px;">
         <ion-thumbnail>
-          <ion-img :src="player_store.audio!.thumbnail.url"></ion-img>
+          <ion-img :src="player_store.audio!.thumbnail"></ion-img>
         </ion-thumbnail>
       </div>
       <div class="mini-player-audio-info">
         <div class="audio-title">{{ player_store.audio!.title }}</div>
-        <div class="audio-artist">{{ player_store.audio!.artist }}</div>
+        <div class="audio-artist">{{ player_store.audio!.author }}</div>
       </div>
     </div>
     <div class="mini-player-actions">
@@ -110,14 +133,14 @@ const handleSeek = (ev: RangeCustomEvent) => {
       <ion-icon v-else :src="player_store.state == states.playing ? pause : play"
         @click="player_store.state == states.playing ? player_store.pause() : player_store.resume()"></ion-icon>
       <ion-icon :src="playSkipForward" @click="player_store.skipNext()"></ion-icon>
-      <ion-icon :src="favorites_store.isFavorite(player_store.audio!.id) ? heart : heartOutline" @click="favorites_store.toggleFavorite(player_store.audio!.id)"></ion-icon>
+      <ion-icon :src="favorites_store.isFavorite(player_store.audio!.id) ? heart : heartOutline" @click="toggleFavorite(player_store.audio!.id)"></ion-icon>
     </div>
     <div class="mini-player-audio-range">
       <div>{{ formatDuration(player_store.current_position) }}</div>
       <ion-range :value="Math.floor(player_store.current_position / 1000)" :min="0"
         :max="Math.floor(player_store.audio!.duration / 1000)" @ionKnobMoveStart="player_store.isDragging = true"
         @ionKnobMoveEnd="player_store.isDragging = false" @ionChange="handleSeek"></ion-range>
-      <div>{{ player_store.audio!.durationText }}</div>
+      <div>{{ player_store.audio!.duration_text }}</div>
     </div>
   </div>
 </template>
@@ -134,18 +157,18 @@ ion-spinner {
 }
 
 ion-range {
-  --bar-background: v-bind(player_store.audio?.colors?.text);
-  --bar-background-active: v-bind(player_store.audio?.colors?.text);
-  --knob-background: v-bind(player_store.audio?.colors?.text);
+  --bar-background: v-bind(color_theme.title_text_color);
+  --bar-background-active: v-bind(color_theme.title_text_color);
+  --knob-background: v-bind(color_theme.title_text_color);
   --knob-size: 15px;
 }
 
 .mini-player {
   position: fixed;
-  bottom: 60px;
+  bottom: 135px;
   left: 10px;
   right: 10px;
-  z-index: 1;
+  z-index: 9999;
   padding: 10px;
   border-radius: 10px;
   box-shadow: rgba(99, 99, 99, 0.2) 0 2px 8px;

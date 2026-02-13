@@ -3,16 +3,19 @@ import { type PluginListenerHandle, registerPlugin } from "@capacitor/core";
 export interface PlayerAudio {
 	id: string;
 	title: string;
+	author: string;
 	duration: number;
 	thumbnail: string;
-	author: string;
-	artist: string;
-	url: string;
+	url?: string;
+	expires_at?: number;
 	favorite: boolean;
 }
 
 export interface PlayerPlugin {
-	play(options: PlayerAudio): Promise<void>;
+	play(options: {
+		audio_items: PlayerAudio[];
+		shuffle: boolean;
+	}): Promise<void>;
 	seekTo(options: { position: number }): Promise<void>;
 	resume(): Promise<void>;
 	pause(): Promise<void>;
@@ -21,13 +24,15 @@ export interface PlayerPlugin {
 	skipPrevious(): Promise<void>;
 	toggleRepeat(options: { repeating: boolean }): Promise<void>;
 	toggleFavorite(options: { favorite: boolean }): Promise<void>;
+	getCurrentPosition(): Promise<{ position: number }>;
 	addListener(
 		event: string,
 		callback: (
 			data:
 				| { position: number }
 				| { repeating: boolean }
-				| { favorite: boolean },
+				| { favorite: boolean }
+				| { index: number },
 		) => void,
 	): Promise<PluginListenerHandle>;
 }

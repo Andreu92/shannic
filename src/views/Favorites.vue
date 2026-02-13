@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Keyboard } from "@capacitor/keyboard";
+import { Icon } from "@iconify/vue";
 import {
 	alertController,
 	IonButton,
@@ -10,6 +12,7 @@ import {
 	IonLabel,
 	IonList,
 	IonPage,
+	IonPopover,
 	IonReorder,
 	IonReorderGroup,
 	IonSearchbar,
@@ -23,10 +26,10 @@ import {
 	ellipsisVertical,
 	heart,
 	heartOutline,
-	play,
+	play as play_icon,
 	reorderTwoOutline,
 	search as search_icon,
-	shuffle,
+	shuffle as shuffle_icon,
 } from "ionicons/icons";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -34,15 +37,13 @@ import { useRouter } from "vue-router";
 import iconDark from "@/assets/img/icon-dark.png";
 import iconLight from "@/assets/img/icon-light.png";
 import no_search_results from "@/assets/img/no-search-results.svg";
-import spotify_icon from "@/assets/img/spotify-icon.svg";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import ToggleButton from "@/components/ui/ToggleButton.vue";
 import { useLayout } from "@/composables/useLayout";
-import useSpotify from "@/composables/useSpotify";
-import { FAVORITES_PLAYLIST_ID } from "@/constants";
 import { RxAudio } from "@/schemas/audio";
-import { useFavoritesStore } from "@/stores/FavoritesStore";
-import { usePlayerStore } from "@/stores/PlayerStore";
+import useSpotifyService from "@/services/SpotifyService";
+import useFavoritesStore from "@/stores/FavoritesStore";
+import usePlayerStore from "@/stores/PlayerStore";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -50,11 +51,12 @@ const { t } = useI18n();
 const layout = useLayout();
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
-const spotify = useSpotify();
+
+const spotify_service = useSpotifyService();
 
 const query = ref<string>("");
 const reorder_mode = ref(false);
-const shuffle_mode = ref(false);
+const shuffle = ref(false);
 
 const search_results = computed(() => {
 	const searchTerm = query.value.trim().toLowerCase();
@@ -62,13 +64,14 @@ const search_results = computed(() => {
 		return favorites_store.audios.filter(
 			(audio: RxAudio) =>
 				audio.title.toLowerCase().includes(searchTerm) ||
-				audio.artist?.toLowerCase().includes(searchTerm),
+				audio.author.toLowerCase().includes(searchTerm),
 		);
 	}
 	return favorites_store.audios;
 });
 
 const search = (e: SearchbarCustomEvent) => {
+	Keyboard.hide();
 	query.value = e.detail.value || "";
 };
 
@@ -96,6 +99,9 @@ const showDeleteFavoriteConfirmAlert = async (audioId: string) => {
 				role: "confirm",
 				handler: () => {
 					favorites_store.deleteFavorite(audioId);
+					if (player_store.audio && player_store.audio.id === audioId) {
+						player_store.toggleFavorite(false);
+					}
 				},
 			},
 		],
@@ -111,14 +117,6 @@ const handleReorder = async (event: ReorderEndCustomEvent) => {
 	event.detail.complete();
 };
 
-const linkSpotify = () => {
-	spotify.linkAccount();
-};
-
-const fetchSpotifyFavoriteTracks = async () => {
-	console.log(await spotify.getFavoriteTracks());
-};
-
 onIonViewWillEnter(async () => {
 	reorder_mode.value = false;
 });
@@ -131,14 +129,14 @@ onIonViewWillEnter(async () => {
       <div v-if="favorites_store.audios.length" style="height: 100%">
         <div class="search-container">
           <ion-searchbar :placeholder="t('favorites.placeholder')" @ion-change="search" @ion-input="clearIfEmpty" @ion-clear="query = ''" />
-          <ion-icon slot="icon-only" color="dark" :icon="ellipsisVertical" style="font-size: 1.4rem;"></ion-icon>
+          <ion-icon id="open-actions-popover" slot="icon-only" color="dark" :icon="ellipsisVertical" style="font-size: 1.4rem;"></ion-icon>
         </div>
         <div class="playlist-actions" v-if="query.trim() === ''">
-          <ion-button fill="clear" shape="round" @click="player_store.playPlaylist(FAVORITES_PLAYLIST_ID, shuffle_mode)">
-            <ion-icon slot="icon-only" color="dark" :icon="play"></ion-icon>
+          <ion-button fill="clear" shape="round" @click="player_store.play(favorites_store.audios, shuffle)">
+            <ion-icon slot="icon-only" color="dark" :icon="play_icon"></ion-icon>
           </ion-button>
-          <toggle-button :enabled="shuffle_mode" :icon="shuffle" @click="shuffle_mode = !shuffle_mode" />
-          <ion-button fill="clear" shape="round">
+          <toggle-button :enabled="shuffle" :icon="shuffle_icon" @click="shuffle = !shuffle" />
+          <ion-button fill="clear" shape="round" @click="console.log('TODO')">
             <ion-icon slot="icon-only" color="dark" :icon="downloadOutline"></ion-icon>
           </ion-button>
           <toggle-button :enabled="reorder_mode" :icon="reorderTwoOutline" @click="reorder_mode = !reorder_mode" />
@@ -146,21 +144,17 @@ onIonViewWillEnter(async () => {
         <ion-list v-if="search_results.length">
           <ion-reorder-group :disabled="!reorder_mode || query.trim() !== ''" @ionReorderEnd="handleReorder">
             <ion-reorder v-for="result of search_results" :key="result.id">
-              <ion-item @click="player_store.play(result.id)">
+              <ion-item @click="console.log('TODO')">
                 <div class="audio-thumbnail">
-                  <Transition name="fade" mode="out-in">
-                    <ion-spinner v-if="player_store.current_audio_id === result.id && player_store.fetching_audio"
-                      style="width: 45px; height: 45px;" name="dots"></ion-spinner>
-                    <ion-thumbnail v-else>
-                      <ion-img :src="result.thumbnail.url" />
-                    </ion-thumbnail>
-                  </Transition>
+                  <ion-thumbnail>
+                    <ion-img :src="result.thumbnail" />
+                  </ion-thumbnail>
                 </div>
                 <div class="audio-info">
                   <div ref="titles" class="audio-title">{{ result.title }}</div>
-                  <div class="audio-artist">{{ result.artist }}</div>
+                  <div class="audio-artist">{{ result.author }}</div>
                 </div>
-                <div class="audio-duration">{{ result.durationText }}</div>
+                <div class="audio-duration">{{ result.duration_text }}</div>
                 <div class="audio-actions">
                   <ion-icon :icon="favorites_store.isFavorite(result.id) ? heart : heartOutline"
                     :color="favorites_store.isFavorite(result.id) ? 'danger' : ''"
@@ -172,8 +166,19 @@ onIonViewWillEnter(async () => {
         </ion-list>
         <div v-else class="no-results">
           <img :src="no_search_results"></img>
-          <div>{{ t('favorites.noResults') }}</div>
+          <div>{{ t('favorites.no_results') }}</div>
         </div>
+
+        <ion-popover trigger="open-actions-popover" dismiss-on-select trigger-action="click">
+          <ion-content class="ion-padding">
+            <div class="import-actions" @click="spotify_service.importSavedTracks">
+              <div class="spotify-icon-background" style="width: 20px; height: 20px;">
+                <Icon icon="logos:spotify-icon"></Icon>
+              </div>
+              <div>{{ t('favorites.spotify') }}...</div>
+            </div>
+          </ion-content>
+        </ion-popover>
       </div>
       <div v-else class="no-favs">
         <ion-img :src="layout.state.isDarkTheme ? iconLight : iconDark" style="width: 100px;" />
@@ -183,9 +188,11 @@ onIonViewWillEnter(async () => {
             <ion-icon :icon="search_icon" style="font-size: 20px;"></ion-icon>
             <ion-label>{{ t('pages.search') }}</ion-label>
           </ion-chip>
-          <ion-chip @click="linkSpotify">
-            <ion-icon :icon="spotify_icon" style="font-size: 25px; color: black"></ion-icon>
-            <ion-label>{{ t('favorites.spotify') }}</ion-label>
+          <ion-chip @click="spotify_service.importSavedTracks">
+            <div class="spotify-icon-background" style="width: 20px; height: 20px;">
+              <Icon icon="logos:spotify-icon"></Icon>
+            </div>
+            <ion-label style="margin-left: 5px;">{{ t('favorites.spotify') }}</ion-label>
           </ion-chip>
         </div>
       </div>
@@ -197,6 +204,12 @@ onIonViewWillEnter(async () => {
 ion-thumbnail {
   --size: 45px;
   --border-radius: 10px;
+}
+
+.import-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .playlist-actions {

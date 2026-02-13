@@ -15,34 +15,42 @@
     "android:copy": "bun run build && bun x cap copy android"
   },
   "dependencies": {
-    "@capacitor/android": "^8.0.2",
-    "@capacitor/app": "^8.0.0",
-    "@capacitor/core": "^8.0.2",
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/core": "^8.1.0",
     "@capacitor/haptics": "^8.0.0",
     "@capacitor/keyboard": "^8.0.0",
-    "@capgo/inappbrowser": "^8.1.10",
+    "@capgo/inappbrowser": "^8.1.15",
+    "@iconify/vue": "^5.0.0",
     "@ionic/vue": "^8.7.17",
     "@ionic/vue-router": "^8.7.17",
+    "@spotify/web-api-ts-sdk": "^1.2.0",
     "ionicons": "^8.0.13",
     "node-vibrant": "^4.0.4",
     "pinia": "^3.0.4",
     "rxdb": "^16.21.1",
-    "vue": "^3.5.27",
+    "vue": "^3.5.28",
     "vue-i18n": "^11.2.8",
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.13",
+    "@biomejs/biome": "^2.3.15",
     "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^8.0.2",
-    "@vitejs/plugin-vue": "^6.0.3",
+    "@capacitor/cli": "^8.1.0",
+    "@vitejs/plugin-vue": "^6.0.4",
     "@vue/test-utils": "^2.4.6",
-    "cypress": "^15.9.0",
+    "cypress": "^15.10.0",
     "jsdom": "^27.4.0",
     "sass": "^1.97.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18",
     "vue-tsc": "^3.2.4"
-  }
+  },
+  "trustedDependencies": [
+    "@firebase/util",
+    "@parcel/watcher",
+    "protobufjs",
+    "rxdb"
+  ]
 }

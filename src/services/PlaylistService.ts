@@ -5,7 +5,7 @@ import type {
 	PlaylistDocument,
 } from "@/types";
 
-export const usePlaylistService = () => {
+const usePlaylistService = () => {
 	const db = useDatabase();
 	const playlist_collection: PlaylistCollection = db.playlists;
 
@@ -35,7 +35,7 @@ export const usePlaylistService = () => {
 		audio_id: string,
 	): Promise<boolean> => {
 		const playlist: PlaylistDocument | null = await getPlaylist(playlist_id);
-		return playlist?.audios?.some((o) => o.audioId === audio_id) ?? false;
+		return playlist?.audios?.some((o) => o.audio_id === audio_id) ?? false;
 	};
 
 	const toggleAudioToPlaylist = async (
@@ -59,7 +59,7 @@ export const usePlaylistService = () => {
 			: 0;
 
 		const new_playlist_audio: PlaylistAudio = {
-			audioId: audio_id,
+			audio_id: audio_id,
 			position,
 		};
 
@@ -80,10 +80,10 @@ export const usePlaylistService = () => {
 
 		let playlist_audios = playlist.audios ?? [];
 
-		const toRemove = playlist_audios.find((o) => o.audioId === audio_id);
+		const toRemove = playlist_audios.find((o) => o.audio_id === audio_id);
 		if (toRemove) {
 			playlist_audios = playlist_audios
-				.filter((o) => o.audioId !== audio_id)
+				.filter((o) => o.audio_id !== audio_id)
 				.map((o, i) => ({ ...o, position: i }));
 		}
 
@@ -101,3 +101,5 @@ export const usePlaylistService = () => {
 		toggleAudioToPlaylist,
 	};
 };
+
+export default usePlaylistService;

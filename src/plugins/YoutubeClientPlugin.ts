@@ -10,7 +10,7 @@ interface YoutubeSearchResult {
 
 export interface YoutubeSearch {
 	next_token: string | null;
-	results: YoutubeSearchResult[];
+	items: YoutubeSearchResult[];
 }
 
 export interface YoutubeAudio {
@@ -22,19 +22,21 @@ export interface YoutubeAudio {
 		base64: string;
 	};
 	duration: number;
-	durationText: string;
+	duration_text: string;
 	url: string;
-	expirationDate: number;
-	color: string;
+	expires_at: number;
 }
 
 export interface YoutubeClientPlugin {
 	get(options: { id: string }): Promise<YoutubeAudio>;
+	getByQuery(options: { artist: string; title: string }): Promise<YoutubeAudio>;
 	search(options: {
 		query: string;
 		next_token?: string | null;
+		limit?: number;
 	}): Promise<YoutubeSearch>;
 }
 
-export const youtube_client_plugin: YoutubeClientPlugin =
-	registerPlugin("YoutubeClient");
+export const youtube_client_plugin: YoutubeClientPlugin = registerPlugin(
+	"YoutubeClientPlugin",
+);

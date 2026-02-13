@@ -13,7 +13,6 @@ dependencies {
     implementation project(':capacitor-haptics')
     implementation project(':capacitor-keyboard')
     implementation project(':capgo-inappbrowser')
-
 }
 
 

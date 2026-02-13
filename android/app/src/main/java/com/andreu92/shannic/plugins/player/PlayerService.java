@@ -61,16 +61,10 @@ public class PlayerService extends MediaSessionService {
             String expires_at_str = uri.getQueryParameter("expire");
             if (expires_at_str == null) return dataSpec;
 
-            long expires_at = Long.parseLong(expires_at_str);
-            if (expires_at < System.currentTimeMillis()) {
+            long expires_at = Long.parseLong(expires_at_str) * 1000;
+            if ((expires_at - 10000) < System.currentTimeMillis()) {
                 try {
-                    MediaItem currentMediaItem = player.getCurrentMediaItem();
-                    if (currentMediaItem == null) return dataSpec;
-
-                    AudioItem item = youtubeService.get(currentMediaItem.mediaId);
-                    MediaItem newItem = currentMediaItem.buildUpon().setUri(item.url()).build();
-                    player.replaceMediaItem(player.getCurrentMediaItemIndex(), newItem);
-
+                    AudioItem item = youtubeService.get(dataSpec.key);
                     return dataSpec.buildUpon()
                             .setUri(Uri.parse(item.url()))
                             .build();

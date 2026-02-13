@@ -18,7 +18,7 @@ const useAudioService = () => {
 			return await createAudio(audio);
 		}
 
-		if (Date.now() >= audio.expires_at) {
+		if ((audio.expires_at - 10000) < Date.now()) {
 			const audio: Audio = await youtube_client.get(id);
 			return await updateAudio(audio);
 		}

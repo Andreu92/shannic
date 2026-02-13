@@ -4,11 +4,7 @@ import android.util.Base64;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +19,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class YoutubeService {
     private static YoutubeService client;
@@ -40,7 +39,7 @@ public class YoutubeService {
             String duration_text,
             ThumbnailInfo thumbnail,
             String url,
-            long expiration_date) {}
+            long expires_at) {}
 
     private YoutubeService() {
         InnertubeClient innertubeClient = new InnertubeClient();
@@ -243,8 +242,7 @@ public class YoutubeService {
                         expirationDate = Long.parseLong(expire) * 1000;
                     }
                 }
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
         }
 
         String base64 = getBase64ImageFromUrl(thumbnailUrl);
@@ -272,20 +270,20 @@ public class YoutubeService {
     }
 
     private byte[] getBytes(String urlString) throws IOException {
-        URL url = new URL(urlString);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setConnectTimeout(5000);
-        connection.connect();
+        okhttp3.OkHttpClient httpClient = new okhttp3.OkHttpClient();
 
-        InputStream is = connection.getInputStream();
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        byte[] data = new byte[4096];
-        int nRead;
+        Request request = new Request.Builder()
+                .url(urlString)
+                .build();
 
-        while ((nRead = is.read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, nRead);
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Unexpected code " + response);
+            }
+            if (response.body() == null) {
+                throw new IOException("Response body is null");
+            }
+            return response.body().bytes();
         }
-
-        return buffer.toByteArray();
     }
 }

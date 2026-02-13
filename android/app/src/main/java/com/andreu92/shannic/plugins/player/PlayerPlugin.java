@@ -107,7 +107,7 @@ public class PlayerPlugin extends Plugin {
                         notifyListeners("onMediaItemChanged", data);
 
                         //Pre refresh if necessary
-                        /*int nextMediaItemIndex = mediaController.getNextMediaItemIndex();
+                        int nextMediaItemIndex = mediaController.getNextMediaItemIndex();
                         if (nextMediaItemIndex != C.INDEX_UNSET) {
                             executorService.execute(() -> refreshAudioUrl(mediaController.getMediaItemAt(nextMediaItemIndex), nextMediaItemIndex));
                         }
@@ -115,7 +115,7 @@ public class PlayerPlugin extends Plugin {
                         int previousMediaItemIndex = mediaController.getPreviousMediaItemIndex();
                         if (previousMediaItemIndex != C.INDEX_UNSET) {
                             executorService.execute(() -> refreshAudioUrl(mediaController.getMediaItemAt(previousMediaItemIndex), previousMediaItemIndex));
-                        }*/
+                        }
                     }
 
                     @Override
@@ -172,8 +172,8 @@ public class PlayerPlugin extends Plugin {
             String expires_at_str = itemToRefresh.localConfiguration.uri.getQueryParameter("expire");
             if (expires_at_str == null) return;
 
-            long expires_at = Long.parseLong(expires_at_str);
-            if (expires_at < System.currentTimeMillis()) {
+            long expires_at = Long.parseLong(expires_at_str) * 1000;
+            if ((expires_at - 10000) < System.currentTimeMillis()) {
                 YoutubeService.AudioItem item = youtubeService.get(itemToRefresh.mediaId);
                 MediaItem oldItem = mediaController.getMediaItemAt(index);
                 MediaItem newItem = oldItem.buildUpon().setUri(item.url()).build();

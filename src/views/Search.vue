@@ -82,9 +82,11 @@ const searchContinuation = async (e: InfiniteScrollCustomEvent) => {
 const play = async (audio: SearchResult) => {
 	audio_id_to_play.value = audio.id;
 	fetching_audio.value = true;
+
 	const audio_to_play: RxAudio = (
 		await audio_service.getAudio(audio.id)
 	).toMutableJSON();
+
 	player_store.play([audio_to_play]);
 	fetching_audio.value = false;
 };

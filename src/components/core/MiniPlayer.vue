@@ -38,14 +38,14 @@ const offsets: { top: number; left: number } = { top: 0, left: 0 };
 
 const color_theme = computed<ColorTheme>(() => {
 	let color_theme: ColorTheme | undefined = layout.state.isDarkTheme
-		? player_store.audio?.colors.vibrant || player_store.audio?.colors.muted
+		? player_store.audio?.colors.muted || player_store.audio?.colors.vibrant
 		: player_store.audio?.colors.dark_vibrant ||
 			player_store.audio?.colors.dark_muted;
 
 	return (
 		color_theme ??
-		(player_store.audio?.colors.vibrant ||
-			player_store.audio?.colors.muted ||
+		(player_store.audio?.colors.muted ||
+			player_store.audio?.colors.vibrant ||
 			DEFAULT_COLOR_THEME)
 	);
 });
@@ -103,6 +103,14 @@ const handleSeek = (ev: RangeCustomEvent) => {
 	player_store.seekTo(newPosition);
 };
 
+const onDragStart = () => {
+	player_store.stopProgressTimer();
+};
+
+const onDragEnd = () => {
+	if (player_store.state === states.playing) player_store.startProgressTimer();
+};
+
 const toggleFavorite = async (audio_id: string) => {
 	const is_fav = await favorites_store.toggleFavorite(audio_id);
 	player_store.toggleFavorite(is_fav);
@@ -137,10 +145,10 @@ const toggleFavorite = async (audio_id: string) => {
     </div>
     <div class="mini-player-audio-range">
       <div>{{ formatDuration(player_store.current_position) }}</div>
-      <ion-range :value="Math.floor(player_store.current_position / 1000)" :min="0"
-        :max="Math.floor(player_store.audio!.duration / 1000)" @ionKnobMoveStart="player_store.isDragging = true"
-        @ionKnobMoveEnd="player_store.isDragging = false" @ionChange="handleSeek"></ion-range>
-      <div>{{ player_store.audio!.duration_text }}</div>
+      <ion-range :value="Math.floor(player_store.current_position / 1000)" :min="0" 
+        :max="Math.floor(player_store.audio!.duration / 1000)"
+        @ionKnobMoveStart="onDragStart" @ionKnobMoveEnd="onDragEnd" @ionChange="handleSeek"></ion-range>
+      <div>{{ formatDuration(player_store.audio!.duration) }}</div>
     </div>
   </div>
 </template>

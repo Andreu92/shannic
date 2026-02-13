@@ -18,7 +18,6 @@ const usePlayerStore = defineStore("player", () => {
 	const state = ref<number>(states.paused);
 	const repeat = ref<boolean>(false);
 	const current_position = ref<number>(0);
-	const isDragging = ref<boolean>(false);
 	let progress_timer: number | null = null;
 
 	const startProgressTimer = () => {
@@ -45,15 +44,6 @@ const usePlayerStore = defineStore("player", () => {
 	};
 
 	const initListeners = () => {
-		player_plugin.addListener("onCurrentPositionChange", (data) => {
-			const { position } = data as { position: number };
-			if (!isDragging.value) {
-				current_position.value = position;
-			}
-		});
-		player_plugin.addListener("onStop", () => {
-			reset();
-		});
 		player_plugin.addListener("onBuffering", () => {
 			state.value = states.buffering;
 		});
@@ -148,7 +138,6 @@ const usePlayerStore = defineStore("player", () => {
 		state,
 		repeat,
 		current_position,
-		isDragging,
 		initListeners,
 		play,
 		resume,
@@ -160,6 +149,8 @@ const usePlayerStore = defineStore("player", () => {
 		skipPrevious,
 		toggleRepeat,
 		toggleFavorite,
+		stopProgressTimer,
+		startProgressTimer,
 	};
 });
 

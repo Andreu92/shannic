@@ -109,12 +109,14 @@ public class PlayerPlugin extends Plugin {
                         //Pre refresh if necessary
                         int nextMediaItemIndex = mediaController.getNextMediaItemIndex();
                         if (nextMediaItemIndex != C.INDEX_UNSET) {
-                            executorService.execute(() -> refreshAudioUrl(mediaController.getMediaItemAt(nextMediaItemIndex), nextMediaItemIndex));
+                            MediaItem nextMediaItem = mediaController.getMediaItemAt(nextMediaItemIndex);
+                            executorService.execute(() -> refreshAudioUrl(nextMediaItem, nextMediaItemIndex));
                         }
 
                         int previousMediaItemIndex = mediaController.getPreviousMediaItemIndex();
                         if (previousMediaItemIndex != C.INDEX_UNSET) {
-                            executorService.execute(() -> refreshAudioUrl(mediaController.getMediaItemAt(previousMediaItemIndex), previousMediaItemIndex));
+                            MediaItem previousMediaItem = mediaController.getMediaItemAt(previousMediaItemIndex);
+                            executorService.execute(() -> refreshAudioUrl(previousMediaItem, previousMediaItemIndex));
                         }
                     }
 
@@ -125,11 +127,18 @@ public class PlayerPlugin extends Plugin {
 
                     @Override
                     public void onPlaybackStateChanged(int playbackState) {
-                        if (playbackState == Player.STATE_BUFFERING) {
-                            notifyListeners("onBuffering", null);
-                        }
-                        if (playbackState == Player.STATE_READY) {
-                            refreshPlaybackState(mediaController.isPlaying());
+                        switch (playbackState) {
+                            case Player.STATE_BUFFERING:
+                                notifyListeners("onBuffering", null);
+                                break;
+                            case Player.STATE_READY:
+                                refreshPlaybackState(mediaController.isPlaying());
+                                break;
+                            case Player.STATE_ENDED:
+                                if (mediaController.getRepeatMode() == Player.REPEAT_MODE_OFF) {
+                                    mediaController.seekToDefaultPosition(0);
+                                    mediaController.pause();
+                                }
                         }
                     }
 
@@ -175,9 +184,12 @@ public class PlayerPlugin extends Plugin {
             long expires_at = Long.parseLong(expires_at_str) * 1000;
             if ((expires_at - 10000) < System.currentTimeMillis()) {
                 YoutubeService.AudioItem item = youtubeService.get(itemToRefresh.mediaId);
-                MediaItem oldItem = mediaController.getMediaItemAt(index);
-                MediaItem newItem = oldItem.buildUpon().setUri(item.url()).build();
-                mediaController.replaceMediaItem(index, newItem);
+
+                getActivity().runOnUiThread(() -> {
+                    MediaItem oldItem = mediaController.getMediaItemAt(index);
+                    MediaItem newItem = oldItem.buildUpon().setUri(item.url()).build();
+                    mediaController.replaceMediaItem(index, newItem);
+                });
             }
         } catch (Exception ignored) {}
     }

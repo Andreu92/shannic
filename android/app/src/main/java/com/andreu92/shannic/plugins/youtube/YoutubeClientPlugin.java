@@ -17,9 +17,6 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-import com.andreu92.shannic.plugins.youtube.YoutubeService.SearchResponse;
-import com.andreu92.shannic.plugins.youtube.YoutubeService.AudioItem;
-
 import org.json.JSONException;
 
 @CapacitorPlugin(name = "YoutubeClientPlugin")

@@ -25,7 +25,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -40,12 +39,12 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.andreu92.shannic.plugins.youtube.AudioItem;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
 
 @CapacitorPlugin(name = "PlayerPlugin")
@@ -54,17 +53,6 @@ public class PlayerPlugin extends Plugin {
     private MediaController mediaController;
     private ListenableFuture<MediaController> controllerFuture;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-
-    public record PlayerAudioItem(
-        @JsonProperty("id") String id,
-        @JsonProperty("title") String title,
-        @JsonProperty("author") String author,
-        @JsonProperty("duration") Long duration,
-        @JsonProperty("thumbnail") String thumbnail,
-        @JsonProperty("url") String url,
-        @JsonProperty("expires_at") Long expires_at,
-        @JsonProperty("favorite") Boolean favorite
-    ) implements Serializable {}
 
     @OptIn(markerClass = UnstableApi.class)
     @Override
@@ -87,6 +75,9 @@ public class PlayerPlugin extends Plugin {
                     ){
                         if (command.customAction.equals(PlayerActions.ACTION_TOGGLE_FAVORITE))
                             notifyListeners("onToggleFavorite", null);
+
+                        if (command.customAction.equals(PlayerActions.ACTION_URL_REFRESH))
+                            onUrlRefresh(args.getString("id"), args.getString("url"), args.getLong("expires_at"));
 
                         return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));
                     }
@@ -183,7 +174,9 @@ public class PlayerPlugin extends Plugin {
 
             long expires_at = Long.parseLong(expires_at_str) * 1000;
             if ((expires_at - 10000) < System.currentTimeMillis()) {
-                YoutubeService.AudioItem item = youtubeService.get(itemToRefresh.mediaId);
+                AudioItem item = youtubeService.get(itemToRefresh.mediaId);
+
+                onUrlRefresh(item.id(), item.url(), item.expires_at());
 
                 getActivity().runOnUiThread(() -> {
                     MediaItem oldItem = mediaController.getMediaItemAt(index);
@@ -192,6 +185,14 @@ public class PlayerPlugin extends Plugin {
                 });
             }
         } catch (Exception ignored) {}
+    }
+
+    private void onUrlRefresh(String id, String url, Long expires_at) {
+        JSObject data = new JSObject();
+        data.put("id", id);
+        data.put("url", url);
+        data.put("expires_at", expires_at);
+        notifyListeners("onUrlRefresh", data);
     }
 
     @OptIn(markerClass = UnstableApi.class)

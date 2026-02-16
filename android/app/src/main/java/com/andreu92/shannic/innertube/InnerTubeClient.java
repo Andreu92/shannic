@@ -1,4 +1,4 @@
-package com.andreu92.shannic.plugins.youtube;
+package com.andreu92.shannic.innertube;
 
 import androidx.annotation.NonNull;
 
@@ -24,33 +24,20 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class InnertubeClient {
+public class InnerTubeClient {
     public static final String USER_AGENT = "com.google.android.apps.youtube.vr.oculus/1.71.26 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip";
     private static final String YOUTUBE_CLIENT_VERSION = "1.71.26";
     private static final String YOUTUBE_CLIENT_NAME = "28";
     private static final String API_ORIGIN = "https://youtubei.googleapis.com";
     private static final String BASE_URL = "https://youtubei.googleapis.com/youtubei/v1/";
-    private String apiKey = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
     private static final String VIDEO_ONLY_PARAMS = "EgIQAQ%3D%3D";
+    private String apiKey = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
 
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
     private String visitorId = null;
 
     public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
-
-    public record ClientContext(
-            String clientName,
-            String clientVersion,
-            String deviceMake,
-            String deviceModel,
-            int androidSdkVersion,
-            String userAgent,
-            String osName,
-            String osVersion,
-            boolean requireJsPlayer) {}
-
-    public record InnerTubeContext(ClientContext client, Boolean userExternalId) {}
 
     private static final InnerTubeContext ANDROID_VR_CONTEXT = new InnerTubeContext(
             new ClientContext(
@@ -61,19 +48,10 @@ public class InnertubeClient {
                     32,
                     USER_AGENT,
                     "Android",
-                    "12L",
-                    false),
+                    "12L"),
             null);
 
-    public record SearchRequest(InnerTubeContext context, String query, String params, String continuation) {}
-
-    public record PlayerRequest(InnerTubeContext context, String videoId, PlaybackContext playbackContext) {}
-
-    public record PlaybackContext(ContentCheck contentCheck) {}
-
-    public record ContentCheck(boolean queryContentCheckOk, boolean racyCheckOk) {}
-
-    public InnertubeClient() {
+    public InnerTubeClient() {
         this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(java.time.Duration.ofSeconds(10))
                 .readTimeout(java.time.Duration.ofSeconds(10))

@@ -2,6 +2,7 @@ package com.andreu92.shannic.plugins.youtube;
 
 import android.util.Base64;
 
+import com.andreu92.shannic.innertube.InnerTubeClient;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.IOException;
@@ -25,24 +26,11 @@ import okhttp3.Response;
 
 public class YoutubeService {
     private static YoutubeService client;
-    private final InnertubeClient innertubeClient = new InnertubeClient();
+    private final InnerTubeClient innertubeClient = new InnerTubeClient();
     private final ExecutorService executorService;
 
-    public record SearchItem(String id, String title, String author, String thumbnail, String duration) {}
-    public record SearchResponse(List<SearchItem> items, String continuationToken) {}
-    public record ThumbnailInfo(String url, String base64) {}
-    public record AudioItem(
-            String id,
-            String title,
-            String author,
-            long duration,
-            String duration_text,
-            ThumbnailInfo thumbnail,
-            String url,
-            long expires_at) {}
-
     private YoutubeService() {
-        InnertubeClient innertubeClient = new InnertubeClient();
+        InnerTubeClient innertubeClient = new InnerTubeClient();
         executorService = Executors.newSingleThreadExecutor();
         executorService.execute(innertubeClient::fetchApiKey);
     }
@@ -66,7 +54,7 @@ public class YoutubeService {
 
     public AudioItem getByQuery(final String artist, final String title) throws ExecutionException, InterruptedException, IOException {
         CompletableFuture<JsonNode> future = innertubeClient.search(artist + " " + title);
-        SearchItem bestMatch = getBestYoutubeMatch(artist, title, processSearchResults(future.get()).items);
+        SearchItem bestMatch = getBestYoutubeMatch(artist, title, processSearchResults(future.get()).items());
         return get(bestMatch.id());
     }
 

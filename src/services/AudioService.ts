@@ -66,11 +66,30 @@ const useAudioService = () => {
 		});
 	};
 
+	const refreshUrl = async (
+		id: string,
+		url: string,
+		expires_at: number,
+	): Promise<void> => {
+		const audio: AudioDocument | null = await audio_collection
+			.findOne(id)
+			.exec();
+
+		if (!audio) throw new Error("Audio not found");
+
+		audio.incrementalPatch({
+			url,
+			expires_at,
+			updated_at: Date.now()
+		});
+	};
+
 	return {
 		getAudio,
 		getAudiosByIds,
 		createAudio,
 		updateAudio,
+		refreshUrl,
 	};
 };
 

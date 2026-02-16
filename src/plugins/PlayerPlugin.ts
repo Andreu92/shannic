@@ -32,7 +32,8 @@ export interface PlayerPlugin {
 				| { position: number }
 				| { repeating: boolean }
 				| { favorite: boolean }
-				| { index: number },
+				| { index: number }
+				| { id: string; url: string; expires_at: number },
 		) => void,
 	): Promise<PluginListenerHandle>;
 }

@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { type PlayerAudio, player_plugin } from "@/plugins/PlayerPlugin";
 import type { RxAudio } from "@/schemas/audio";
+import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
 
 export const states = {
@@ -12,6 +13,7 @@ export const states = {
 
 const usePlayerStore = defineStore("player", () => {
 	const favorites_store = useFavoritesStore();
+	const audio_service = useAudioService();
 
 	const audio = ref<RxAudio | null>(null);
 	const playlist_items = ref<RxAudio[] | null>(null);
@@ -72,6 +74,28 @@ const usePlayerStore = defineStore("player", () => {
 		});
 		player_plugin.addListener("onToggleFavorite", () => {
 			if (audio.value) favorites_store.toggleFavorite(audio.value.id);
+		});
+		player_plugin.addListener("onUrlRefresh", (data) => {
+			const { id, url, expires_at } = data as {
+				id: string;
+				url: string;
+				expires_at: number;
+			};
+
+			if (audio.value && audio.value.id === id) {
+				audio.value.url = url;
+				audio.value.expires_at = expires_at;
+			}
+
+			if (playlist_items.value) {
+				const index = playlist_items.value.findIndex((a) => a.id === id);
+				if (index !== -1) {
+					playlist_items.value[index].url = url;
+					playlist_items.value[index].expires_at = expires_at;
+				}
+			}
+
+			audio_service.refreshUrl(id, url, expires_at);
 		});
 		player_plugin.addListener("onSourceError", async () => {
 			//TODO: Update this because it will fail in a mortal loop

@@ -16,6 +16,7 @@ const usePlayerStore = defineStore("player", () => {
 	const audio_service = useAudioService();
 
 	const audio = ref<RxAudio | null>(null);
+	let current_index: number | null = null;
 	const playlist_items = ref<RxAudio[] | null>(null);
 	const state = ref<number>(states.paused);
 	const repeat = ref<boolean>(false);
@@ -39,6 +40,7 @@ const usePlayerStore = defineStore("player", () => {
 
 	const reset = () => {
 		audio.value = null;
+		current_index = null;
 		playlist_items.value = null;
 		repeat.value = false;
 		current_position.value = 0;
@@ -67,6 +69,7 @@ const usePlayerStore = defineStore("player", () => {
 			if (!playlist_items.value) return;
 			const { index } = data as { index: number };
 			audio.value = playlist_items.value[index];
+			current_index = index;
 		});
 		player_plugin.addListener("onToggleRepeat", (data) => {
 			const { repeating } = data as { repeating: boolean };
@@ -148,13 +151,24 @@ const usePlayerStore = defineStore("player", () => {
 		player_plugin.skipPrevious();
 	};
 
-	const toggleFavorite = (is_fav: boolean) => {
-		player_plugin.toggleFavorite({ favorite: is_fav });
+	const toggleFavorite = (
+		is_fav: boolean,
+		index: number = current_index as number,
+	) => {
+		player_plugin.toggleFavorite({ favorite: is_fav, index });
 	};
 
 	const toggleRepeat = () => {
 		repeat.value = !repeat.value;
 		player_plugin.toggleRepeat({ repeating: repeat.value });
+	};
+
+	const isInPlaylist = (audio_id: string): boolean => {
+		return playlist_items.value?.some((a) => a.id === audio_id) ?? false;
+	};
+
+	const getIndexById = (audio_id: string): number => {
+		return playlist_items.value?.findIndex((a) => a.id === audio_id) ?? -1;
 	};
 
 	return {
@@ -175,6 +189,8 @@ const usePlayerStore = defineStore("player", () => {
 		toggleFavorite,
 		stopProgressTimer,
 		startProgressTimer,
+		isInPlaylist,
+		getIndexById,
 	};
 });
 

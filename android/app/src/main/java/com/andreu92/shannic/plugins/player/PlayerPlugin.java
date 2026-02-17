@@ -3,6 +3,7 @@ package com.andreu92.shannic.plugins.player;
 import android.content.ComponentName;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,6 +40,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -166,25 +168,33 @@ public class PlayerPlugin extends Plugin {
     }
 
     private void refreshAudioUrl(MediaItem itemToRefresh, int index) {
-        try {
-            if (itemToRefresh.localConfiguration == null) return;
+        if (itemToRefresh.localConfiguration == null) return;
 
-            String expires_at_str = itemToRefresh.localConfiguration.uri.getQueryParameter("expire");
-            if (expires_at_str == null) return;
+        String expires_at_str = itemToRefresh.localConfiguration.uri.getQueryParameter("expire");
+        if (expires_at_str == null) return;
 
-            long expires_at = Long.parseLong(expires_at_str) * 1000;
-            if ((expires_at - 10000) < System.currentTimeMillis()) {
-                AudioItem item = youtubeService.get(itemToRefresh.mediaId);
+        long expires_at = Long.parseLong(expires_at_str) * 1000;
+        if ((expires_at - 10000) < System.currentTimeMillis()) {
+            executorService.execute(() -> {
+                AudioItem item = null;
+                try {
+                    item = youtubeService.get(itemToRefresh.mediaId);
+                } catch (ExecutionException | IOException | InterruptedException e) {
+                    Log.e("PlayerPlugin", "Error refreshing audio url", e);
+                }
+
+                if (item == null) return;
 
                 onUrlRefresh(item.id(), item.url(), item.expires_at());
 
+                AudioItem finalItem = item;
                 getActivity().runOnUiThread(() -> {
                     MediaItem oldItem = mediaController.getMediaItemAt(index);
-                    MediaItem newItem = oldItem.buildUpon().setUri(item.url()).build();
+                    MediaItem newItem = oldItem.buildUpon().setUri(finalItem.url()).build();
                     mediaController.replaceMediaItem(index, newItem);
                 });
-            }
-        } catch (Exception ignored) {}
+            });
+        }
     }
 
     private void onUrlRefresh(String id, String url, Long expires_at) {
@@ -233,7 +243,6 @@ public class PlayerPlugin extends Plugin {
         }
 
         getActivity().runOnUiThread(() -> {
-            refreshAudioUrl(mediaItems.get(0), 0);
             mediaController.setMediaItems(mediaItems);
             mediaController.setShuffleModeEnabled(shuffle);
             mediaController.prepare();
@@ -296,9 +305,17 @@ public class PlayerPlugin extends Plugin {
 
     @PluginMethod()
     public void toggleFavorite(PluginCall call) {
+        int index = call.getInt("index");
+        boolean favorite = call.getBoolean("favorite");
+
         getActivity().runOnUiThread(() -> {
+            Bundle args = new Bundle();
+            args.putBoolean("favorite", favorite);
+            args.putInt("index", index);
+
             SessionCommand customCommand = new SessionCommand(PlayerActions.ACTION_TOGGLE_FAVORITE, Bundle.EMPTY);
-            mediaController.sendCustomCommand(customCommand, Bundle.EMPTY);
+            mediaController.sendCustomCommand(customCommand, args);
+
             call.resolve();
         });
     }

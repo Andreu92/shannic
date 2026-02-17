@@ -25,6 +25,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class YoutubeService {
+    private static final int MINIMUM_SEARCH_RESULTS = 20;
     private static YoutubeService client;
     private final InnerTubeClient innertubeClient = new InnerTubeClient();
     private final ExecutorService executorService;
@@ -43,8 +44,16 @@ public class YoutubeService {
     }
 
     public SearchResponse search(final String query, final String nextToken) throws ExecutionException, InterruptedException {
-        CompletableFuture<JsonNode> future = innertubeClient.search(query, nextToken);
-        return processSearchResults(future.get());
+        List<SearchItem> items = new ArrayList<>();
+        String continuationToken = nextToken;
+        do {
+            CompletableFuture<JsonNode> future = innertubeClient.search(query, continuationToken);
+            SearchResponse response = processSearchResults(future.get());
+            continuationToken = response.continuationToken();
+            items.addAll(response.items());
+        } while (items.size() <= MINIMUM_SEARCH_RESULTS);
+
+        return new SearchResponse(items, continuationToken);
     }
 
     public AudioItem get(final String id) throws ExecutionException, InterruptedException, IOException {
@@ -60,12 +69,11 @@ public class YoutubeService {
 
     public SearchResponse processSearchResults(JsonNode root) {
         List<SearchItem> items = new ArrayList<>();
-        Set<String> seenIds = new HashSet<>();
 
         List<JsonNode> searchNodes = root.findParents("videoId");
         for (JsonNode item : searchNodes) {
             String itemId = item.path("videoId").asText();
-            if (itemId.isEmpty() || seenIds.contains(itemId))
+            if (itemId.isEmpty() || !item.has("lengthText"))
                 continue;
 
             String title = StreamSupport.stream(item.path("title").path("runs").spliterator(), false)
@@ -97,7 +105,6 @@ public class YoutubeService {
             }
 
             items.add(new SearchItem(itemId, title, author, thumbnail, duration));
-            seenIds.add(itemId);
         }
 
         String continuationToken = "";

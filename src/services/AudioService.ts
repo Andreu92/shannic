@@ -80,7 +80,7 @@ const useAudioService = () => {
 		audio.incrementalPatch({
 			url,
 			expires_at,
-			updated_at: Date.now()
+			updated_at: Date.now(),
 		});
 	};
 

@@ -28,8 +28,7 @@ const useSpotifyService = () => {
 				favorites_store.addFavorite(audio.id, () => {
 					spotify_sync_store.incrementCounter();
 				});
-			} catch (error) {
-				console.log(error);
+			} catch {
 				spotify_sync_store.incrementCounter();
 			}
 		});

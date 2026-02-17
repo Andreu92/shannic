@@ -93,8 +93,9 @@ const play = async (audio: SearchResult) => {
 
 const toggleFavorite = async (audio_id: string) => {
 	const is_fav = await favorites_store.toggleFavorite(audio_id);
-	if (player_store.audio && player_store.audio.id === audio_id) {
-		player_store.toggleFavorite(is_fav);
+	if (player_store.isInPlaylist(audio_id)) {
+		const index = player_store.getIndexById(audio_id);
+		player_store.toggleFavorite(is_fav, index);
 	}
 };
 </script>

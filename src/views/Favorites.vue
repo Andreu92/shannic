@@ -99,8 +99,9 @@ const showDeleteFavoriteConfirmAlert = async (audioId: string) => {
 				role: "confirm",
 				handler: () => {
 					favorites_store.deleteFavorite(audioId);
-					if (player_store.audio && player_store.audio.id === audioId) {
-						player_store.toggleFavorite(false);
+					if (player_store.isInPlaylist(audioId)) {
+						const index = player_store.getIndexById(audioId);
+						player_store.toggleFavorite(false, index);
 					}
 				},
 			},

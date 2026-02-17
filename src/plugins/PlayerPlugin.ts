@@ -23,7 +23,7 @@ export interface PlayerPlugin {
 	skipNext(): Promise<void>;
 	skipPrevious(): Promise<void>;
 	toggleRepeat(options: { repeating: boolean }): Promise<void>;
-	toggleFavorite(options: { favorite: boolean }): Promise<void>;
+	toggleFavorite(options: { favorite: boolean; index: number }): Promise<void>;
 	getCurrentPosition(): Promise<{ position: number }>;
 	addListener(
 		event: string,

@@ -151,7 +151,7 @@ public class InnerTubeClient {
         CompletableFuture<JsonNode> future = new CompletableFuture<>();
         httpClient.newCall(requestBuilder.build()).enqueue(new Callback() {
             @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
                 try {
                     assert response.body() != null;
                     String body = response.body().string();

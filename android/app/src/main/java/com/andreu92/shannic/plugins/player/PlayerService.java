@@ -30,6 +30,7 @@ import androidx.media3.session.SessionCommands;
 import androidx.media3.session.SessionResult;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import com.google.common.collect.ImmutableList;
@@ -248,31 +249,34 @@ public class PlayerService extends MediaSessionService {
                                 player.seekToNext();
                                 break;
                             case PlayerActions.ACTION_TOGGLE_FAVORITE:
-                                MediaItem currentItem = player.getCurrentMediaItem();
-                                if (currentItem != null) {
-                                    Bundle oldExtras = currentItem.mediaMetadata.extras;
-                                    boolean isFavorite = oldExtras != null && oldExtras.getBoolean("favorite");
+                                int toggledIndex = player.getCurrentMediaItemIndex();
+                                boolean favorite = !player.getCurrentMediaItem().mediaMetadata.extras
+                                        .getBoolean("favorite", false);
 
-                                    Bundle extras = new Bundle();
-                                    extras.putBoolean("favorite", !isFavorite);
-
-                                    MediaMetadata newMetadata = currentItem.mediaMetadata.buildUpon()
-                                            .setExtras(extras)
-                                            .build();
-
-                                    MediaItem updatedItem = currentItem.buildUpon()
-                                            .setMediaMetadata(newMetadata)
-                                            .build();
-
-                                    player.replaceMediaItem(player.getCurrentMediaItemIndex(), updatedItem);
-
-                                    if (!controller.equals(appControllerInfo))
-                                        mediaSession.sendCustomCommand(appControllerInfo, favoriteCommand, Bundle.EMPTY);
+                                if (!args.isEmpty()) {
+                                    toggledIndex = args.getInt("index");
+                                    favorite = args.getBoolean("favorite");
                                 }
 
-                        }
+                                MediaItem item = player.getMediaItemAt(toggledIndex);
+                                    Bundle extras = new Bundle();
+                                    extras.putBoolean("favorite", favorite);
 
-                        syncNotificationButtons();
+                                MediaMetadata newMetadata = item.mediaMetadata.buildUpon()
+                                        .setExtras(extras)
+                                        .build();
+
+                                MediaItem updatedItem = item.buildUpon()
+                                        .setMediaMetadata(newMetadata)
+                                        .build();
+
+                                player.replaceMediaItem(toggledIndex, updatedItem);
+
+                                if (!controller.equals(appControllerInfo))
+                                    mediaSession.sendCustomCommand(appControllerInfo, favoriteCommand, Bundle.EMPTY);
+
+                                syncNotificationButtons();
+                        }
 
                         return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));
                     }

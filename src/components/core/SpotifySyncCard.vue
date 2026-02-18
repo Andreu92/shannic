@@ -10,30 +10,50 @@ const { t } = useI18n();
 const spotify_sync_store = useSpotifySyncStore();
 
 watch(
-	() => spotify_sync_store.counter,
-	() => {
-		if (spotify_sync_store.counter === spotify_sync_store.total_saved_tracks) {
-			spotify_sync_store.finishSync();
-		}
-	},
+  () => spotify_sync_store.counter,
+  () => {
+    if (spotify_sync_store.counter === spotify_sync_store.total_saved_tracks) {
+      spotify_sync_store.finishSync();
+    }
+  },
 );
 </script>
 
 <template>
-  <ion-card color="dark" v-if="spotify_sync_store.is_syncing" class="spotify-sync-card">
+  <ion-card
+    color="dark"
+    v-if="spotify_sync_store.is_syncing"
+    class="spotify-sync-card"
+  >
     <ion-card-content>
       <div class="flex-between">
-        <div v-if="!spotify_sync_store.total_saved_tracks" class="flex-center-vertical">
-          <div class="spotify-icon-background" style="width: 20px; height: 20px;">
+        <div
+          v-if="!spotify_sync_store.total_saved_tracks"
+          class="flex-center-vertical"
+        >
+          <div
+            class="spotify-icon-background"
+            style="width: 20px; height: 20px"
+          >
             <Icon icon="logos:spotify-icon"></Icon>
-          </div>    
+          </div>
           <div>{{ t("spotify.starting_import") }}</div>
         </div>
         <div v-else class="flex-center-vertical">
-          <div class="spotify-icon-background" style="width: 20px; height: 20px;">
+          <div
+            class="spotify-icon-background"
+            style="width: 20px; height: 20px"
+          >
             <Icon icon="logos:spotify-icon"></Icon>
-          </div>    
-          <div>{{ t("spotify.favorites.importing", [spotify_sync_store.counter, spotify_sync_store.total_saved_tracks]) }}</div>
+          </div>
+          <div>
+            {{
+              t("spotify.favorites.importing", [
+                spotify_sync_store.counter,
+                spotify_sync_store.total_saved_tracks,
+              ])
+            }}
+          </div>
         </div>
         <ion-spinner name="dots"></ion-spinner>
       </div>
@@ -62,4 +82,3 @@ watch(
   justify-content: space-between;
 }
 </style>
-

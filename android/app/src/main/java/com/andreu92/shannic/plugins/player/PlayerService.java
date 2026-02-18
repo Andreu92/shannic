@@ -16,9 +16,17 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
+import androidx.media3.database.DatabaseProvider;
+import androidx.media3.database.StandaloneDatabaseProvider;
+import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DataSpec;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.datasource.ResolvingDataSource;
+import androidx.media3.datasource.cache.Cache;
+import androidx.media3.datasource.cache.CacheDataSink;
+import androidx.media3.datasource.cache.CacheDataSource;
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor;
+import androidx.media3.datasource.cache.SimpleCache;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.session.CommandButton;
@@ -29,8 +37,8 @@ import androidx.media3.session.SessionCommand;
 import androidx.media3.session.SessionCommands;
 import androidx.media3.session.SessionResult;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import com.google.common.collect.ImmutableList;
@@ -44,6 +52,8 @@ import com.andreu92.shannic.plugins.youtube.AudioItem;
 
 @UnstableApi
 public class PlayerService extends MediaSessionService {
+    private static final int MAX_CACHE_SIZE_IN_MB = 500;
+    private static SimpleCache simpleCache;
     private ExoPlayer player;
     private MediaSession mediaSession;
     private final YoutubeService youtubeService = YoutubeService.getInstance();
@@ -86,6 +96,20 @@ public class PlayerService extends MediaSessionService {
             return dataSpec;
         }
     };
+
+    private synchronized Cache getCache() {
+        if (simpleCache == null) {
+            File cacheDir = new File(getCacheDir(), "shannic_media_cache");
+            DatabaseProvider databaseProvider = new StandaloneDatabaseProvider(this);
+            simpleCache = new SimpleCache(
+                    cacheDir,
+                    new LeastRecentlyUsedCacheEvictor(MAX_CACHE_SIZE_IN_MB * 1024 * 1024),
+                    databaseProvider
+            );
+        }
+
+        return simpleCache;
+    }
 
     @Nullable
     @Override
@@ -149,16 +173,21 @@ public class PlayerService extends MediaSessionService {
 
         DefaultHttpDataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory()
                 .setUserAgent(InnerTubeClient.USER_AGENT)
-                .setConnectTimeoutMs(DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS)
-                .setReadTimeoutMs(DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS)
                 .setAllowCrossProtocolRedirects(true);
 
+        // URL resolver to refresh expired URLS if necessary
         ResolvingDataSource.Factory resolvingDataSourceFactory =
                 new ResolvingDataSource.Factory(httpDataSourceFactory, urlResolver);
 
+        // Media cache... Wraps the URL resolver
+        DataSource.Factory cacheDataSourceFactory = new CacheDataSource.Factory()
+                .setCache(getCache())
+                .setUpstreamDataSourceFactory(resolvingDataSourceFactory)
+                .setCacheWriteDataSinkFactory(new CacheDataSink.Factory().setCache(getCache()));
+
         DefaultMediaSourceFactory mediaSourceFactory =
                 new DefaultMediaSourceFactory(this)
-                        .setDataSourceFactory(resolvingDataSourceFactory);
+                        .setDataSourceFactory(cacheDataSourceFactory);
 
         player = new ExoPlayer.Builder(this)
                 .setAudioAttributes(audioAttributes, true)

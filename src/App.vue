@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { App } from "@capacitor/app";
-import { PluginListenerHandle } from "@capacitor/core";
+import type { PluginListenerHandle } from "@capacitor/core";
 import { IonApp, IonRouterOutlet } from "@ionic/vue";
 import { onBeforeMount, onMounted, onUnmounted } from "vue";
 import MiniPlayer from "@/components/core/MiniPlayer.vue";
@@ -16,24 +16,24 @@ const player_store = usePlayerStore();
 let stateChangeListener: PluginListenerHandle;
 
 onBeforeMount(async () => {
-	layout.applyStoredTheme();
+  layout.applyStoredTheme();
 
-	stateChangeListener = await App.addListener("appStateChange", (state) => {
-		if (state.isActive) {
-			if (player_store.state === states.playing) {
-				player_store.startProgressTimer();
-			}
-		} else player_store.stopProgressTimer();
-	});
+  stateChangeListener = await App.addListener("appStateChange", (state) => {
+    if (state.isActive) {
+      if (player_store.state === states.playing) {
+        player_store.startProgressTimer();
+      }
+    } else player_store.stopProgressTimer();
+  });
 });
 
 onMounted(async () => {
-	favorites_store.init();
-	player_store.initListeners();
+  favorites_store.init();
+  player_store.initListeners();
 });
 
 onUnmounted(() => {
-	stateChangeListener.remove();
+  stateChangeListener.remove();
 });
 </script>
 

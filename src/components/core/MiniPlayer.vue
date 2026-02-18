@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import {
-	createGesture,
-	Gesture,
-	IonIcon,
-	IonImg,
-	IonRange,
-	IonSpinner,
-	IonThumbnail,
-	RangeCustomEvent,
+  createGesture,
+  type Gesture,
+  IonIcon,
+  IonImg,
+  IonRange,
+  IonSpinner,
+  IonThumbnail,
+  type RangeCustomEvent,
 } from "@ionic/vue";
 import {
-	heart,
-	heartOutline,
-	infinite,
-	pause,
-	play,
-	playSkipBack,
-	playSkipForward,
-	repeat,
+  heart,
+  heartOutline,
+  infinite,
+  pause,
+  play,
+  playSkipBack,
+  playSkipForward,
+  repeat,
 } from "ionicons/icons";
 import { computed, reactive, useTemplateRef, watch } from "vue";
 import { useLayout } from "@/composables/useLayout";
@@ -37,94 +37,99 @@ let gesture: Gesture | null = null;
 const offsets: { top: number; left: number } = { top: 0, left: 0 };
 
 const color_theme = computed<ColorTheme>(() => {
-	let color_theme: ColorTheme | undefined = layout.state.isDarkTheme
-		? player_store.audio?.colors.muted || player_store.audio?.colors.vibrant
-		: player_store.audio?.colors.dark_vibrant ||
-			player_store.audio?.colors.dark_muted;
+  const color_theme: ColorTheme | undefined = layout.state.isDarkTheme
+    ? player_store.audio?.colors.muted || player_store.audio?.colors.vibrant
+    : player_store.audio?.colors.dark_vibrant ||
+      player_store.audio?.colors.dark_muted;
 
-	return (
-		color_theme ??
-		(player_store.audio?.colors.muted ||
-			player_store.audio?.colors.vibrant ||
-			DEFAULT_COLOR_THEME)
-	);
+  return (
+    color_theme ??
+    (player_store.audio?.colors.muted ||
+      player_store.audio?.colors.vibrant ||
+      DEFAULT_COLOR_THEME)
+  );
 });
 
 watch(player, (el) => {
-	if (el && gesture == null) {
-		gesture = createGesture({
-			el: el,
-			threshold: 0,
-			gestureName: "drag-player",
-			priority: 100,
-			canStart: (ev) => {
-				const target = ev.event.target as HTMLElement;
-				if (target.closest("ion-range") || target.closest("ion-icon")) {
-					return false;
-				}
-				return true;
-			},
+  if (el && gesture == null) {
+    gesture = createGesture({
+      el: el,
+      threshold: 0,
+      gestureName: "drag-player",
+      priority: 100,
+      canStart: (ev) => {
+        const target = ev.event.target as HTMLElement;
+        if (target.closest("ion-range") || target.closest("ion-icon")) {
+          return false;
+        }
+        return true;
+      },
 
-			onStart: () => {
-				Haptics.impact({ style: ImpactStyle.Light });
-				offsets.top = el.offsetTop;
-				offsets.left = el.offsetLeft;
+      onStart: () => {
+        Haptics.impact({ style: ImpactStyle.Light });
+        offsets.top = el.offsetTop;
+        offsets.left = el.offsetLeft;
 
-				player_coords.sX = player_coords.x;
-				player_coords.sY = player_coords.y;
-			},
+        player_coords.sX = player_coords.x;
+        player_coords.sY = player_coords.y;
+      },
 
-			onMove: (ev) => {
-				const clamp = (v: number, min: number, max: number) =>
-					Math.min(Math.max(v, min), max);
+      onMove: (ev) => {
+        const clamp = (v: number, min: number, max: number) =>
+          Math.min(Math.max(v, min), max);
 
-				player_coords.x = clamp(
-					player_coords.sX + ev.deltaX,
-					-offsets.left,
-					window.innerWidth - el.offsetWidth - offsets.left,
-				);
-				player_coords.y = clamp(
-					player_coords.sY + ev.deltaY,
-					-offsets.top,
-					window.innerHeight - el.offsetHeight - offsets.top,
-				);
-			},
-		});
+        player_coords.x = clamp(
+          player_coords.sX + ev.deltaX,
+          -offsets.left,
+          window.innerWidth - el.offsetWidth - offsets.left,
+        );
+        player_coords.y = clamp(
+          player_coords.sY + ev.deltaY,
+          -offsets.top,
+          window.innerHeight - el.offsetHeight - offsets.top,
+        );
+      },
+    });
 
-		gesture.enable();
-	} else {
-		gesture?.destroy();
-		gesture = null;
-	}
+    gesture.enable();
+  } else {
+    gesture?.destroy();
+    gesture = null;
+  }
 });
 
 const handleSeek = (ev: RangeCustomEvent) => {
-	const newPosition = (ev.detail.value as number) * 1000;
-	player_store.seekTo(newPosition);
+  const newPosition = (ev.detail.value as number) * 1000;
+  player_store.seekTo(newPosition);
 };
 
 const onDragStart = () => {
-	player_store.stopProgressTimer();
+  player_store.stopProgressTimer();
 };
 
 const onDragEnd = () => {
-	if (player_store.state === states.playing) player_store.startProgressTimer();
+  if (player_store.state === states.playing) player_store.startProgressTimer();
 };
 
 const toggleFavorite = async (audio_id: string) => {
-	const is_fav = await favorites_store.toggleFavorite(audio_id);
-	player_store.toggleFavorite(is_fav);
+  const is_fav = await favorites_store.toggleFavorite(audio_id);
+  player_store.toggleFavorite(is_fav);
 };
 </script>
 
 <template>
-  <div class="mini-player" ref="player" v-if="player_store.audio" :style="{
-    color: color_theme.title_text_color,
-    background: color_theme.main_color,
-    transform: `translate3d(${player_coords.x}px, ${player_coords.y}px, 0)`
-  }">
-    <div style="display: flex; gap: 12px;">
-      <div style="min-width: 45px;">
+  <div
+    class="mini-player"
+    ref="player"
+    v-if="player_store.audio"
+    :style="{
+      color: color_theme.title_text_color,
+      background: color_theme.main_color,
+      transform: `translate3d(${player_coords.x}px, ${player_coords.y}px, 0)`,
+    }"
+  >
+    <div style="display: flex; gap: 12px">
+      <div style="min-width: 45px">
         <ion-thumbnail>
           <ion-img :src="player_store.audio!.thumbnail"></ion-img>
         </ion-thumbnail>
@@ -135,19 +140,47 @@ const toggleFavorite = async (audio_id: string) => {
       </div>
     </div>
     <div class="mini-player-actions">
-      <ion-icon :src="player_store.repeat ? infinite : repeat" @click="player_store.toggleRepeat()"></ion-icon>
-      <ion-icon :src="playSkipBack" @click="player_store.skipPrevious()"></ion-icon>
+      <ion-icon
+        :src="player_store.repeat ? infinite : repeat"
+        @click="player_store.toggleRepeat()"
+      ></ion-icon>
+      <ion-icon
+        :src="playSkipBack"
+        @click="player_store.skipPrevious()"
+      ></ion-icon>
       <ion-spinner v-if="player_store.state == states.buffering"></ion-spinner>
-      <ion-icon v-else :src="player_store.state == states.playing ? pause : play"
-        @click="player_store.state == states.playing ? player_store.pause() : player_store.resume()"></ion-icon>
-      <ion-icon :src="playSkipForward" @click="player_store.skipNext()"></ion-icon>
-      <ion-icon :src="favorites_store.isFavorite(player_store.audio!.id) ? heart : heartOutline" @click="toggleFavorite(player_store.audio!.id)"></ion-icon>
+      <ion-icon
+        v-else
+        :src="player_store.state == states.playing ? pause : play"
+        @click="
+          player_store.state == states.playing
+            ? player_store.pause()
+            : player_store.resume()
+        "
+      ></ion-icon>
+      <ion-icon
+        :src="playSkipForward"
+        @click="player_store.skipNext()"
+      ></ion-icon>
+      <ion-icon
+        :src="
+          favorites_store.isFavorite(player_store.audio!.id)
+            ? heart
+            : heartOutline
+        "
+        @click="toggleFavorite(player_store.audio!.id)"
+      ></ion-icon>
     </div>
     <div class="mini-player-audio-range">
       <div>{{ formatDuration(player_store.current_position) }}</div>
-      <ion-range :value="Math.floor(player_store.current_position / 1000)" :min="0" 
+      <ion-range
+        :value="Math.floor(player_store.current_position / 1000)"
+        :min="0"
         :max="Math.floor(player_store.audio!.duration / 1000)"
-        @ionKnobMoveStart="onDragStart" @ionKnobMoveEnd="onDragEnd" @ionChange="handleSeek"></ion-range>
+        @ionKnobMoveStart="onDragStart"
+        @ionKnobMoveEnd="onDragEnd"
+        @ionChange="handleSeek"
+      ></ion-range>
       <div>{{ formatDuration(player_store.audio!.duration) }}</div>
     </div>
   </div>

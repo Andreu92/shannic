@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {
-	IonIcon,
-	IonLabel,
-	IonPage,
-	IonRouterOutlet,
-	IonTabBar,
-	IonTabButton,
-	IonTabs,
+  IonIcon,
+  IonLabel,
+  IonPage,
+  IonRouterOutlet,
+  IonTabBar,
+  IonTabButton,
+  IonTabs,
 } from "@ionic/vue";
-import { heart, home, list, search } from "ionicons/icons";
+import { heart, search } from "ionicons/icons";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -18,7 +18,6 @@ const { t } = useI18n();
   <ion-page>
     <ion-tabs>
       <ion-router-outlet />
-
       <ion-tab-bar slot="bottom">
         <!-- <ion-tab-button tab="home" href="/home">
           <ion-icon aria-hidden="true" :icon="home" />

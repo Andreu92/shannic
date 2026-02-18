@@ -30,14 +30,14 @@ import "@ionic/vue/css/palettes/dark.class.css";
 import "./theme/styles.scss";
 
 const i18n = createI18n({
-	legacy: false,
-	locale: "es",
-	fallbackLocale: "es",
-	messages: {
-		es: es,
-		en: en,
-		ca: ca,
-	},
+  legacy: false,
+  locale: "es",
+  fallbackLocale: "es",
+  messages: {
+    es: es,
+    en: en,
+    ca: ca,
+  },
 });
 
 const database = createDatabase();
@@ -45,8 +45,8 @@ const pinia = createPinia();
 const app = createApp(App).use(IonicVue).use(i18n).use(router).use(pinia);
 
 database.then((db) => {
-	app.use(db);
-	router.isReady().then(() => {
-		app.mount("#app");
-	});
+  app.use(db);
+  router.isReady().then(() => {
+    app.mount("#app");
+  });
 });

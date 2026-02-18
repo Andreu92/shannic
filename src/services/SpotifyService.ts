@@ -5,38 +5,38 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import useSpotifySyncStore from "@/stores/SpotifySyncStore";
 
 const useSpotifyService = () => {
-	const spotify_client = useSpotifyClient();
-	const youtube_client = useYoutubeClient();
-	const favorites_store = useFavoritesStore();
-	const spotify_sync_store = useSpotifySyncStore();
+  const spotify_client = useSpotifyClient();
+  const youtube_client = useYoutubeClient();
+  const favorites_store = useFavoritesStore();
+  const spotify_sync_store = useSpotifySyncStore();
 
-	const importSavedTracks = async () => {
-		await spotify_client.linkAccount();
+  const importSavedTracks = async () => {
+    await spotify_client.linkAccount();
 
-		spotify_client.getSavedTracks(async (track: SavedTrack) => {
-			try {
-				const audio = await youtube_client.getByQuery(
-					track.track.artists[0].name,
-					track.track.name,
-				);
+    spotify_client.getSavedTracks(async (track: SavedTrack) => {
+      try {
+        const audio = await youtube_client.getByQuery(
+          track.track.artists[0].name,
+          track.track.name,
+        );
 
-				if (favorites_store.isFavorite(audio.id)) {
-					spotify_sync_store.incrementCounter();
-					return;
-				}
+        if (favorites_store.isFavorite(audio.id)) {
+          spotify_sync_store.incrementCounter();
+          return;
+        }
 
-				favorites_store.addFavorite(audio.id, () => {
-					spotify_sync_store.incrementCounter();
-				});
-			} catch {
-				spotify_sync_store.incrementCounter();
-			}
-		});
-	};
+        favorites_store.addFavorite(audio.id, () => {
+          spotify_sync_store.incrementCounter();
+        });
+      } catch {
+        spotify_sync_store.incrementCounter();
+      }
+    });
+  };
 
-	return {
-		importSavedTracks,
-	};
+  return {
+    importSavedTracks,
+  };
 };
 
 export default useSpotifyService;

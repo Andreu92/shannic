@@ -1,7 +1,7 @@
 {
   "name": "shannic",
   "description": "The music app you deserve",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -22,7 +22,7 @@
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/haptics": "^8.0.0",
     "@capacitor/keyboard": "^8.0.0",
-    "@capgo/inappbrowser": "^8.1.21",
+    "@capgo/inappbrowser": "^8.1.22",
     "@iconify/vue": "^5.0.0",
     "@ionic/vue": "^8.7.17",
     "@ionic/vue-router": "^8.7.17",

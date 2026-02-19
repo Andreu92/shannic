@@ -56,7 +56,7 @@ export const useDownloadStore = defineStore("downloads", () => {
       path: fileInfo.uri,
       progress: true,
       headers: {
-        "User-Agent": import.meta.env.YT_USER_AGENT,
+        "User-Agent": import.meta.env.VITE_YT_USER_AGENT,
         "Accept":
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Encoding": "identity",

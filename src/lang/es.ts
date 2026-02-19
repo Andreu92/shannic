@@ -47,6 +47,10 @@ const es = {
       importing: "Importando favoritos de Spotify ({0} de {1})",
     },
   },
+  update: {
+    title: "Actualización disponible!",
+    message: "La versión {0} está disponible. ¿Te gustaría descargarla?",
+  },
 };
 
 export default es;

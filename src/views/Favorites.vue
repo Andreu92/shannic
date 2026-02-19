@@ -146,7 +146,12 @@ onIonViewWillEnter(async () => {
           <ion-button
             fill="clear"
             shape="round"
-            @click="player_store.play(search_results, shuffle)"
+            @click="
+              player_store.play(
+                search_results.map((a) => ({ ...a })),
+                shuffle,
+              )
+            "
           >
             <ion-icon
               slot="icon-only"
@@ -182,7 +187,7 @@ onIonViewWillEnter(async () => {
             @ionReorderEnd="handleReorder"
           >
             <ion-reorder v-for="result of search_results" :key="result.id">
-              <ion-item @click="player_store.play([result])">
+              <ion-item @click="player_store.play([{ ...result }])">
                 <div class="flex-column">
                   <div class="flex-between">
                     <div class="audio-thumbnail">

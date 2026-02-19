@@ -90,7 +90,7 @@
 
     "@capacitor/synapse": ["@capacitor/synapse@1.0.4", "", {}, "sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw=="],
 
-    "@capgo/inappbrowser": ["@capgo/inappbrowser@8.1.21", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-4q2W6UKU3SaU2u6UpLTVjxEn4zui/MJ81X42muHwq1W9sA9k6rPRiujRWlMYqhtlVIkwA6bpJlZsjiOSUiBFnA=="],
+    "@capgo/inappbrowser": ["@capgo/inappbrowser@8.1.22", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-nrjoD5zdNHSWr3XvyUuVl0AwXdQgbVM3XUdtzYln13isjm99D+BM9gtwyY4aDocRDISNWvlrRij9M2VDqHPImg=="],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 

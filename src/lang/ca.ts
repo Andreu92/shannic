@@ -47,6 +47,10 @@ const ca = {
       importing: "Important favorits de Spotify ({0} de {1})",
     },
   },
+  update: {
+    title: "Actualització disponible!",
+    message: "La versió {0} està disponible. T'agradaria descarregar-la?",
+  },
 };
 
 export default ca;

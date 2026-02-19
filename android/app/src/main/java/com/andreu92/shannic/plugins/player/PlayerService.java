@@ -132,6 +132,7 @@ public class PlayerService extends MediaSessionService {
                         .setChannelName(R.string.app_name)
                         .build();
 
+        notificationProvider.setSmallIcon(R.drawable.icon);
         setMediaNotificationProvider(notificationProvider);
     }
 

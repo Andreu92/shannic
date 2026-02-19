@@ -227,12 +227,12 @@ ion-range {
   display: flex;
   justify-content: space-between;
   padding: 0 5px;
-  margin-top: 15px;
+  margin-top: 18px;
 }
 
 .mini-player-audio-range {
   font-size: 0.8rem;
-  margin-top: 10px;
+  margin-top: 15px;
   height: 25px;
   display: flex;
   gap: 12px;

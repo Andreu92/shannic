@@ -48,6 +48,9 @@ import useSpotifyService from "@/services/SpotifyService";
 import { useDownloadStore } from "@/stores/DownloadStore";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore from "@/stores/PlayerStore";
+import { Directory, Filesystem } from "@capacitor/filesystem";
+import useAudioService from "@/services/AudioService";
+import useYoutubeClient from "@/clients/YoutubeClient";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -56,11 +59,15 @@ const layout = useLayout();
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
 const download_store = useDownloadStore();
+const youtube_client = useYoutubeClient();
 
+const audio_service = useAudioService();
 const spotify_service = useSpotifyService();
 
 const show_download_all_alert = ref(false);
-const to_delete = ref<RxAudio | null>(null);
+const show_remove_alert = ref(false);
+
+const to_remove = ref<RxAudio | null>(null);
 const query = ref<string>("");
 const reorder_mode = ref(false);
 const shuffle = ref(false);
@@ -87,28 +94,52 @@ const clearIfEmpty = (e: SearchbarCustomEvent) => {
 };
 
 const showRemoveFromFavoritesAlert = (audio_id: string) => {
-  to_delete.value =
-    favorites_store.audios.find((audio: RxAudio) => audio.id === audio_id) ??
-    null;
+  const audio = favorites_store.audios.find(
+    (audio: RxAudio) => audio.id === audio_id,
+  );
+  if (audio) {
+    show_remove_alert.value = true;
+    to_remove.value = { ...audio };
+  }
 };
 
-const removeFromFavorites = () => {
-  if (!to_delete.value) return;
+const removeFromFavorites = async () => {
+  if (!to_remove.value) return;
 
-  favorites_store.deleteFavorite(to_delete.value.id);
-  if (player_store.isInPlaylist(to_delete.value.id)) {
-    const index = player_store.getIndexById(to_delete.value.id);
+  favorites_store.deleteFavorite(to_remove.value.id);
+  if (player_store.isInPlaylist(to_remove.value.id)) {
+    const index = player_store.getIndexById(to_remove.value.id);
     player_store.toggleFavorite(false, index);
   }
 
-  to_delete.value = null;
+  to_remove.value = null;
 };
 
 const downloadAll = () => {
   download_store.downloadMultiple(
     favorites_store.audios.map((audio: RxAudio) => audio.id),
   );
-  show_download_all_alert.value = false;
+};
+
+const download = (audio_id: string) => {
+  download_store.addToQueue(audio_id);
+};
+
+const deleteLocalAudio = async (audio_id: string) => {
+  const audio = await audio_service.getAudio(audio_id);
+  if (!audio) return;
+
+  Filesystem.deleteFile({
+    directory: Directory.Data,
+    path: audio_id
+  }).then(async () => {
+    const new_audio = await youtube_client.get(audio_id);
+    audio.incrementalPatch({
+      url: new_audio.url,
+      expires_at: new_audio.expires_at,
+      updated_at: Date.now(),
+    });
+  });
 };
 
 const handleReorder = async (event: ReorderEndCustomEvent) => {
@@ -141,6 +172,26 @@ onIonViewWillEnter(async () => {
             :icon="ellipsisVertical"
             style="font-size: 1.4rem"
           ></ion-icon>
+          <ion-popover
+            trigger="open-actions-popover"
+            dismiss-on-select
+            trigger-action="click"
+          >
+            <ion-content class="ion-padding">
+              <div
+                class="import-actions"
+                @click="spotify_service.importSavedTracks"
+              >
+                <div
+                  class="spotify-icon-background"
+                  style="width: 20px; height: 20px"
+                >
+                  <Icon icon="logos:spotify-icon"></Icon>
+                </div>
+                <div>{{ t("favorites.spotify") }}...</div>
+              </div>
+            </ion-content>
+          </ion-popover>
         </div>
         <div class="flex-between" v-if="query.trim() === ''">
           <ion-button
@@ -211,9 +262,14 @@ onIonViewWillEnter(async () => {
                           name="dots"
                         ></ion-spinner>
                         <ion-icon
-                          v-else
+                          v-else-if="!result.url || result.url.startsWith('http')"
                           :icon="cloudDownloadOutline"
-                          @click.stop="download_store.addToQueue(result.id)"
+                          @click.stop="download(result.id)"
+                        ></ion-icon>
+                        <ion-icon
+                          v-else
+                          :icon="trashOutline"
+                          @click.stop="deleteLocalAudio(result.id)"
                         ></ion-icon>
                       </Transition>
                       <ion-icon
@@ -244,29 +300,8 @@ onIonViewWillEnter(async () => {
           <img :src="no_search_results" />
           <div>{{ t("favorites.no_results") }}</div>
         </div>
-
-        <ion-popover
-          trigger="open-actions-popover"
-          dismiss-on-select
-          trigger-action="click"
-        >
-          <ion-content class="ion-padding">
-            <div
-              class="import-actions"
-              @click="spotify_service.importSavedTracks"
-            >
-              <div
-                class="spotify-icon-background"
-                style="width: 20px; height: 20px"
-              >
-                <Icon icon="logos:spotify-icon"></Icon>
-              </div>
-              <div>{{ t("favorites.spotify") }}...</div>
-            </div>
-          </ion-content>
-        </ion-popover>
       </div>
-      <div v-else class="no-favs">
+      <div v-show="!favorites_store.audios.length" class="no-favs">
         <ion-img
           :src="layout.state.isDarkTheme ? iconLight : iconDark"
           style="width: 100px"
@@ -293,21 +328,22 @@ onIonViewWillEnter(async () => {
 
       <!-- Alerts -->
       <ion-alert
-        :is-open="to_delete != null"
+        :is-open="show_remove_alert"
         :header="t('favorites.delete.header')"
-        :message="t('favorites.delete.message', { title: to_delete?.title })"
+        :message="t('favorites.delete.message', { title: to_remove?.title })"
         :buttons="[
           {
             text: t('generic.no'),
             role: 'cancel',
             handler: () => {
-              to_delete = null;
+              to_remove = null;
             },
           },
           {
             text: t('generic.yes'),
             role: 'confirm',
             handler: () => {
+              show_remove_alert = false;
               removeFromFavorites();
             },
           },
@@ -330,6 +366,7 @@ onIonViewWillEnter(async () => {
             text: t('generic.yes'),
             role: 'confirm',
             handler: () => {
+              show_download_all_alert = false;
               downloadAll();
             },
           },

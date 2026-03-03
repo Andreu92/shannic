@@ -64,7 +64,13 @@ export const useDownloadStore = defineStore("downloads", () => {
       },
     })
       .then((res) => {
-        console.log("Download complete", res.path);
+        if (res.path) {
+          audio.incrementalPatch({
+            url: res.path,
+            expires_at: undefined,
+            updated_at: Date.now(),
+          });
+        }
       })
       .catch((error) => {
         // TODO: Show error toast

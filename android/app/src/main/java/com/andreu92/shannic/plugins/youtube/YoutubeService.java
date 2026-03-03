@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -27,13 +25,10 @@ import okhttp3.Response;
 public class YoutubeService {
     private static final int MINIMUM_SEARCH_RESULTS = 20;
     private static YoutubeService client;
-    private final InnerTubeClient innertubeClient = new InnerTubeClient();
-    private final ExecutorService executorService;
+    private final InnerTubeClient innertubeClient;
 
     private YoutubeService() {
-        InnerTubeClient innertubeClient = new InnerTubeClient();
-        executorService = Executors.newSingleThreadExecutor();
-        executorService.execute(innertubeClient::fetchApiKey);
+        innertubeClient = new InnerTubeClient();
     }
 
     public static YoutubeService getInstance() {

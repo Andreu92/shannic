@@ -38,10 +38,10 @@ const es = {
   settings: {
     language: "Idioma",
     theme: "Tema",
-    clear_cache: "Borrar caché navegador",
   },
   spotify: {
     link: "Vincular Spotify",
+    unlink: "Desvincular Spotify",
     starting_import: "Iniciando importación de Spotify...",
     favorites: {
       importing: "Importando favoritos de Spotify ({0} de {1})",

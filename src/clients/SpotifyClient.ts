@@ -49,6 +49,14 @@ const useSpotifyClient = () => {
     });
   };
 
+  const deleteToken = async (): Promise<void> => {
+    const spotify_config: SpotifyDocument | null = await spotify_db
+      .findOne(SPOTIFY_CONFIG_ID)
+      .exec();
+
+    spotify_config?.remove();
+  };
+
   const isTokenExpired = (): boolean => {
     if (!spotify_token || !spotify_token.expires) return true;
     return Date.now() >= spotify_token.expires;
@@ -217,6 +225,7 @@ const useSpotifyClient = () => {
     getSavedTracks,
     accountAlreadyLinked,
     refreshToken,
+    deleteToken,
   };
 };
 

@@ -16,12 +16,15 @@ import {
   IonSelectOption,
   IonToggle,
 } from "@ionic/vue";
-import { moonOutline, sunnyOutline, trashOutline } from "ionicons/icons";
+import { closeOutline, moonOutline, sunnyOutline } from "ionicons/icons";
 import { type Ref, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";
 import type { LanguageMessages } from "@/types";
+import SpotifyClient from "@/clients/SpotifyClient";
+
+const spotify_client = SpotifyClient();
 
 const { t, getLocaleMessage, locale } = useI18n();
 
@@ -48,7 +51,8 @@ const changeLanguage = (
   messages.value = getLocaleMessage(locale.value);
 };
 
-const clearBrowserCache = () => {
+const unlinkSpotify = () => {
+  spotify_client.deleteToken();
   InAppBrowser.clearAllCookies();
   InAppBrowser.clearCache();
 };
@@ -94,14 +98,19 @@ const clearBrowserCache = () => {
           </div>
         </div>
         <div>
-          <div>{{ t("settings.clear_cache") }}</div>
+          <div>{{ t("spotify.unlink") }}</div>
           <div>
             <ion-button
               color="primary"
               shape="round"
-              @click="clearBrowserCache"
+              @click="unlinkSpotify"
             >
-              <ion-icon slot="icon-only" :icon="trashOutline" />
+              <div slot="icon-only" class="spotify-button-container">
+                <div class="spotify-icon-background">
+                  <Icon icon="logos:spotify-icon"></Icon>
+                </div>
+                <ion-icon :icon="closeOutline" class="close-icon-overlay" />
+              </div>
             </ion-button>
           </div>
         </div>
@@ -141,5 +150,24 @@ const clearBrowserCache = () => {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.spotify-button-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spotify-icon-background {
+  width: 20px;
+  height: 20px;
+}
+
+.close-icon-overlay {
+  position: absolute;
+  font-size: 26px;
+  color: var(--ion-color-danger, #eb445a);
+  pointer-events: none;
 }
 </style>

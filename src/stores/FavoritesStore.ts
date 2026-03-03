@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { useDatabase } from "@/database";
 import { FAVORITES_PLAYLIST_ID } from "@/constants";
 import type { RxAudio } from "@/schemas/audio";
 import useAudioService from "@/services/AudioService";
@@ -7,6 +8,8 @@ import usePlaylistService from "@/services/PlaylistService";
 import type { AudioDocument, PlaylistAudio, PlaylistDocument } from "@/types";
 
 const useFavoritesStore = defineStore("favorites", () => {
+  const db = useDatabase();
+
   const playlist_service = usePlaylistService();
   const audio_service = useAudioService();
 
@@ -26,6 +29,13 @@ const useFavoritesStore = defineStore("favorites", () => {
     ).sort((a, b) => sortByPosition(a, b));
 
     audios.value = audio_document_array.map((d) => d.toMutableJSON());
+
+    db.audios.update$.subscribe((audioDoc) => {
+      const index = audios.value.findIndex((a) => a.id === audioDoc.documentId);
+      if (index !== -1) {
+        audios.value[index] = { ...audioDoc.documentData };
+      }
+    });
   };
 
   const toggleFavorite = async (id: string) => {

@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +29,7 @@ public class InnerTubeClient {
     public static final String USER_AGENT = "com.google.android.apps.youtube.vr.oculus/1.71.26 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip";
     private static final String YOUTUBE_CLIENT_VERSION = "1.71.26";
     private static final String YOUTUBE_CLIENT_NAME = "28";
+    private static final String YOUTUBE_URL = "https://www.youtube.com";
     private static final String API_ORIGIN = "https://youtubei.googleapis.com";
     private static final String BASE_URL = "https://youtubei.googleapis.com/youtubei/v1/";
     private static final String VIDEO_ONLY_PARAMS = "EgIQAQ%3D%3D";
@@ -61,11 +63,13 @@ public class InnerTubeClient {
                 .visibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .build();
+
+        Executors.newSingleThreadExecutor().execute(this::fetchApiKey);
     }
 
-    public CompletableFuture<Void> fetchApiKey() {
+    private void fetchApiKey() {
         Request request = new Request.Builder()
-                .url("https://www.youtube.com")
+                .url(YOUTUBE_URL)
                 .header("User-Agent", USER_AGENT)
                 .get()
                 .build();
@@ -101,7 +105,6 @@ public class InnerTubeClient {
                 future.completeExceptionally(e);
             }
         });
-        return future;
     }
 
     public CompletableFuture<JsonNode> search(String query, String continuation) {

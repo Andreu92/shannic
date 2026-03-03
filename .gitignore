@@ -35,4 +35,5 @@ android/.idea
 /www
 
 # Shannic
+shannic-key.jks
 .env

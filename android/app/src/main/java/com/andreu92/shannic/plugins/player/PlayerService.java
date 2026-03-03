@@ -20,6 +20,7 @@ import androidx.media3.database.DatabaseProvider;
 import androidx.media3.database.StandaloneDatabaseProvider;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DataSpec;
+import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.datasource.ResolvingDataSource;
 import androidx.media3.datasource.cache.Cache;
@@ -176,11 +177,12 @@ public class PlayerService extends MediaSessionService {
                 .setUserAgent(InnerTubeClient.USER_AGENT)
                 .setAllowCrossProtocolRedirects(true);
 
-        // URL resolver to refresh expired URLS if necessary
-        ResolvingDataSource.Factory resolvingDataSourceFactory =
-                new ResolvingDataSource.Factory(httpDataSourceFactory, urlResolver);
+        DefaultDataSource.Factory baseDataSourceFactory =
+                new DefaultDataSource.Factory(this, httpDataSourceFactory);
 
-        // Media cache... Wraps the URL resolver
+        ResolvingDataSource.Factory resolvingDataSourceFactory =
+                new ResolvingDataSource.Factory(baseDataSourceFactory, urlResolver);
+
         DataSource.Factory cacheDataSourceFactory = new CacheDataSource.Factory()
                 .setCache(getCache())
                 .setUpstreamDataSourceFactory(resolvingDataSourceFactory)

@@ -31,7 +31,7 @@ export interface SearchResult {
 export interface Audio extends SearchResult {
   duration: number;
   duration_text: string;
-  expires_at: number;
+  expires_at?: number;
   url: string;
   colors: Palette;
 }

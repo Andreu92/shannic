@@ -30,7 +30,7 @@ const usePlayerStore = defineStore("player", () => {
       current_position.value = (
         await player_plugin.getCurrentPosition()
       ).position;
-    }, 500);
+    }, 1000);
   };
 
   const stopProgressTimer = () => {

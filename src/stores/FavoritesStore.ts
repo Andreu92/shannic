@@ -22,13 +22,23 @@ const useFavoritesStore = defineStore("favorites", () => {
     );
     favorites.value = playlist.audios ?? [];
 
-    const audio_document_array: AudioDocument[] = (
-      await audio_service.getAudiosByIds(
-        playlist.audios?.map((a: PlaylistAudio) => a.audio_id) ?? [],
-      )
-    ).sort((a, b) => sortByPosition(a, b));
+    const ids = playlist.audios?.map((a: PlaylistAudio) => a.audio_id) ?? [];
 
-    audios.value = audio_document_array.map((d) => d.toMutableJSON());
+    const audio_documents = await audio_service.getAudiosByIds(ids);
+
+    const positionsMap = new Map(
+      favorites.value.map((f) => [f.audio_id, f.position]),
+    );
+
+    const sorted_audios = audio_documents
+      .map((d) => d.toMutableJSON())
+      .sort((a, b) => {
+        const p1 = positionsMap.get(a.id) ?? 0;
+        const p2 = positionsMap.get(b.id) ?? 0;
+        return p1 - p2;
+      });
+
+    audios.value = sorted_audios;
 
     db.audios.update$.subscribe((audioDoc) => {
       const index = audios.value.findIndex((a) => a.id === audioDoc.documentId);
@@ -45,14 +55,22 @@ const useFavoritesStore = defineStore("favorites", () => {
     return !is_fav;
   };
 
-  const addFavorite = async (id: string, callback?: () => void) => {
+  const addFavorite = async (id: string) => {
     const new_favorite: PlaylistAudio =
       await playlist_service.addAudioToPlaylist(FAVORITES_PLAYLIST_ID, id);
+
     favorites.value.push(new_favorite);
-    audio_service.getAudio(id).then((a: AudioDocument) => {
-      audios.value.push(a.toMutableJSON());
-      audios.value.sort((a, b) => sortByPosition(a, b));
-      if (callback) callback();
+
+    const audio: AudioDocument = await audio_service.getAudio(id);
+    audios.value.push(audio.toMutableJSON());
+
+    const positionsMap = new Map(
+      favorites.value.map((f) => [f.audio_id, f.position]),
+    );
+    audios.value.sort((a, b) => {
+      const p1 = positionsMap.get(a.id) ?? 0;
+      const p2 = positionsMap.get(b.id) ?? 0;
+      return p1 - p2;
     });
   };
 
@@ -66,12 +84,6 @@ const useFavoritesStore = defineStore("favorites", () => {
 
   const isFavorite = (id: string): boolean => {
     return favorites.value.some((o) => o.audio_id === id);
-  };
-
-  const sortByPosition = (a: RxAudio, b: RxAudio) => {
-    const p1 = favorites.value.find((f) => f.audio_id === a.id)?.position ?? 0;
-    const p2 = favorites.value.find((f) => f.audio_id === b.id)?.position ?? 0;
-    return p1 - p2;
   };
 
   const reorder = async (from: number, to: number) => {

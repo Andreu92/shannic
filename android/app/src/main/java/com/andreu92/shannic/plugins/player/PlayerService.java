@@ -28,6 +28,7 @@ import androidx.media3.datasource.cache.CacheDataSink;
 import androidx.media3.datasource.cache.CacheDataSource;
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor;
 import androidx.media3.datasource.cache.SimpleCache;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.session.CommandButton;
@@ -192,7 +193,11 @@ public class PlayerService extends MediaSessionService {
                 new DefaultMediaSourceFactory(this)
                         .setDataSourceFactory(cacheDataSourceFactory);
 
-        player = new ExoPlayer.Builder(this)
+        DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(this)
+                .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+                .setEnableDecoderFallback(true);
+
+        player = new ExoPlayer.Builder(this, renderersFactory)
                 .setAudioAttributes(audioAttributes, true)
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build();

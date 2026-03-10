@@ -7,36 +7,35 @@ import {
   IonChip,
   IonContent,
   IonIcon,
-  IonImg,
-  IonItem,
   IonLabel,
-  IonList,
   IonPage,
   IonPopover,
   IonProgressBar,
-  IonReorder,
-  IonReorderGroup,
   IonSearchbar,
   IonSpinner,
   IonThumbnail,
-  onIonViewWillEnter,
-  type ReorderEndCustomEvent,
+  IonFab,
+  IonFabButton,
   type SearchbarCustomEvent,
+  onIonViewDidEnter,
+  onIonViewDidLeave,
 } from "@ionic/vue";
 import {
+  arrowDown,
+  arrowUp,
   cloudDownloadOutline,
   ellipsisVertical,
   heart,
   heartOutline,
   play as play_icon,
-  reorderTwoOutline,
   search as search_icon,
   shuffle as shuffle_icon,
   trashOutline,
 } from "ionicons/icons";
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import { useVirtualizer } from "@tanstack/vue-virtual";
 import iconDark from "@/assets/img/icon-dark.png";
 import iconLight from "@/assets/img/icon-light.png";
 import no_search_results from "@/assets/img/no-search-results.svg";
@@ -51,6 +50,9 @@ import usePlayerStore from "@/stores/PlayerStore";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import useAudioService from "@/services/AudioService";
 import useYoutubeClient from "@/clients/YoutubeClient";
+
+const contentRef = ref<InstanceType<typeof IonContent> | null>(null);
+const scrollElement = ref<HTMLElement | null>(null);
 
 const router = useRouter();
 const { t } = useI18n();
@@ -69,8 +71,10 @@ const show_remove_alert = ref(false);
 
 const to_remove = ref<RxAudio | null>(null);
 const query = ref<string>("");
-const reorder_mode = ref(false);
 const shuffle = ref(false);
+
+const show_up = ref(false);
+const show_down = ref(false);
 
 const search_results = computed(() => {
   const searchTerm = query.value.trim().toLowerCase();
@@ -83,6 +87,17 @@ const search_results = computed(() => {
   }
   return favorites_store.audios;
 });
+
+const rowVirtualizerOptions = computed(() => {
+  return {
+    count: search_results.value.length,
+    getScrollElement: () => scrollElement.value,
+    estimateSize: () => 65,
+    overscan: 5,
+  };
+});
+
+const rowVirtualizer = useVirtualizer(rowVirtualizerOptions);
 
 const search = (e: SearchbarCustomEvent) => {
   Keyboard.hide();
@@ -117,7 +132,7 @@ const removeFromFavorites = async () => {
 
 const downloadAll = () => {
   download_store.downloadMultiple(
-    favorites_store.audios.map((audio: RxAudio) => audio.id),
+    search_results.value.map((audio: RxAudio) => audio.id),
   );
 };
 
@@ -131,7 +146,7 @@ const deleteLocalAudio = async (audio_id: string) => {
 
   Filesystem.deleteFile({
     directory: Directory.Data,
-    path: audio_id
+    path: audio_id,
   }).then(async () => {
     const new_audio = await youtube_client.get(audio_id);
     audio.incrementalPatch({
@@ -142,29 +157,61 @@ const deleteLocalAudio = async (audio_id: string) => {
   });
 };
 
-const handleReorder = async (event: ReorderEndCustomEvent) => {
-  const from = event.detail.from;
-  const to = event.detail.to;
-  await favorites_store.reorder(from, to);
-  event.detail.complete();
+const handleScroll = () => {
+  if (!scrollElement.value) return;
+
+  const { scrollTop, scrollHeight, clientHeight } = scrollElement.value;
+  show_up.value = scrollTop > 100;
+  show_down.value =
+    scrollHeight > clientHeight &&
+    scrollTop < scrollHeight - clientHeight - 100;
 };
 
-onIonViewWillEnter(async () => {
-  reorder_mode.value = false;
+const scrollToTop = () => {
+  scrollElement.value?.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+const scrollToBottom = () => {
+  scrollElement.value?.scrollTo({
+    top: scrollElement.value.scrollHeight,
+    behavior: "smooth",
+  });
+};
+
+onIonViewDidEnter(async () => {
+  if (contentRef.value) {
+    scrollElement.value = await contentRef.value.$el.getScrollElement();
+    scrollElement.value?.addEventListener("scroll", handleScroll);
+  }
+  setTimeout(handleScroll, 100);
 });
+
+onIonViewDidLeave(() => {
+  scrollElement.value?.removeEventListener("scroll", handleScroll);
+});
+
+watch(
+  () => search_results.value,
+  () => {
+    setTimeout(handleScroll, 100);
+  },
+  { deep: true },
+);
 </script>
 
 <template>
   <ion-page>
     <AppHeader />
-    <ion-content fullscreen class="ion-padding">
-      <div v-if="favorites_store.audios.length" style="height: 100%">
+    <ion-content ref="contentRef" class="ion-padding">
+      <div v-if="favorites_store.audios.length">
+        <!-- Search bar -->
         <div class="search-container">
           <ion-searchbar
             :placeholder="t('favorites.placeholder')"
             @ion-change="search"
             @ion-input="clearIfEmpty"
             @ion-clear="query = ''"
+            :debounce="300"
           />
           <ion-icon
             id="open-actions-popover"
@@ -193,7 +240,9 @@ onIonViewWillEnter(async () => {
             </ion-content>
           </ion-popover>
         </div>
-        <div class="flex-between" v-if="query.trim() === ''">
+
+        <!-- General playlist actions -->
+        <div class="flex-between" v-if="search_results.length">
           <ion-button
             fill="clear"
             shape="round"
@@ -226,83 +275,130 @@ onIonViewWillEnter(async () => {
               :icon="cloudDownloadOutline"
             ></ion-icon>
           </ion-button>
-          <toggle-button
-            :enabled="reorder_mode"
-            :icon="reorderTwoOutline"
-            @click="reorder_mode = !reorder_mode"
-          />
         </div>
-        <ion-list v-if="search_results.length" lines="none">
-          <ion-reorder-group
-            :disabled="!reorder_mode || query.trim() !== ''"
-            @ionReorderEnd="handleReorder"
+
+        <!-- Virtual list -->
+        <div style="padding: 0px 5px">
+          <div
+            v-if="scrollElement && search_results.length"
+            style="width: 100%; position: relative"
+            :style="{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+            }"
           >
-            <ion-reorder v-for="result of search_results" :key="result.id">
-              <ion-item @click="player_store.play([{ ...result }])">
-                <div class="flex-column">
-                  <div class="flex-between">
-                    <div class="audio-thumbnail">
-                      <ion-thumbnail>
-                        <ion-img :src="result.thumbnail" />
-                      </ion-thumbnail>
+            <div
+              v-for="virtualRow in rowVirtualizer.getVirtualItems()"
+              :key="virtualRow.index"
+              @click="
+                player_store.play([{ ...search_results[virtualRow.index] }])
+              "
+              style="position: absolute; top: 0; left: 0; width: 100%"
+              :style="{
+                height: `${virtualRow.size}px`,
+                transform: `translateY(${virtualRow.start}px)`,
+              }"
+            >
+              <div class="flex-column grow">
+                <div class="flex-between">
+                  <div class="audio-thumbnail">
+                    <ion-thumbnail>
+                      <img :src="search_results[virtualRow.index].thumbnail" />
+                    </ion-thumbnail>
+                  </div>
+                  <div class="audio-info">
+                    <div class="audio-title">
+                      {{ search_results[virtualRow.index].title }}
                     </div>
-                    <div class="audio-info">
-                      <div ref="titles" class="audio-title">
-                        {{ result.title }}
-                      </div>
-                      <div class="audio-artist">{{ result.author }}</div>
-                    </div>
-                    <div class="audio-actions">
-                      <Transition name="fade" mode="out-in">
-                        <ion-spinner
-                          v-if="
-                            download_store.status.queue.includes(result.id) ||
-                            download_store.status.current === result.id
-                          "
-                          name="dots"
-                        ></ion-spinner>
-                        <ion-icon
-                          v-else-if="!result.url || result.url.startsWith('http')"
-                          :icon="cloudDownloadOutline"
-                          @click.stop="download(result.id)"
-                        ></ion-icon>
-                        <ion-icon
-                          v-else
-                          :icon="trashOutline"
-                          @click.stop="deleteLocalAudio(result.id)"
-                        ></ion-icon>
-                      </Transition>
-                      <ion-icon
-                        :icon="
-                          favorites_store.isFavorite(result.id)
-                            ? heart
-                            : heartOutline
-                        "
-                        :color="
-                          favorites_store.isFavorite(result.id) ? 'danger' : ''
-                        "
-                        @click.stop="showRemoveFromFavoritesAlert(result.id)"
-                      ></ion-icon>
+                    <div class="audio-artist">
+                      {{ search_results[virtualRow.index].author }}
                     </div>
                   </div>
-                  <ion-progress-bar
-                    style="margin-bottom: 5px"
-                    v-if="download_store.status.current === result.id"
-                    :value="download_store.status.progress"
-                  >
-                  </ion-progress-bar>
+                  <div class="audio-actions">
+                    <Transition name="fade" mode="out-in">
+                      <ion-spinner
+                        v-if="
+                          download_store.status.queue.includes(
+                            search_results[virtualRow.index].id,
+                          ) ||
+                          download_store.status.current ===
+                            search_results[virtualRow.index].id
+                        "
+                        name="dots"
+                      ></ion-spinner>
+                      <ion-icon
+                        v-else-if="
+                          !search_results[virtualRow.index].url ||
+                          search_results[virtualRow.index].url.startsWith(
+                            'http',
+                          )
+                        "
+                        :icon="cloudDownloadOutline"
+                        @click.stop="
+                          download(search_results[virtualRow.index].id)
+                        "
+                      ></ion-icon>
+                      <ion-icon
+                        v-else
+                        :icon="trashOutline"
+                        @click.stop="
+                          deleteLocalAudio(search_results[virtualRow.index].id)
+                        "
+                      ></ion-icon>
+                    </Transition>
+                    <ion-icon
+                      :icon="
+                        favorites_store.isFavorite(
+                          search_results[virtualRow.index].id,
+                        )
+                          ? heart
+                          : heartOutline
+                      "
+                      :color="
+                        favorites_store.isFavorite(
+                          search_results[virtualRow.index].id,
+                        )
+                          ? 'danger'
+                          : ''
+                      "
+                      @click.stop="
+                        showRemoveFromFavoritesAlert(
+                          search_results[virtualRow.index].id,
+                        )
+                      "
+                    ></ion-icon>
+                  </div>
                 </div>
-              </ion-item>
-            </ion-reorder>
-          </ion-reorder-group>
-        </ion-list>
-        <div v-else class="no-results">
-          <img :src="no_search_results" />
-          <div>{{ t("favorites.no_results") }}</div>
+                <ion-progress-bar
+                  style="margin-bottom: 5px"
+                  v-if="
+                    download_store.status.current ===
+                    search_results[virtualRow.index].id
+                  "
+                  :value="download_store.status.progress"
+                >
+                </ion-progress-bar>
+              </div>
+            </div>
+          </div>
+          <!-- No results -->
+          <div
+            v-else
+            class="flex-column center-hv"
+            style="gap: 5px; margin-top: 50%"
+          >
+            <img :src="no_search_results" />
+            <div>{{ t("favorites.no_results") }}</div>
+          </div>
         </div>
       </div>
-      <div v-show="!favorites_store.audios.length" class="no-favs">
-        <ion-img
+
+      <!-- No favorites -->
+      <div
+        v-show="!favorites_store.audios.length"
+        class="flex-column center-hv"
+        style="height: 100%"
+      >
+        <img
           :src="layout.state.isDarkTheme ? iconLight : iconDark"
           style="width: 100px"
         />
@@ -325,6 +421,33 @@ onIonViewWillEnter(async () => {
           </ion-chip>
         </div>
       </div>
+
+      <!-- Scroll to top/bottom buttons -->
+      <ion-fab
+        v-if="favorites_store.audios.length"
+        horizontal="end"
+        vertical="bottom"
+        slot="fixed"
+      >
+        <div class="fab-button-placeholder">
+          <Transition name="fade">
+            <ion-fab-button v-show="show_up" size="small" @click="scrollToTop">
+              <ion-icon :icon="arrowUp" color="dark"></ion-icon>
+            </ion-fab-button>
+          </Transition>
+        </div>
+        <div class="fab-button-placeholder">
+          <Transition name="fade">
+            <ion-fab-button
+              v-show="show_down"
+              size="small"
+              @click="scrollToBottom"
+            >
+              <ion-icon :icon="arrowDown" color="dark"></ion-icon>
+            </ion-fab-button>
+          </Transition>
+        </div>
+      </ion-fab>
 
       <!-- Alerts -->
       <ion-alert
@@ -388,6 +511,11 @@ ion-thumbnail {
   gap: 10px;
 }
 
+.center-hv {
+  align-items: center;
+  justify-content: center;
+}
+
 .flex-between {
   display: flex;
   justify-content: space-between;
@@ -397,25 +525,11 @@ ion-thumbnail {
 .flex-column {
   display: flex;
   flex-direction: column;
-  flex: 1;
   min-width: 0;
 }
 
-.no-favs,
-.no-results {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.no-favs {
-  height: 100%;
-}
-
-.no-results {
-  gap: 5px;
-  height: calc(100% - 60px);
+.grow {
+  flex: 1;
 }
 
 .start-actions {
@@ -424,14 +538,16 @@ ion-thumbnail {
   margin-top: 15px;
 }
 
-.reorder-header {
-  display: flex;
-  justify-content: flex-end;
-  padding: 8px;
-}
-
 .search-container {
   display: flex;
   align-items: center;
+}
+
+.fab-button-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
 }
 </style>

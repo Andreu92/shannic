@@ -27,15 +27,10 @@ const useAudioService = () => {
   };
 
   const getAudiosByIds = async (ids: string[]): Promise<AudioDocument[]> => {
-    const audios: AudioDocument[] = await audio_collection
-      .find({
-        selector: {
-          id: { $in: ids },
-        },
-      })
+    const audio_map: Map<string, AudioDocument> = await audio_collection
+      .findByIds(ids)
       .exec();
-
-    return audios;
+    return Array.from(audio_map.values());
   };
 
   const createAudio = async (audio: Audio): Promise<AudioDocument> => {

@@ -144,6 +144,13 @@ public class PlayerPlugin extends Plugin {
 
                     @Override
                     public void onPlayerError(@NonNull PlaybackException error) {
+                        if (error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED) {
+                            long lastPosition = mediaController.getCurrentPosition();
+                            mediaController.prepare();
+                            mediaController.seekTo(lastPosition);
+                            mediaController.play();
+                        }
+                        
                         if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS) {
                             Throwable cause = error.getCause();
                             if (cause instanceof HttpDataSource.InvalidResponseCodeException httpError) {

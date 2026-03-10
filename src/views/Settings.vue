@@ -22,9 +22,9 @@ import { useI18n } from "vue-i18n";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";
 import type { LanguageMessages } from "@/types";
-import SpotifyClient from "@/clients/SpotifyClient";
+import useSpotifyService from "@/services/SpotifyService";
 
-const spotify_client = SpotifyClient();
+const spotify_service = useSpotifyService();
 
 const { t, getLocaleMessage, locale } = useI18n();
 
@@ -52,7 +52,7 @@ const changeLanguage = (
 };
 
 const unlinkSpotify = () => {
-  spotify_client.deleteToken();
+  spotify_service.deleteToken();
   InAppBrowser.clearAllCookies();
   InAppBrowser.clearCache();
 };

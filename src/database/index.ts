@@ -1,6 +1,7 @@
 import {
   addRxPlugin,
   createRxDatabase,
+  removeRxDatabase,
   type DexieSettings,
   type DexieStorageInternals,
   type RxStorage,
@@ -38,6 +39,7 @@ export function useDatabase(): RxShannicDatabase {
 
 export async function createDatabase(): Promise<Plugin> {
   //await removeRxDatabase("shannic", storage);
+  
   const db: RxShannicDatabase = await createRxDatabase<RxShannicCollections>({
     name: "shannic",
     storage: storage,

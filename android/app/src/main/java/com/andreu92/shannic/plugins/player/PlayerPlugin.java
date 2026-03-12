@@ -15,7 +15,7 @@ import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
-import androidx.media3.datasource.HttpDataSource;
+import androidx.media3.datasource.cache.SimpleCache;
 import androidx.media3.session.MediaController;
 import androidx.media3.session.SessionCommand;
 import androidx.media3.session.SessionResult;
@@ -144,22 +144,33 @@ public class PlayerPlugin extends Plugin {
 
                     @Override
                     public void onPlayerError(@NonNull PlaybackException error) {
+                        MediaItem item = mediaController.getCurrentMediaItem();
+                        int index = mediaController.getCurrentMediaItemIndex();
+                        long currentPos = mediaController.getCurrentPosition();
+
                         // Decoder OPUS sometimes fails in older androids
                         if (error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED) {
-                            long lastPosition = mediaController.getCurrentPosition();
                             mediaController.prepare();
-                            mediaController.seekTo(lastPosition);
+                            mediaController.seekTo(currentPos);
                             mediaController.play();
                             return;
                         }
 
-                        //File not found (user manually or android deleted it?)
+                        // File not found (user manually or android deleted it?)
                         if (error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND) {
-                            MediaItem item = mediaController.getCurrentMediaItem();
-                            int index = mediaController.getCurrentMediaItemIndex();
-                            if (item == null) return;
                             refreshAudioUrl(item, index);
                             mediaController.prepare();
+                            mediaController.play();
+                            return;
+                        }
+
+                        // Dirty cache error
+                        if (error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
+                                || error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED) {
+                            removeMediaItemFromCache(item);
+                            refreshAudioUrl(item, index);
+                            mediaController.prepare();
+                            mediaController.seekTo(currentPos);
                             mediaController.play();
                             return;
                         }
@@ -206,6 +217,14 @@ public class PlayerPlugin extends Plugin {
                 }
             });
         }
+    }
+
+    @OptIn(markerClass = UnstableApi.class)
+    private void removeMediaItemFromCache(MediaItem item) {
+        if (item == null || item.localConfiguration == null) return;
+        String cacheKey = item.localConfiguration.customCacheKey;
+        SimpleCache cache = PlayerCache.getInstance(getContext());
+        cache.removeResource(cacheKey);
     }
 
     private void onUrlRefresh(String id, String url, Long expires_at) {

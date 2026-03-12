@@ -101,7 +101,7 @@ const usePlayerStore = defineStore("player", () => {
       audio_service.refreshUrl(id, url, expires_at);
     });
     player_plugin.addListener("onSourceError", async () => {
-      //TODO: Update this because it will fail in a mortal loop
+      //TO DO: Show Error
       state.value = states.buffering;
     });
   };

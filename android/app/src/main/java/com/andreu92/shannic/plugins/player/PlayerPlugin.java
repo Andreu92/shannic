@@ -144,22 +144,31 @@ public class PlayerPlugin extends Plugin {
 
                     @Override
                     public void onPlayerError(@NonNull PlaybackException error) {
+                        // Decoder OPUS sometimes fails in older androids
                         if (error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED) {
                             long lastPosition = mediaController.getCurrentPosition();
                             mediaController.prepare();
                             mediaController.seekTo(lastPosition);
                             mediaController.play();
+                            return;
                         }
-                        
-                        if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS) {
-                            Throwable cause = error.getCause();
-                            if (cause instanceof HttpDataSource.InvalidResponseCodeException httpError) {
-                                int responseCode = httpError.responseCode;
-                                if (responseCode == 403) {
-                                    notifyListeners("onSourceError", null);
-                                }
-                            }
+
+                        //File not found (user manually or android deleted it?)
+                        if (error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND) {
+                            MediaItem item = mediaController.getCurrentMediaItem();
+                            int index = mediaController.getCurrentMediaItemIndex();
+                            if (item == null) return;
+                            refreshAudioUrl(item, index);
+                            mediaController.prepare();
+                            mediaController.play();
+                            return;
                         }
+
+                        JSObject data = new JSObject();
+                        data.put("code", error.errorCode);
+                        data.put("cause", error.getCause());
+                        data.put("message", error.getMessage());
+                        notifyListeners("onSourceError", data);
                     }
                 });
 
@@ -183,23 +192,18 @@ public class PlayerPlugin extends Plugin {
         long expires_at = Long.parseLong(expires_at_str) * 1000;
         if ((expires_at - 10000) < System.currentTimeMillis()) {
             executorService.execute(() -> {
-                AudioItem item = null;
                 try {
-                    item = youtubeService.get(itemToRefresh.mediaId);
+                    AudioItem item = youtubeService.get(itemToRefresh.mediaId);
+                    onUrlRefresh(item.id(), item.url(), item.expires_at());
+
+                    getActivity().runOnUiThread(() -> {
+                        MediaItem oldItem = mediaController.getMediaItemAt(index);
+                        MediaItem newItem = oldItem.buildUpon().setUri(item.url()).build();
+                        mediaController.replaceMediaItem(index, newItem);
+                    });
                 } catch (ExecutionException | IOException | InterruptedException e) {
                     Log.e("PlayerPlugin", "Error refreshing audio url", e);
                 }
-
-                if (item == null) return;
-
-                onUrlRefresh(item.id(), item.url(), item.expires_at());
-
-                AudioItem finalItem = item;
-                getActivity().runOnUiThread(() -> {
-                    MediaItem oldItem = mediaController.getMediaItemAt(index);
-                    MediaItem newItem = oldItem.buildUpon().setUri(finalItem.url()).build();
-                    mediaController.replaceMediaItem(index, newItem);
-                });
             });
         }
     }
@@ -229,6 +233,8 @@ public class PlayerPlugin extends Plugin {
         ArrayList<MediaItem> mediaItems = new ArrayList<>();
 
         for (PlayerAudioItem item : audioItems) {
+            Log.i("Shannic", "Audio item: " + item.toString());
+
             Bundle extras = new Bundle();
             extras.putBoolean("favorite", item.favorite());
 

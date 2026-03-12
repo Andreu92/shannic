@@ -42,6 +42,7 @@ import androidx.media3.session.SessionResult;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -68,31 +69,32 @@ public class PlayerService extends MediaSessionService {
         @NonNull
         @OptIn(markerClass = UnstableApi.class)
         @Override
-        public DataSpec resolveDataSpec(DataSpec dataSpec) throws IOException {
+        public DataSpec resolveDataSpec(DataSpec dataSpec) {
             Uri uri = dataSpec.uri;
+            String uriString = uri.toString();
 
+            // Empty url means refresh
+            if (uriString.isBlank()) {
+                String newUrl = refreshUrl(dataSpec);
+                if (newUrl != null) {
+                    return dataSpec.buildUpon()
+                            .setUri(Uri.parse(newUrl))
+                            .build();
+                } else return dataSpec;
+            }
+
+            // If not empty check if it's expired
             String expires_at_str = uri.getQueryParameter("expire");
             if (expires_at_str == null) return dataSpec;
 
             long expires_at = Long.parseLong(expires_at_str) * 1000;
             if ((expires_at - 10000) < System.currentTimeMillis()) {
-                try {
-                    AudioItem item = youtubeService.get(dataSpec.key);
-
-                    Bundle extras = new Bundle();
-                    extras.putString("id", item.id());
-                    extras.putString("url", item.url());
-                    extras.putLong("expires_at", item.expires_at());
-
-                    mediaSession.sendCustomCommand(appControllerInfo,
-                            new SessionCommand(PlayerActions.ACTION_URL_REFRESH, Bundle.EMPTY),
-                            extras
-                    );
-
-                    return dataSpec.buildUpon()
-                            .setUri(Uri.parse(item.url()))
-                            .build();
-                } catch (ExecutionException | InterruptedException ignored) {}
+                    String newUrl = refreshUrl(dataSpec);
+                    if (newUrl != null) {
+                        return dataSpec.buildUpon()
+                                .setUri(Uri.parse(newUrl))
+                                .build();
+                    }
             }
 
             return dataSpec;
@@ -362,6 +364,26 @@ public class PlayerService extends MediaSessionService {
                 .build();
 
         mediaSession.setMediaButtonPreferences(ImmutableList.of(repeatBtn, prevBtn, nextBtn, favoriteBtn));
+    }
+
+    private String refreshUrl(DataSpec dataSpec) {
+        try {
+            AudioItem item = youtubeService.get(dataSpec.key);
+
+            Bundle extras = new Bundle();
+            extras.putString("id", item.id());
+            extras.putString("url", item.url());
+            extras.putLong("expires_at", item.expires_at());
+
+            mediaSession.sendCustomCommand(appControllerInfo,
+                    new SessionCommand(PlayerActions.ACTION_URL_REFRESH, Bundle.EMPTY),
+                    extras
+            );
+
+            return item.url();
+        } catch (ExecutionException | InterruptedException | IOException ignored) {
+            return null;
+        }
     }
 
 }

@@ -122,12 +122,6 @@ const useSpotifyService = () => {
   const getSavedTracks = async (
     callback: (track: SavedTrack) => Promise<void>,
   ): Promise<void> => {
-    if (isTokenExpired()) {
-      await refreshToken();
-    }
-
-    spotify_sync_store.is_syncing = true;
-
     let tracks: Page<SavedTrack> | undefined;
 
     const limit = 50;
@@ -146,31 +140,44 @@ const useSpotifyService = () => {
   };
 
   const importSavedTracks = async () => {
+    if (spotify_sync_store.is_syncing) return;
+
     await linkAccount();
-    
-    KeepAwake.keepAwake();
-    
-    await getSavedTracks(async (track: SavedTrack) => {
-      try {
-        const audio = await youtube_client.getByQuery(
-          track.track.artists[0].name,
-          track.track.name,
-        );
 
-        if (favorites_store.isFavorite(audio.id)) {
+    try {
+      if (isTokenExpired()) await refreshToken();
+
+      spotify_sync_store.is_syncing = true;
+
+      KeepAwake.keepAwake();
+
+      await getSavedTracks(async (track: SavedTrack) => {
+        try {
+          const audio = await youtube_client.getByQuery(
+            track.track.artists[0].name,
+            track.track.name,
+          );
+
+          if (favorites_store.isFavorite(audio.id)) {
+            spotify_sync_store.incrementCounter();
+            return;
+          }
+
+          await audio_service.createAudio(audio);
+          favorites_store.addFavorite(audio.id);
+        } catch {
+          // TO DO: Show error to user
+        } finally {
           spotify_sync_store.incrementCounter();
-          return;
         }
-
-        await audio_service.createAudio(audio);
-        favorites_store.addFavorite(audio.id);
-        spotify_sync_store.incrementCounter();
-      } catch {
-        spotify_sync_store.incrementCounter();
-      }
-    });
-
-    KeepAwake.allowSleep();
+      });
+    } catch (error) {
+      console.error("Error importing Spotify saved tracks:", error);
+      // TO DO: Show error to user
+    } finally {
+      spotify_sync_store.finishSync();
+      KeepAwake.allowSleep();
+    }
   };
 
   const linkAccount = async (): Promise<void> => {

@@ -1,22 +1,12 @@
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
 import { IonCard, IonCardContent, IonSpinner } from "@ionic/vue";
-import { watch } from "vue";
 import { useI18n } from "vue-i18n";
 import useSpotifySyncStore from "@/stores/SpotifySyncStore";
 
 const { t } = useI18n();
 
 const spotify_sync_store = useSpotifySyncStore();
-
-watch(
-  () => spotify_sync_store.counter,
-  () => {
-    if (spotify_sync_store.counter === spotify_sync_store.total_saved_tracks) {
-      spotify_sync_store.finishSync();
-    }
-  },
-);
 </script>
 
 <template>

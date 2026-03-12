@@ -54,8 +54,6 @@ public class PlayerService extends MediaSessionService {
     private final YoutubeService youtubeService = YoutubeService.getInstance();
     private SessionCommand favoriteCommand;
     private SessionCommand repeatCommand;
-    private SessionCommand skipToPreviousCommand;
-    private SessionCommand skipToNextCommand;
     private MediaSession.ControllerInfo appControllerInfo;
     private final ResolvingDataSource.Resolver urlResolver = new ResolvingDataSource.Resolver() {
         @NonNull
@@ -211,8 +209,6 @@ public class PlayerService extends MediaSessionService {
 
         favoriteCommand = new SessionCommand(PlayerActions.ACTION_TOGGLE_FAVORITE, Bundle.EMPTY);
         repeatCommand = new SessionCommand(PlayerActions.ACTION_TOGGLE_REPEAT, Bundle.EMPTY);
-        skipToPreviousCommand = new SessionCommand(PlayerActions.ACTION_SKIP_TO_PREVIOUS, Bundle.EMPTY);
-        skipToNextCommand = new SessionCommand(PlayerActions.ACTION_SKIP_TO_NEXT, Bundle.EMPTY);
 
         mediaSession = new MediaSession.Builder(this, player)
                 .setSessionActivity(sessionActivityPendingIntent)
@@ -225,25 +221,13 @@ public class PlayerService extends MediaSessionService {
                             appControllerInfo = controller;
                         }
 
-                        Player.Commands playerCommands =
-                                MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
-                                        .buildUpon()
-                                        .removeAll(Player.COMMAND_SEEK_TO_PREVIOUS,
-                                                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
-                                                Player.COMMAND_SEEK_TO_NEXT,
-                                                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM
-                                        ).build();
-
                         SessionCommands sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
                                 .add(repeatCommand)
-                                .add(skipToPreviousCommand)
-                                .add(skipToNextCommand)
                                 .add(favoriteCommand)
                                 .build();
 
                         return new MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                                 .setAvailableSessionCommands(sessionCommands)
-                                .setAvailablePlayerCommands(playerCommands)
                                 .build();
                     }
 
@@ -261,12 +245,6 @@ public class PlayerService extends MediaSessionService {
                                 int repeatMode = player.getRepeatMode();
                                 player.setRepeatMode(repeatMode == Player.REPEAT_MODE_ONE
                                         ? Player.REPEAT_MODE_OFF : Player.REPEAT_MODE_ONE);
-                                break;
-                            case PlayerActions.ACTION_SKIP_TO_PREVIOUS:
-                                player.seekToPrevious();
-                                break;
-                            case PlayerActions.ACTION_SKIP_TO_NEXT:
-                                player.seekToNext();
                                 break;
                             case PlayerActions.ACTION_TOGGLE_FAVORITE:
                                 int toggledIndex = player.getCurrentMediaItemIndex();
@@ -309,20 +287,6 @@ public class PlayerService extends MediaSessionService {
         MediaItem currentItem = player.getCurrentMediaItem();
         if (currentItem == null) return;
 
-        CommandButton prevBtn = new CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-                .setCustomIconResId(R.drawable.play_skip_back)
-                .setSessionCommand(skipToPreviousCommand)
-                .setDisplayName("Previous")
-                .setSlots(CommandButton.SLOT_BACK)
-                .build();
-
-        CommandButton nextBtn = new CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-                .setCustomIconResId(R.drawable.play_skip_forward)
-                .setSessionCommand(skipToNextCommand)
-                .setSlots(CommandButton.SLOT_FORWARD)
-                .setDisplayName("Next")
-                .build();
-
         boolean isFavorite = false;
         if (currentItem.mediaMetadata.extras != null) {
             isFavorite = currentItem.mediaMetadata.extras.getBoolean("favorite", false);
@@ -333,6 +297,7 @@ public class PlayerService extends MediaSessionService {
                         ? R.drawable.heart : R.drawable.heart_outline)
                 .setSessionCommand(favoriteCommand)
                 .setDisplayName("Favorite")
+                .setSlots(CommandButton.SLOT_FORWARD_SECONDARY, CommandButton.SLOT_OVERFLOW)
                 .build();
 
         int repeatMode = player.getRepeatMode();
@@ -342,9 +307,10 @@ public class PlayerService extends MediaSessionService {
                         ? R.drawable.infinite : R.drawable.repeat)
                 .setSessionCommand(repeatCommand)
                 .setDisplayName("Repeat")
+                .setSlots(CommandButton.SLOT_BACK_SECONDARY, CommandButton.SLOT_OVERFLOW)
                 .build();
 
-        mediaSession.setMediaButtonPreferences(ImmutableList.of(repeatBtn, prevBtn, nextBtn, favoriteBtn));
+        mediaSession.setMediaButtonPreferences(ImmutableList.of(repeatBtn, favoriteBtn));
     }
 
     private String refreshUrl(DataSpec dataSpec) {

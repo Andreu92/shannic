@@ -239,7 +239,7 @@ public class PlayerPlugin extends Plugin {
     @PluginMethod()
     public void play(PluginCall call) throws JsonProcessingException {
         JSArray js_audio_items_array = call.getArray("audio_items");
-        boolean shuffle = Boolean.TRUE.equals(call.getBoolean("shuffle", false));
+        boolean shuffle = call.getBoolean("shuffle", false);
 
         JsonMapper mapper = JsonMapper.builder()
                 .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.ALWAYS))
@@ -252,8 +252,6 @@ public class PlayerPlugin extends Plugin {
         ArrayList<MediaItem> mediaItems = new ArrayList<>();
 
         for (PlayerAudioItem item : audioItems) {
-            Log.i("Shannic", "Audio item: " + item.toString());
-
             Bundle extras = new Bundle();
             extras.putBoolean("favorite", item.favorite());
 
@@ -320,8 +318,7 @@ public class PlayerPlugin extends Plugin {
     @PluginMethod()
     public void skipPrevious(PluginCall call) {
         getActivity().runOnUiThread(() -> {
-            SessionCommand customCommand = new SessionCommand(PlayerActions.ACTION_SKIP_TO_PREVIOUS, Bundle.EMPTY);
-            mediaController.sendCustomCommand(customCommand, Bundle.EMPTY);
+            mediaController.seekToPreviousMediaItem();
             call.resolve();
         });
     }
@@ -329,8 +326,7 @@ public class PlayerPlugin extends Plugin {
     @PluginMethod()
     public void skipNext(PluginCall call) {
         getActivity().runOnUiThread(() -> {
-            SessionCommand customCommand = new SessionCommand(PlayerActions.ACTION_SKIP_TO_NEXT, Bundle.EMPTY);
-            mediaController.sendCustomCommand(customCommand, Bundle.EMPTY);
+            mediaController.seekToNextMediaItem();
             call.resolve();
         });
     }

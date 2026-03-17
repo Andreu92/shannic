@@ -4,10 +4,8 @@ export interface PlayerAudio {
   id: string;
   title: string;
   author: string;
-  duration: number;
   thumbnail: string;
   url?: string;
-  expires_at?: number;
   favorite: boolean;
 }
 

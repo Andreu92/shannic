@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -66,7 +67,7 @@ public class PlayerService extends MediaSessionService {
             // Empty url means refresh
             if (uriString.isBlank()) {
                 String newUrl = refreshUrl(dataSpec);
-                if (newUrl != null) {
+                if (newUrl != null && !newUrl.isBlank()) {
                     return dataSpec.buildUpon()
                             .setUri(Uri.parse(newUrl))
                             .build();
@@ -317,6 +318,14 @@ public class PlayerService extends MediaSessionService {
         try {
             AudioItem item = youtubeService.get(dataSpec.key);
 
+            if (item.url() == null || item.url().isBlank()) {
+                mediaSession.sendCustomCommand(appControllerInfo,
+                        new SessionCommand(PlayerActions.ACTION_AUDIO_UNPLAYABLE, Bundle.EMPTY),
+                        Bundle.EMPTY
+                );
+                return null;
+            }
+
             Bundle extras = new Bundle();
             extras.putString("id", item.id());
             extras.putString("url", item.url());
@@ -328,7 +337,8 @@ public class PlayerService extends MediaSessionService {
             );
 
             return item.url();
-        } catch (ExecutionException | InterruptedException | IOException ignored) {
+        } catch (ExecutionException | InterruptedException | IOException e) {
+            Log.e("PlayerService", "Error refreshing URL:" + e.getMessage());
             return null;
         }
     }

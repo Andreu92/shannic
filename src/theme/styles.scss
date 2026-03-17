@@ -29,6 +29,15 @@
   }
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus,
+:focus-visible {
+  outline: none !important;
+}
+
 /* Custom shared styles */
 
 .audio-thumbnail {
@@ -95,13 +104,4 @@
 .fade-enter-active,
 .fade-leave-active {
   transition: all 0.5s ease;
-}
-
-:focus,
-:focus-visible {
-  outline: none !important;
-}
-
-* {
-  -webkit-tap-highlight-color: transparent;
 }

@@ -31,6 +31,7 @@ export const showToast = async (message: string, color: string = "danger") => {
     position: "bottom",
     swipeGesture: "vertical",
     icon: alertOutline,
+    positionAnchor: "footer",
   });
 
   await toast.present();

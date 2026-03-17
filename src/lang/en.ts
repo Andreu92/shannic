@@ -39,6 +39,9 @@ const en = {
     language: "Language",
     theme: "Theme",
   },
+  errors: {
+    audio_unplayable: "This audio cannot be played.",
+  },
   spotify: {
     link: "Link Spotify",
     unlink: "Unlink Spotify",

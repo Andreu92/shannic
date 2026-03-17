@@ -1,9 +1,11 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { type PlayerAudio, player_plugin } from "@/plugins/PlayerPlugin";
 import type { RxAudio } from "@/schemas/audio";
 import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
+import { showToast } from "@/utils";
+import { useI18n } from "vue-i18n";
 
 export const states = {
   paused: 0,
@@ -12,11 +14,13 @@ export const states = {
 };
 
 const usePlayerStore = defineStore("player", () => {
+  const { t } = useI18n();
+
   const favorites_store = useFavoritesStore();
   const audio_service = useAudioService();
 
   const audio = ref<RxAudio | null>(null);
-  let current_index: number | null = null;
+  const current_index = ref<number | null>(null);
   const playlist_items = ref<RxAudio[] | null>(null);
   const state = ref<number>(states.paused);
   const repeat = ref<boolean>(false);
@@ -40,7 +44,7 @@ const usePlayerStore = defineStore("player", () => {
 
   const reset = () => {
     audio.value = null;
-    current_index = null;
+    current_index.value = null;
     playlist_items.value = null;
     repeat.value = false;
     current_position.value = 0;
@@ -69,7 +73,7 @@ const usePlayerStore = defineStore("player", () => {
       if (!playlist_items.value) return;
       const { index } = data as { index: number };
       audio.value = playlist_items.value[index];
-      current_index = index;
+      current_index.value = index;
     });
     player_plugin.addListener("onToggleRepeat", (data) => {
       const { repeating } = data as { repeating: boolean };
@@ -104,6 +108,10 @@ const usePlayerStore = defineStore("player", () => {
       //TO DO: Show Error
       state.value = states.buffering;
     });
+    player_plugin.addListener("onAudioUnplayable", async () => {
+      showToast(t("errors.audio_unplayable"));
+      reset();
+    });
   };
 
   const play = async (audio_items: RxAudio[], shuffle: boolean = false) => {
@@ -113,10 +121,8 @@ const usePlayerStore = defineStore("player", () => {
       id: a.id,
       title: a.title,
       author: a.author,
-      duration: a.duration,
       thumbnail: a.thumbnail,
       url: a.url,
-      expires_at: a.expires_at,
       favorite: favorites_store.isFavorite(a.id),
     }));
 
@@ -147,13 +153,18 @@ const usePlayerStore = defineStore("player", () => {
     player_plugin.skipNext();
   };
 
+  const hasNext = computed<boolean>(() => {
+    if (current_index.value === null || !playlist_items.value) return false;
+    return current_index.value < playlist_items.value.length - 1;
+  });
+
   const skipPrevious = () => {
     player_plugin.skipPrevious();
   };
 
   const toggleFavorite = (
     is_fav: boolean,
-    index: number = current_index as number,
+    index: number = current_index.value as number,
   ) => {
     player_plugin.toggleFavorite({ favorite: is_fav, index });
   };
@@ -184,6 +195,7 @@ const usePlayerStore = defineStore("player", () => {
     stop,
     reset,
     skipNext,
+    hasNext,
     skipPrevious,
     toggleRepeat,
     toggleFavorite,

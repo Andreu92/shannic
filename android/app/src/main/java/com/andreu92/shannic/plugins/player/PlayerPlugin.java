@@ -81,6 +81,16 @@ public class PlayerPlugin extends Plugin {
                         if (command.customAction.equals(PlayerActions.ACTION_URL_REFRESH))
                             onUrlRefresh(args.getString("id"), args.getString("url"), args.getLong("expires_at"));
 
+                        if (command.customAction.equals(PlayerActions.ACTION_AUDIO_UNPLAYABLE)) {
+                            if (mediaController.hasNextMediaItem()) {
+                                mediaController.seekToNext();
+                            } else {
+                                mediaController.stop();
+                                mediaController.clearMediaItems();
+                                notifyListeners("onAudioUnplayable", null);
+                            }
+                        }
+
                         return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));
                     }
                 })
@@ -148,6 +158,15 @@ public class PlayerPlugin extends Plugin {
                         int index = mediaController.getCurrentMediaItemIndex();
                         long currentPos = mediaController.getCurrentPosition();
 
+                        if (item == null) return;
+
+                        Log.e("PlayerPlugin", "onPlayerError for audio: " + item.mediaId);
+                        Log.e("PlayerPlugin", "Audio URL: " + item.localConfiguration.uri);
+                        Log.e("PlayerPlugin", "Error Code: " + error.errorCode);
+                        Log.e("PlayerPlugin", "Error Code name: " + error.getErrorCodeName());
+                        Log.e("PlayerPlugin", "Error Cause: " + error.getCause());
+                        Log.e("PlayerPlugin", "Error Message: " + error.getMessage());
+
                         // Decoder OPUS sometimes fails in older androids
                         if (error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED) {
                             mediaController.prepare();
@@ -208,12 +227,13 @@ public class PlayerPlugin extends Plugin {
                     onUrlRefresh(item.id(), item.url(), item.expires_at());
 
                     getActivity().runOnUiThread(() -> {
+                        if (item.url() == null) return;
                         MediaItem oldItem = mediaController.getMediaItemAt(index);
                         MediaItem newItem = oldItem.buildUpon().setUri(item.url()).build();
                         mediaController.replaceMediaItem(index, newItem);
                     });
                 } catch (ExecutionException | IOException | InterruptedException e) {
-                    Log.e("PlayerPlugin", "Error refreshing audio url", e);
+                    Log.e("PlayerPlugin", "Error refreshing URL:", e);
                 }
             });
         }
@@ -273,8 +293,13 @@ public class PlayerPlugin extends Plugin {
         }
 
         getActivity().runOnUiThread(() -> {
+            mediaController.stop();
             mediaController.setMediaItems(mediaItems);
             mediaController.setShuffleModeEnabled(shuffle);
+            if (!mediaItems.isEmpty() && shuffle) {
+                int randomIndex = (int) (Math.random() * mediaItems.size());
+                mediaController.seekTo(randomIndex, 0);
+            }
             mediaController.prepare();
             mediaController.play();
             call.resolve();
@@ -318,7 +343,7 @@ public class PlayerPlugin extends Plugin {
     @PluginMethod()
     public void skipPrevious(PluginCall call) {
         getActivity().runOnUiThread(() -> {
-            mediaController.seekToPreviousMediaItem();
+            mediaController.seekToPrevious();
             call.resolve();
         });
     }
@@ -326,7 +351,7 @@ public class PlayerPlugin extends Plugin {
     @PluginMethod()
     public void skipNext(PluginCall call) {
         getActivity().runOnUiThread(() -> {
-            mediaController.seekToNextMediaItem();
+            mediaController.seekToNext();
             call.resolve();
         });
     }

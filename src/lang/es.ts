@@ -39,6 +39,9 @@ const es = {
     language: "Idioma",
     theme: "Tema",
   },
+  errors: {
+    audio_unplayable: "Este audio no se puede reproducir.",
+  },
   spotify: {
     link: "Vincular Spotify",
     unlink: "Desvincular Spotify",

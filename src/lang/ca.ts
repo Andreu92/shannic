@@ -39,6 +39,9 @@ const ca = {
     language: "Idioma",
     theme: "Tema",
   },
+  errors: {
+    audio_unplayable: "Aquest àudio no es pot reproduir.",
+  },
   spotify: {
     link: "Vincular Spotify",
     unlink: "Desvincular Spotify",

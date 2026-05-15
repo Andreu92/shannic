@@ -29,7 +29,7 @@ const props = withDefaults(defineProps<Props>(), {
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   &.is-active {
-    background: rgba(var(--ion-color-primary-rgb), 0.2);
+    background: rgba(var(--ion-color-primary-rgb), 0.4);
   }
 }
 </style>

@@ -46,7 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.andreu92.shannic.plugins.youtube.AudioItem;
+import com.andreu92.shannic.models.AudioItem;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
 
 @CapacitorPlugin(name = "PlayerPlugin")
@@ -224,15 +224,15 @@ public class PlayerPlugin extends Plugin {
             executorService.execute(() -> {
                 try {
                     AudioItem item = youtubeService.get(itemToRefresh.mediaId);
-                    onUrlRefresh(item.id(), item.url(), item.expires_at());
+                    onUrlRefresh(item.id(), item.streamUrl(), item.expiresAt());
 
                     getActivity().runOnUiThread(() -> {
-                        if (item.url() == null) return;
+                        if (item.streamUrl() == null) return;
                         MediaItem oldItem = mediaController.getMediaItemAt(index);
-                        MediaItem newItem = oldItem.buildUpon().setUri(item.url()).build();
+                        MediaItem newItem = oldItem.buildUpon().setUri(item.streamUrl()).build();
                         mediaController.replaceMediaItem(index, newItem);
                     });
-                } catch (ExecutionException | IOException | InterruptedException e) {
+                } catch (Exception e) {
                     Log.e("PlayerPlugin", "Error refreshing URL:", e);
                 }
             });

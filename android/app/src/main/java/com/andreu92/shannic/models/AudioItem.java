@@ -1,12 +1,12 @@
-package com.andreu92.shannic.plugins.youtube;
+package com.andreu92.shannic.models;
 
 public record AudioItem(
         String id,
         String title,
         String author,
         long duration,
-        String duration_text,
         ThumbnailInfo thumbnail,
-        String url,
-        long expires_at
+        String streamUrl,
+        String youtubeUrl,
+        long expiresAt
 ) {}

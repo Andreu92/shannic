@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+## Rules for NewPipeExtractor
+-keep class org.mozilla.javascript.** { *; }
+-dontwarn org.mozilla.javascript.tools.**

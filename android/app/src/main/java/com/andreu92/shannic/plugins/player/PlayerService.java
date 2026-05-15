@@ -39,14 +39,14 @@ import androidx.media3.session.SessionResult;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+import com.andreu92.shannic.plugins.youtube.utils.ShannicDownloader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import com.andreu92.shannic.R;
-import com.andreu92.shannic.innertube.InnerTubeClient;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
-import com.andreu92.shannic.plugins.youtube.AudioItem;
+import com.andreu92.shannic.models.AudioItem;
 
 @UnstableApi
 public class PlayerService extends MediaSessionService {
@@ -154,7 +154,7 @@ public class PlayerService extends MediaSessionService {
                 .build();
 
         DefaultHttpDataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory()
-                .setUserAgent(InnerTubeClient.USER_AGENT)
+                .setUserAgent(ShannicDownloader.USER_AGENT)
                 .setAllowCrossProtocolRedirects(true);
 
         DefaultDataSource.Factory baseDataSourceFactory =
@@ -318,7 +318,7 @@ public class PlayerService extends MediaSessionService {
         try {
             AudioItem item = youtubeService.get(dataSpec.key);
 
-            if (item.url() == null || item.url().isBlank()) {
+            if (item.streamUrl() == null || item.streamUrl().isBlank()) {
                 mediaSession.sendCustomCommand(appControllerInfo,
                         new SessionCommand(PlayerActions.ACTION_AUDIO_UNPLAYABLE, Bundle.EMPTY),
                         Bundle.EMPTY
@@ -328,16 +328,16 @@ public class PlayerService extends MediaSessionService {
 
             Bundle extras = new Bundle();
             extras.putString("id", item.id());
-            extras.putString("url", item.url());
-            extras.putLong("expires_at", item.expires_at());
+            extras.putString("url", item.streamUrl());
+            extras.putLong("expires_at", item.expiresAt());
 
             mediaSession.sendCustomCommand(appControllerInfo,
                     new SessionCommand(PlayerActions.ACTION_URL_REFRESH, Bundle.EMPTY),
                     extras
             );
 
-            return item.url();
-        } catch (ExecutionException | InterruptedException | IOException e) {
+            return item.streamUrl();
+        } catch (Exception e) {
             Log.e("PlayerService", "Error refreshing URL:" + e.getMessage());
             return null;
         }

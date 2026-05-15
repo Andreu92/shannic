@@ -1,279 +1,211 @@
 package com.andreu92.shannic.plugins.youtube;
 
-import android.util.Base64;
-
-import com.andreu92.shannic.innertube.InnerTubeClient;
-import com.fasterxml.jackson.databind.JsonNode;
-
 import java.io.IOException;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import okhttp3.Request;
-import okhttp3.Response;
+import static java.util.Collections.singletonList;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+import org.schabi.newpipe.extractor.Image;
+import org.schabi.newpipe.extractor.InfoItem;
+import org.schabi.newpipe.extractor.InfoItemExtractor;
+import org.schabi.newpipe.extractor.InfoItemsCollector;
+import org.schabi.newpipe.extractor.NewPipe;
+import org.schabi.newpipe.extractor.Page;
+import org.schabi.newpipe.extractor.StreamingService;
+import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+import org.schabi.newpipe.extractor.ListExtractor.InfoItemsPage;
+import org.schabi.newpipe.extractor.search.SearchExtractor;
+import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory;
+import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.StreamExtractor;
+import org.schabi.newpipe.extractor.stream.StreamInfoItem;
+
+import static org.schabi.newpipe.extractor.ServiceList.YouTube;
+
+import com.andreu92.shannic.models.*;
+import com.andreu92.shannic.plugins.youtube.utils.*;
 
 public class YoutubeService {
-    private static final int MINIMUM_SEARCH_RESULTS = 20;
-    private static YoutubeService client;
-    private final InnerTubeClient innertubeClient;
+    private static YoutubeService instance;
+    private static StreamingService youtube;
 
-    private YoutubeService() {
-        innertubeClient = new InnerTubeClient();
+    private SearchExtractor searchExtractor;
+    private Page nextPage = null;
+
+    private StreamExtractor streamExtractor;
+
+    public static YoutubeService init() {
+        NewPipe.init(ShannicDownloader.getInstance());
+
+        try {
+            youtube = NewPipe.getService(YouTube.getServiceId());
+            instance = new YoutubeService();
+        } catch (ExtractionException ignored) {}
+
+        return instance;
     }
 
     public static YoutubeService getInstance() {
-        if (client == null)
-            client = new YoutubeService();
-
-        return client;
+        if (instance == null) instance = init();
+        return instance;
     }
 
-    public SearchResponse search(final String query, final String nextToken) throws ExecutionException, InterruptedException {
-        List<SearchItem> items = new ArrayList<>();
-        String continuationToken = nextToken;
-        do {
-            CompletableFuture<JsonNode> future = innertubeClient.search(query, continuationToken);
-            SearchResponse response = processSearchResults(future.get());
-            continuationToken = response.continuationToken();
-            items.addAll(response.items());
-        } while (items.size() <= MINIMUM_SEARCH_RESULTS);
-
-        return new SearchResponse(items, continuationToken);
+    public SearchResponse search(String query) {
+        return search(query, singletonList(YoutubeSearchQueryHandlerFactory.VIDEOS));
     }
 
-    public AudioItem get(final String id) throws ExecutionException, InterruptedException, IOException {
-        CompletableFuture<JsonNode> future = innertubeClient.player(id);
-        return processPlayerResponse(future.get());
+    public SearchResponse searchMusic(String query) {
+        return search(query, singletonList(YoutubeSearchQueryHandlerFactory.MUSIC_SONGS));
     }
 
-    public AudioItem getByQuery(final String artist, final String title) throws ExecutionException, InterruptedException, IOException {
-        CompletableFuture<JsonNode> future = innertubeClient.search(artist + " " + title);
-        SearchItem bestMatch = getBestYoutubeMatch(artist, title, processSearchResults(future.get()).items());
-        return get(bestMatch.id());
+    public SearchResponse search(String query, List<String> filters) {
+        try {
+            searchExtractor = youtube.getSearchExtractor(query, filters, null);
+            searchExtractor.fetchPage();
+            return parseSearchResults(searchExtractor.getInitialPage());
+        } catch (ExtractionException | IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
-    public SearchResponse processSearchResults(JsonNode root) {
-        List<SearchItem> items = new ArrayList<>();
+    public SearchResponse searchContinuation() {
+        if (searchExtractor == null) return null;
 
-        List<JsonNode> searchNodes = root.findParents("videoId");
-        for (JsonNode item : searchNodes) {
-            String itemId = item.path("videoId").asText();
-            if (itemId.isEmpty() || !item.has("lengthText"))
-                continue;
-
-            String title = StreamSupport.stream(item.path("title").path("runs").spliterator(), false)
-                    .map(r -> r.path("text").asText())
-                    .collect(Collectors.joining());
-
-            if (title.isEmpty())
-                continue;
-
-            JsonNode authorNode = item.has("longBylineText") ? item.path("longBylineText") : item.path("bylineText");
-            String author = StreamSupport.stream(authorNode.path("runs").spliterator(), false)
-                    .map(r -> r.path("text").asText())
-                    .collect(Collectors.joining());
-
-            JsonNode thumbnails = item.path("thumbnail").path("thumbnails");
-            String thumbnail = "";
-            if (thumbnails.isArray() && thumbnails.size() > 0) {
-                thumbnail = thumbnails.get(thumbnails.size() - 1).path("url").asText();
-            }
-
-            JsonNode lengthText = item.path("lengthText");
-            String duration = "-";
-            if (lengthText.has("simpleText")) {
-                duration = lengthText.get("simpleText").asText();
-            } else if (lengthText.has("runs")) {
-                duration = StreamSupport.stream(lengthText.get("runs").spliterator(), false)
-                        .map(r -> r.path("text").asText())
-                        .collect(Collectors.joining());
-            }
-
-            items.add(new SearchItem(itemId, title, author, thumbnail, duration));
+        try {
+            return parseSearchResults(searchExtractor.getPage(nextPage));
+        } catch (ExtractionException | IOException e) {
+            e.printStackTrace();
         }
 
-        String continuationToken = "";
-        List<JsonNode> continuationNodes = root.findValues("continuationCommand");
-        if (!continuationNodes.isEmpty()) {
-            continuationToken = continuationNodes.get(0).path("token").asText();
-        } else {
-            List<JsonNode> nextContinuationNodes = root.findValues("nextContinuationData");
-            if (!nextContinuationNodes.isEmpty()) {
-                continuationToken = nextContinuationNodes.get(0).path("continuation").asText();
-            }
-        }
-
-        return new SearchResponse(items, continuationToken);
+        return null;
     }
 
-    public SearchItem getBestYoutubeMatch(String spotifyArtist, String spotifyTitle, List<SearchItem> youtubeResults) {
-        Set<String> spotifyTitleTokens = normalizeText(spotifyTitle);
-        Set<String> spotifyArtistTokens = normalizeText(spotifyArtist);
 
-        Set<String> fullQueryTokens = new HashSet<>(spotifyTitleTokens);
-        fullQueryTokens.addAll(spotifyArtistTokens);
-
-        SearchItem bestMatch = null;
-        double bestScore = -1.0;
-
-        for (SearchItem yt : youtubeResults) {
-            Set<String> ytTitleTokens = normalizeText(yt.title());
-            Set<String> ytAuthorTokens = normalizeText(yt.author());
-
-            double titleScore = calculateIntersectionScore(fullQueryTokens, ytTitleTokens);
-            double authorScore = calculateIntersectionScore(spotifyArtistTokens, ytAuthorTokens);
-            double finalScore = (titleScore * 0.6) + (authorScore * 0.4);
-
-            if (ytTitleTokens.contains("remix") && !spotifyTitleTokens.contains("remix")) {
-                finalScore *= 0.8;
-            }
-
-            if (finalScore > bestScore) {
-                bestScore = finalScore;
-                bestMatch = yt;
-            }
+    private SearchResponse parseSearchResults(InfoItemsPage<InfoItem> page) {
+        List<SearchItem> results = new ArrayList<>();
+        List<InfoItem> searchResults = page.getItems();
+        for (InfoItem infoItem : searchResults) {
+            StreamInfoItem searchResult = (StreamInfoItem) infoItem;
+            String url = searchResult.getUrl();
+            results.add(new SearchItem(
+                    url.split("v=")[1],
+                    searchResult.getName(),
+                    searchResult.getUploaderName(),
+                    searchResult.getThumbnails()
+                            .get(searchResult.getThumbnails().size() - 1)
+                            .getUrl(),
+                    searchResult.getDuration(),
+                    url
+            ));
         }
-        return bestMatch;
+
+        if (page.hasNextPage()) {
+            nextPage = page.getNextPage();
+        }
+
+        return new SearchResponse(page.hasNextPage(), results);
     }
 
-    private Set<String> normalizeText(String text) {
-        if (text == null || text.isEmpty())
-            return Collections.emptySet();
-        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
-        normalized = normalized.replaceAll("[^\\p{ASCII}]", "");
-        Set<String> tokens = new HashSet<>();
-        Pattern pattern = Pattern.compile("\\w+");
-        Matcher matcher = pattern.matcher(normalized.toLowerCase());
-        while (matcher.find()) {
-            tokens.add(matcher.group());
+    public AudioItem get(String url) {
+        try {
+            streamExtractor = youtube.getStreamExtractor(url);
+            streamExtractor.fetchPage();
+
+            String uploader = streamExtractor.getUploaderName();
+            if (uploader != null) uploader = uploader.replace(" - Topic", "");
+
+            List<AudioStream> audioStreams = streamExtractor.getAudioStreams();
+            AudioStream bestAudioStream = audioStreams.stream()
+                    .max(Comparator.comparingInt(AudioStream::getBitrate))
+                    .orElse(null);
+
+            List<Image> thumbnails = streamExtractor.getThumbnails();
+            Image thumbnail = thumbnails.get(thumbnails.size() - 1);
+            ThumbnailInfo thumbnailInfo = new ThumbnailInfo(
+                    thumbnail.getUrl(), ImageUtils.getBase64(thumbnail.getUrl())
+            );
+
+            String streamUrl = bestAudioStream.getContent();
+            long expiresAt = Long.parseLong(streamUrl.split("expire=")[1].split("&")[0]);
+
+            return new AudioItem(
+                    streamExtractor.getId(),
+                    streamExtractor.getName(),
+                    uploader,
+                    streamExtractor.getLength(),
+                    thumbnailInfo,
+                    streamUrl,
+                    streamExtractor.getUrl(),
+                    expiresAt
+            );
+        } catch (ExtractionException | IOException e) {
+            e.printStackTrace();
         }
-        return tokens;
+
+        return null;
     }
 
-    private double calculateIntersectionScore(Set<String> queryTokens, Set<String> targetTokens) {
-        if (queryTokens.isEmpty())
-            return 0.0;
-        Set<String> intersection = new HashSet<>(queryTokens);
-        intersection.retainAll(targetTokens);
-        return (double) intersection.size() / queryTokens.size();
-    }
+    public AudioItem getNext() {
+        if (streamExtractor == null) return null;
 
-    private AudioItem processPlayerResponse(JsonNode root) throws IOException {
-        JsonNode videoDetails = root.path("videoDetails");
-        String videoId = videoDetails.path("videoId").asText();
-        String title = videoDetails.path("title").asText();
-        String author = videoDetails.path("author").asText();
-        long seconds = videoDetails.path("lengthSeconds").asLong(0);
-        long durationMs = seconds * 1000;
+        try {
+            InfoItemsCollector<? extends InfoItem, ? extends InfoItemExtractor> relatedItems = streamExtractor.getRelatedItems();
+            List<? extends InfoItem> items = relatedItems.getItems();
 
-        String durationText = String.format("%d:%02d", seconds / 60, seconds % 60);
-        if (seconds >= 3600) {
-            durationText = String.format("%d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60);
-        }
+            if (items.isEmpty()) return null;
 
-        JsonNode thumbnails = videoDetails.path("thumbnail").path("thumbnails");
-        String thumbnailUrl = "";
-        if (thumbnails.isArray() && !thumbnails.isEmpty()) {
-            thumbnailUrl = thumbnails.get(thumbnails.size() - 1).path("url").asText();
-        }
+            for (InfoItem nextItem : items) {
+                if (nextItem instanceof StreamInfoItem streamInfoItem) {
+                    // Greedy title matching to avoid repeated items
+                    String oldTitle = streamExtractor.getName().toLowerCase().replaceAll("[^a-z0-9\\s]", "");
+                    String newTitle = streamInfoItem.getName().toLowerCase().replaceAll("[^a-z0-9\\s]", "");
 
-        JsonNode streamingData = root.path("streamingData");
-        List<JsonNode> allFormats = new ArrayList<>();
-        if (streamingData.has("formats"))
-            streamingData.path("formats").forEach(allFormats::add);
-        if (streamingData.has("adaptiveFormats"))
-            streamingData.path("adaptiveFormats").forEach(allFormats::add);
+                    if (streamInfoItem.getUrl().equals(streamExtractor.getUrl())) continue;
 
-        String url = "";
-        long expirationDate = 0;
-        long maxAudioBitrate = -1;
+                    String shorter = oldTitle.length() < newTitle.length() ? oldTitle : newTitle;
+                    String longer = oldTitle.length() >= newTitle.length() ? oldTitle : newTitle;
 
-        for (JsonNode format : allFormats) {
-            String mimeType = format.path("mimeType").asText();
-            long bitrate = format.path("bitrate").asLong(0);
-            String formatUrl = format.path("url").asText();
-            if (formatUrl.isEmpty())
-                continue;
-            if (mimeType.startsWith("audio/")) {
-                if (bitrate > maxAudioBitrate) {
-                    maxAudioBitrate = bitrate;
-                    url = formatUrl;
-                }
-            }
-        }
+                    String[] wordsToCheck = shorter.split("\\s+");
+                    int matches = 0;
+                    int significantWords = 0;
 
-        if (url.isEmpty()) {
-            for (JsonNode format : allFormats) {
-                String formatUrl = format.path("url").asText();
-                long bitrate = format.path("bitrate").asLong(0);
-                if (!formatUrl.isEmpty() && bitrate > maxAudioBitrate) {
-                    maxAudioBitrate = bitrate;
-                    url = formatUrl;
-                }
-            }
-        }
-
-        if (!url.isEmpty()) {
-            try {
-                okhttp3.HttpUrl httpUrl = okhttp3.HttpUrl.parse(url);
-                if (httpUrl != null) {
-                    String expire = httpUrl.queryParameter("expire");
-                    if (expire != null) {
-                        expirationDate = Long.parseLong(expire) * 1000;
+                    for (String word : wordsToCheck) {
+                        if (word.length() < 3) continue;
+                        significantWords++;
+                        if (longer.contains(word)) {
+                            matches++;
+                        }
                     }
+
+                    if (significantWords > 0 && (double) matches / significantWords > 0.8) {
+                        continue;
+                    }
+
+                    return get(streamInfoItem.getUrl());
                 }
-            } catch (Exception ignored) {}
+            }
+
+        } catch (ExtractionException | IOException e) {
+            e.printStackTrace();
         }
 
-        String base64 = getBase64ImageFromUrl(thumbnailUrl);
-
-        return new AudioItem(videoId, title, author, durationMs, durationText, new ThumbnailInfo(thumbnailUrl, base64),
-                url, expirationDate);
+        return null;
     }
 
-    private String getBase64ImageFromUrl(String urlString) throws IOException {
-        String mimeType = "image/jpeg";
-        String lowerUrl = urlString.toLowerCase();
-
-        if (lowerUrl.endsWith(".png")) {
-            mimeType = "image/png";
-        } else if (lowerUrl.endsWith(".webp")) {
-            mimeType = "image/webp";
-        } else if (lowerUrl.endsWith(".gif")) {
-            mimeType = "image/gif";
+    public AudioItem getByQuery(final String artist, final String title) {
+        try {
+            SearchResponse response = searchMusic(artist + " " + title);
+            SearchItem bestMatch = SongMatcher.getBestYoutubeMatch(artist, title, response.items());
+            return get(bestMatch.youtubeUrl());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        byte[] imageBytes = getBytes(urlString);
-
-        String base64Data = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
-        return "data:" + mimeType + ";base64," + base64Data;
-    }
-
-    private byte[] getBytes(String urlString) throws IOException {
-        okhttp3.OkHttpClient httpClient = new okhttp3.OkHttpClient();
-
-        Request request = new Request.Builder()
-                .url(urlString)
-                .build();
-
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Unexpected code " + response);
-            }
-            if (response.body() == null) {
-                throw new IOException("Response body is null");
-            }
-            return response.body().bytes();
-        }
+        return null;
     }
 }

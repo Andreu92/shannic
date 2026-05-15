@@ -32,7 +32,7 @@ import {
   shuffle as shuffle_icon,
   trashOutline,
 } from "ionicons/icons";
-import { computed, ref, onMounted, onUnmounted, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useVirtualizer } from "@tanstack/vue-virtual";

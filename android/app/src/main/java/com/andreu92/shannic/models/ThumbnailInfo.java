@@ -1,4 +1,4 @@
-package com.andreu92.shannic.plugins.youtube;
+package com.andreu92.shannic.models;
 
 public record ThumbnailInfo(
         String url,

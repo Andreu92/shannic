@@ -20,7 +20,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -42,7 +42,8 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
 
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.1'
+    implementation 'com.github.teamnewpipe:NewPipeExtractor:v0.26.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.3'
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.21'
     implementation "androidx.media3:media3-exoplayer:$media3Version"
     implementation "androidx.media3:media3-session:$media3Version"

@@ -19,6 +19,8 @@ import java.util.concurrent.ExecutionException;
 
 import org.json.JSONException;
 
+import com.andreu92.shannic.models.*;
+
 @CapacitorPlugin(name = "YoutubeClientPlugin")
 public class YoutubeClientPlugin extends Plugin {
     private YoutubeService youtubeService;
@@ -35,17 +37,15 @@ public class YoutubeClientPlugin extends Plugin {
     }
 
     @PluginMethod
-    public void search(final PluginCall call) throws ExecutionException, InterruptedException, JsonProcessingException, JSONException {
+    public void search(final PluginCall call) throws JsonProcessingException, JSONException {
         final String query = call.getString("query");
-        final String nextToken = call.getString("next_token");
 
-        SearchResponse searchResponse = youtubeService.search(query, nextToken);
+        SearchResponse searchResponse = youtubeService.search(query);
         JSObject response = new JSObject();
 
         String jsonItems = mapper.writeValueAsString(searchResponse.items());
 
         response.put("items", new JSArray(jsonItems));
-        response.put("next_token", searchResponse.continuationToken());
 
         call.resolve(response);
     }

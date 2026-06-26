@@ -5,7 +5,7 @@ export interface PlayerAudio {
   title: string;
   author: string;
   thumbnail: string;
-  url?: string;
+  src: string;
   favorite: boolean;
 }
 
@@ -31,7 +31,7 @@ export interface PlayerPlugin {
         | { repeating: boolean }
         | { favorite: boolean }
         | { index: number }
-        | { id: string; url: string; expires_at: number },
+        | { id: string; src: string; expires_at: number },
     ) => void,
   ): Promise<PluginListenerHandle>;
 }

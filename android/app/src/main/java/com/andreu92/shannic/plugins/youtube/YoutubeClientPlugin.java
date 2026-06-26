@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
@@ -28,40 +29,49 @@ public class YoutubeClientPlugin extends Plugin {
             .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.ALWAYS))
             .visibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
             .enable(SerializationFeature.INDENT_OUTPUT)
+            .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
             .build();
 
     @Override
     public void load() {
         super.load();
-        youtubeService = YoutubeService.getInstance();
+        youtubeService = new YoutubeService(getContext());
     }
 
     @PluginMethod
     public void search(final PluginCall call) throws JsonProcessingException, JSONException {
         final String query = call.getString("query");
+        final Boolean onlyMusic = call.getBoolean("only_music");
 
-        SearchResponse searchResponse = youtubeService.search(query);
-        JSObject response = new JSObject();
+        SearchResponse searchResponse;
+        if (onlyMusic != null && onlyMusic)
+            searchResponse = youtubeService.searchMusic(query);
+        else
+            searchResponse = youtubeService.search(query);
 
-        String jsonItems = mapper.writeValueAsString(searchResponse.items());
-
-        response.put("items", new JSArray(jsonItems));
-
-        call.resolve(response);
+        String json = mapper.writeValueAsString(searchResponse);
+        call.resolve(new JSObject(json));
     }
 
     @PluginMethod
-    public void get(final PluginCall call) throws ExecutionException, InterruptedException, IOException, JSONException {
-        final String id = call.getString("id");
+    public void fetchNextPage(final PluginCall call) throws JsonProcessingException, JSONException {
+        SearchResponse searchResponse = youtubeService.fetchNextPage();
+        String json = mapper.writeValueAsString(searchResponse);
+        call.resolve(new JSObject(json));
+    }
 
-        AudioItem audioItem = youtubeService.get(id);
+    @PluginMethod
+    public void get(final PluginCall call) throws IOException, JSONException {
+        final String url = call.getString("url");
+
+        AudioItem audioItem = youtubeService.get(url);
         String json = mapper.writeValueAsString(audioItem);
 
         call.resolve(new JSObject(json));
     }
 
     @PluginMethod
-    public void getByQuery(final PluginCall call) throws ExecutionException, InterruptedException, IOException, JSONException {
+    public void getByQuery(final PluginCall call) throws IOException, JSONException {
         final String artist = call.getString("artist");
         final String title = call.getString("title");
 

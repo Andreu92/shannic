@@ -4,7 +4,6 @@ import {
   createGesture,
   type Gesture,
   IonIcon,
-  IonImg,
   IonRange,
   IonSpinner,
   IonThumbnail,
@@ -27,6 +26,7 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore, { states } from "@/stores/PlayerStore";
 import type { ColorTheme } from "@/types";
 import { formatDuration } from "@/utils";
+import { Capacitor } from "@capacitor/core";
 
 const layout = useLayout();
 const player_store = usePlayerStore();
@@ -131,7 +131,7 @@ const toggleFavorite = async (audio_id: string) => {
     <div style="display: flex; gap: 12px">
       <div style="min-width: 45px">
         <ion-thumbnail>
-          <ion-img :src="player_store.audio!.thumbnail"></ion-img>
+          <img :src="Capacitor.convertFileSrc(player_store.audio!.thumbnail)" />
         </ion-thumbnail>
       </div>
       <div class="mini-player-audio-info">
@@ -158,7 +158,8 @@ const toggleFavorite = async (audio_id: string) => {
             : player_store.resume()
         "
       ></ion-icon>
-      <ion-icon v-if="player_store.hasNext"
+      <ion-icon
+        v-if="player_store.hasNext"
         :src="playSkipForward"
         @click="player_store.skipNext()"
       ></ion-icon>
@@ -172,11 +173,13 @@ const toggleFavorite = async (audio_id: string) => {
       ></ion-icon>
     </div>
     <div class="mini-player-audio-range">
-      <div>{{ formatDuration(player_store.current_position) }}</div>
+      <div>
+        {{ formatDuration(Math.floor(player_store.current_position / 1000)) }}
+      </div>
       <ion-range
         :value="Math.floor(player_store.current_position / 1000)"
         :min="0"
-        :max="Math.floor(player_store.audio!.duration / 1000)"
+        :max="player_store.audio!.duration"
         @ionKnobMoveStart="onDragStart"
         @ionKnobMoveEnd="onDragEnd"
         @ionChange="handleSeek"

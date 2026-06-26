@@ -17,6 +17,9 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -42,9 +45,10 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
 
-    implementation 'com.github.teamnewpipe:NewPipeExtractor:v0.26.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.3'
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.21'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs_nio:2.1.5'
+    implementation "com.github.teamnewpipe:NewPipeExtractor:$newPipeExtractorVersion"
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.0'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
     implementation "androidx.media3:media3-exoplayer:$media3Version"
     implementation "androidx.media3:media3-session:$media3Version"
     implementation "androidx.media3:media3-datasource-okhttp:$media3Version"

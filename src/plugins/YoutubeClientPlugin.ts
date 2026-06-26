@@ -1,40 +1,35 @@
 import { registerPlugin } from "@capacitor/core";
 
-interface YoutubeSearchResult {
+export interface YoutubeSearch {
+  has_next_page: boolean;
+  items: YoutubeSearchItem[];
+}
+
+export interface YoutubeSearchItem {
   id: string;
   title: string;
   author: string;
   thumbnail: string;
-  duration: string;
-}
-
-export interface YoutubeSearch {
-  next_token: string | null;
-  items: YoutubeSearchResult[];
-}
-
-export interface YoutubeAudio {
-  id: string;
-  title: string;
-  author: string;
-  thumbnail: {
-    url: string;
-    base64: string;
-  };
   duration: number;
-  duration_text: string;
   url: string;
+}
+
+export interface YoutubeAudioItem extends YoutubeSearchItem {
+  src: string;
   expires_at: number;
 }
 
 export interface YoutubeClientPlugin {
-  get(options: { id: string }): Promise<YoutubeAudio>;
-  getByQuery(options: { artist: string; title: string }): Promise<YoutubeAudio>;
+  get(options: { url: string }): Promise<YoutubeAudioItem>;
+  getByQuery(options: {
+    artist: string;
+    title: string;
+  }): Promise<YoutubeAudioItem>;
   search(options: {
     query: string;
-    next_token?: string | null;
-    limit?: number;
+    only_music?: boolean;
   }): Promise<YoutubeSearch>;
+  fetchNextPage(): Promise<YoutubeSearch>;
 }
 
 export const youtube_client_plugin: YoutubeClientPlugin = registerPlugin(

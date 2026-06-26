@@ -1,9 +1,7 @@
 import { toastController } from "@ionic/vue";
 import { alertOutline } from "ionicons/icons";
 
-export const formatDuration = (ms: number) => {
-  const sec = Math.floor(ms / 1000);
-
+export const formatDuration = (sec: number) => {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;

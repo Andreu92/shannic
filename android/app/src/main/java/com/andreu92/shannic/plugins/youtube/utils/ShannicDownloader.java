@@ -17,17 +17,11 @@ public final class ShannicDownloader extends Downloader {
     public static final String USER_AGENT =
         "Mozilla/5.0 (X11; Linux x86_64; rv:148.0) Gecko/20100101 Firefox/148.0";
     private static ShannicDownloader instance;
-    private static OkHttpClient client;
-
-    public static ShannicDownloader init() {
-        client = new OkHttpClient.Builder().build();
-        instance = new ShannicDownloader();
-        return instance;
-    }
+    private static final OkHttpClient client = HttpClient.getInstance();
 
     public static ShannicDownloader getInstance() {
         if (instance == null) {
-            init();
+            instance = new ShannicDownloader();
         }
         return instance;
     }

@@ -23,7 +23,7 @@ import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore from "@/stores/PlayerStore";
 import type { SearchResult } from "@/types";
-import { showToast } from "@/utils";
+import { formatDuration, showToast } from "@/utils";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 
 const { t } = useI18n();
@@ -39,17 +39,15 @@ const scrollElement = ref<HTMLElement | null>(null);
 
 const loading = ref<boolean>(false);
 const fetching_next_page = ref<boolean>(false);
+const infinite_scroll = ref<boolean>(false);
 const fetching_audio = ref<boolean>(false);
 
 const search_items = ref<SearchResult[]>([]);
-let query: string | null | undefined = null;
-let next_token: string | null = null;
-
 const audio_id_to_play = ref<string | null>(null);
 
 const rowVirtualizerOptions = computed(() => {
   return {
-    count: next_token
+    count: infinite_scroll.value
       ? search_items.value.length + 1
       : search_items.value.length,
     getScrollElement: () => scrollElement.value,
@@ -62,34 +60,35 @@ const rowVirtualizer = useVirtualizer(rowVirtualizerOptions);
 
 const search = async (e: SearchbarCustomEvent) => {
   Keyboard.hide();
-  search_items.value = [];
-  next_token = null;
-  query = e.detail.value;
-  if (query) {
+  if (e.detail.value) {
     try {
       loading.value = true;
-      const search_data: YoutubeSearch = await youtube_client.search(query);
+      const search_data: YoutubeSearch = await youtube_client.search(
+        e.detail.value,
+      );
       search_items.value = search_data.items;
-      next_token = search_data.next_token;
+      infinite_scroll.value = true;
     } catch {
       showToast(t("search.error"));
       search_items.value = [];
     } finally {
       loading.value = false;
     }
-  } else {
-    search_items.value = [];
-  }
+  } else clearSearch();
 };
 
-const searchContinuation = async () => {
-  if (fetching_next_page.value || !next_token) return;
+const clearSearch = () => {
+  search_items.value = [];
+  infinite_scroll.value = false;
+};
+
+const fetchNextPage = async () => {
+  if (fetching_next_page.value) return;
 
   try {
     fetching_next_page.value = true;
-    const new_results = await youtube_client.search(query ?? "", next_token);
+    const new_results: YoutubeSearch = await youtube_client.fetchNextPage();
     search_items.value.push(...new_results.items);
-    next_token = new_results.next_token;
   } catch {
     showToast(t("search.error"));
   } finally {
@@ -102,7 +101,7 @@ const play = async (audio: SearchResult) => {
   fetching_audio.value = true;
 
   const audio_to_play: RxAudio = (
-    await audio_service.getAudio(audio.id)
+    await audio_service.getAudio(audio.id, audio.url)
   ).toMutableJSON();
 
   player_store.play([audio_to_play]);
@@ -125,10 +124,10 @@ watch(
     const lastItem = items[items.length - 1];
     if (
       lastItem.index >= search_items.value.length - 1 &&
-      next_token &&
+      infinite_scroll.value &&
       !fetching_next_page.value
     ) {
-      searchContinuation();
+      fetchNextPage();
     }
   },
 );
@@ -147,7 +146,7 @@ onMounted(async () => {
       <ion-searchbar
         :placeholder="t('search.placeholder')"
         @ion-change="search"
-        @ion-clear="search_items = []"
+        @ion-clear="clearSearch"
       />
 
       <!-- Virtual list -->
@@ -199,7 +198,7 @@ onMounted(async () => {
                 </div>
               </div>
               <div class="audio-duration">
-                {{ search_items[virtualRow.index].duration }}
+                {{ formatDuration(search_items[virtualRow.index].duration) }}
               </div>
               <div class="audio-actions">
                 <ion-icon

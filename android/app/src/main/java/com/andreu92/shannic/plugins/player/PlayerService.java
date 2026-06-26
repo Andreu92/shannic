@@ -52,7 +52,7 @@ import com.andreu92.shannic.models.AudioItem;
 public class PlayerService extends MediaSessionService {
     private ExoPlayer player;
     private MediaSession mediaSession;
-    private final YoutubeService youtubeService = YoutubeService.getInstance();
+    private YoutubeService youtubeService;
     private SessionCommand favoriteCommand;
     private SessionCommand repeatCommand;
     private MediaSession.ControllerInfo appControllerInfo;
@@ -61,29 +61,29 @@ public class PlayerService extends MediaSessionService {
         @OptIn(markerClass = UnstableApi.class)
         @Override
         public DataSpec resolveDataSpec(DataSpec dataSpec) {
-            Uri uri = dataSpec.uri;
-            String uriString = uri.toString();
+            Uri audioSrc = dataSpec.uri;
+            String srcString = audioSrc.toString();
 
             // Empty url means refresh
-            if (uriString.isBlank()) {
-                String newUrl = refreshUrl(dataSpec);
-                if (newUrl != null && !newUrl.isBlank()) {
+            if (srcString.isBlank()) {
+                String newSrc = refreshSrc(dataSpec);
+                if (newSrc != null && !newSrc.isBlank()) {
                     return dataSpec.buildUpon()
-                            .setUri(Uri.parse(newUrl))
+                            .setUri(Uri.parse(newSrc))
                             .build();
                 } else return dataSpec;
             }
 
             // If not empty check if it's expired
-            String expires_at_str = uri.getQueryParameter("expire");
+            String expires_at_str = audioSrc.getQueryParameter("expire");
             if (expires_at_str == null) return dataSpec;
 
             long expires_at = Long.parseLong(expires_at_str) * 1000;
             if ((expires_at - 10000) < System.currentTimeMillis()) {
-                    String newUrl = refreshUrl(dataSpec);
-                    if (newUrl != null) {
+                    String newSrc = refreshSrc(dataSpec);
+                    if (newSrc != null) {
                         return dataSpec.buildUpon()
-                                .setUri(Uri.parse(newUrl))
+                                .setUri(Uri.parse(newSrc))
                                 .build();
                     }
             }
@@ -103,6 +103,7 @@ public class PlayerService extends MediaSessionService {
     public void onCreate() {
         super.onCreate();
 
+        youtubeService = new YoutubeService(getApplicationContext());
         createNotificationChannel();
         createPlayer();
         createMediaSession();
@@ -314,11 +315,11 @@ public class PlayerService extends MediaSessionService {
         mediaSession.setMediaButtonPreferences(ImmutableList.of(repeatBtn, favoriteBtn));
     }
 
-    private String refreshUrl(DataSpec dataSpec) {
+    private String refreshSrc(DataSpec dataSpec) {
         try {
             AudioItem item = youtubeService.get(dataSpec.key);
 
-            if (item.streamUrl() == null || item.streamUrl().isBlank()) {
+            if (item.src() == null || item.src().isBlank()) {
                 mediaSession.sendCustomCommand(appControllerInfo,
                         new SessionCommand(PlayerActions.ACTION_AUDIO_UNPLAYABLE, Bundle.EMPTY),
                         Bundle.EMPTY
@@ -328,17 +329,17 @@ public class PlayerService extends MediaSessionService {
 
             Bundle extras = new Bundle();
             extras.putString("id", item.id());
-            extras.putString("url", item.streamUrl());
+            extras.putString("src", item.src());
             extras.putLong("expires_at", item.expiresAt());
 
             mediaSession.sendCustomCommand(appControllerInfo,
-                    new SessionCommand(PlayerActions.ACTION_URL_REFRESH, Bundle.EMPTY),
+                    new SessionCommand(PlayerActions.ACTION_SRC_REFRESH, Bundle.EMPTY),
                     extras
             );
 
-            return item.streamUrl();
+            return item.src();
         } catch (Exception e) {
-            Log.e("PlayerService", "Error refreshing URL:" + e.getMessage());
+            Log.e("PlayerService", "Error refreshing SRC:" + e.getMessage());
             return null;
         }
     }

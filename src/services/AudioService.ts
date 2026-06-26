@@ -1,29 +1,30 @@
 import useYoutubeClient from "@/clients/YoutubeClient";
 import { useDatabase } from "@/database";
 import type { RxAudio } from "@/schemas/audio";
-import type { Audio, AudioCollection, AudioDocument } from "@/types";
+import type { AudioItem, AudioCollection, AudioDocument } from "@/types";
 
 const useAudioService = () => {
   const youtube_client = useYoutubeClient();
   const db = useDatabase();
   const audio_collection: AudioCollection = db.audios;
 
-  const getAudio = async (id: string): Promise<AudioDocument> => {
-    const audio: AudioDocument | null = await audio_collection
+  const getAudio = async (id: string, url?: string): Promise<AudioDocument> => {
+    const audio_doc: AudioDocument | null = await audio_collection
       .findOne(id)
       .exec();
 
-    if (!audio) {
-      const audio: Audio = await youtube_client.get(id);
-      return await createAudio(audio);
+    if (!audio_doc) {
+      if (!url) throw new Error("URL is required for new audio");
+      const audio_item: AudioItem = await youtube_client.get(url);
+      return await createAudio(audio_item);
     }
 
-    if (audio.expires_at && audio.expires_at - 10000 < Date.now()) {
-      const audio: Audio = await youtube_client.get(id);
-      return await updateAudio(audio);
+    if (audio_doc.expires_at && audio_doc.expires_at - 10000 < Date.now()) {
+      const audio_item: AudioItem = await youtube_client.get(audio_doc.url);
+      return await updateAudio(audio_item);
     }
 
-    return audio;
+    return audio_doc;
   };
 
   const getAudiosByIds = async (ids: string[]): Promise<AudioDocument[]> => {
@@ -33,14 +34,16 @@ const useAudioService = () => {
     return Array.from(audio_map.values());
   };
 
-  const createAudio = async (audio: Audio): Promise<AudioDocument> => {
+  const createAudio = async (audio: AudioItem): Promise<AudioDocument> => {
     return await audio_collection.insertIfNotExists({
       ...audio,
       created_at: Date.now(),
     });
   };
 
-  const updateAudio = async (updated_audio: Audio): Promise<AudioDocument> => {
+  const updateAudio = async (
+    updated_audio: AudioItem,
+  ): Promise<AudioDocument> => {
     const audio: AudioDocument | null = await audio_collection
       .findOne(updated_audio.id)
       .exec();
@@ -48,12 +51,12 @@ const useAudioService = () => {
     if (!audio) throw new Error("Audio not found");
 
     return await audio.incrementalModify((audioDoc: RxAudio) => {
+      audioDoc.url = updated_audio.url;
+      audioDoc.src = updated_audio.src;
       audioDoc.title = updated_audio.title;
       audioDoc.author = updated_audio.author;
       audioDoc.duration = updated_audio.duration;
-      audioDoc.duration_text = updated_audio.duration_text;
       audioDoc.thumbnail = updated_audio.thumbnail;
-      audioDoc.url = updated_audio.url;
       audioDoc.colors = updated_audio.colors;
       audioDoc.expires_at = updated_audio.expires_at;
       audioDoc.updated_at = Date.now();
@@ -61,9 +64,9 @@ const useAudioService = () => {
     });
   };
 
-  const refreshUrl = async (
+  const refreshSrc = async (
     id: string,
-    url: string,
+    src: string,
     expires_at: number,
   ): Promise<void> => {
     const audio: AudioDocument | null = await audio_collection
@@ -73,7 +76,7 @@ const useAudioService = () => {
     if (!audio) throw new Error("Audio not found");
 
     audio.incrementalPatch({
-      url,
+      src,
       expires_at,
       updated_at: Date.now(),
     });
@@ -84,7 +87,7 @@ const useAudioService = () => {
     getAudiosByIds,
     createAudio,
     updateAudio,
-    refreshUrl,
+    refreshSrc,
   };
 };
 

@@ -1,40 +1,40 @@
 import { Vibrant } from "node-vibrant/browser";
 import {
-  type YoutubeAudio,
+  type YoutubeAudioItem,
   type YoutubeSearch,
   youtube_client_plugin,
 } from "@/plugins/YoutubeClientPlugin";
-import type { Audio, Palette } from "@/types";
+import type { AudioItem, Palette } from "@/types";
+import { Capacitor } from "@capacitor/core";
 
 const useYoutubeClient = () => {
-  const get = async (id: string): Promise<Audio> => {
-    const audio_client_audio: YoutubeAudio = await youtube_client_plugin.get({
-      id: id,
+  const get = async (url: string): Promise<AudioItem> => {
+    const yt_audio_item: YoutubeAudioItem = await youtube_client_plugin.get({
+      url,
     });
 
-    return await buildAudio(audio_client_audio);
+    return await buildAudio(yt_audio_item);
   };
 
-  const getByQuery = async (artist: string, title: string): Promise<Audio> => {
-    const audio_client_audio: YoutubeAudio =
-      await youtube_client_plugin.getByQuery({
-        artist: artist,
-        title: title,
-      });
+  const getByQuery = async (
+    artist: string,
+    title: string,
+  ): Promise<AudioItem> => {
+    const yt_audio_item: YoutubeAudioItem =
+      await youtube_client_plugin.getByQuery({ artist, title });
 
-    return await buildAudio(audio_client_audio);
+    return await buildAudio(yt_audio_item);
   };
 
   const buildAudio = async (
-    audio_client_audio: YoutubeAudio,
-  ): Promise<Audio> => {
+    yt_audio_item: YoutubeAudioItem,
+  ): Promise<AudioItem> => {
     const palette = await Vibrant.from(
-      audio_client_audio.thumbnail.base64,
+      Capacitor.convertFileSrc(yt_audio_item.thumbnail),
     ).getPalette();
 
-    const audio: Audio = {
-      ...audio_client_audio,
-      thumbnail: audio_client_audio.thumbnail.url,
+    const audio: AudioItem = {
+      ...yt_audio_item,
       colors: getFormattedColors(palette),
     };
 
@@ -43,14 +43,19 @@ const useYoutubeClient = () => {
 
   const search = async (
     query: string,
-    next_token: string | null = null,
-    limit?: number,
+    only_music: boolean = false,
   ): Promise<YoutubeSearch> => {
     const search_data: YoutubeSearch = await youtube_client_plugin.search({
-      query: query,
-      next_token: next_token,
-      limit: limit,
+      query,
+      only_music,
     });
+
+    return search_data;
+  };
+
+  const fetchNextPage = async (): Promise<YoutubeSearch> => {
+    const search_data: YoutubeSearch =
+      await youtube_client_plugin.fetchNextPage();
 
     return search_data;
   };
@@ -77,7 +82,7 @@ const useYoutubeClient = () => {
     return colors;
   };
 
-  return { search, get, getByQuery };
+  return { search, fetchNextPage, get, getByQuery };
 };
 
 export default useYoutubeClient;

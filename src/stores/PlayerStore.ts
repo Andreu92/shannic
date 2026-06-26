@@ -82,27 +82,27 @@ const usePlayerStore = defineStore("player", () => {
     player_plugin.addListener("onToggleFavorite", () => {
       if (audio.value) favorites_store.toggleFavorite(audio.value.id);
     });
-    player_plugin.addListener("onUrlRefresh", (data) => {
-      const { id, url, expires_at } = data as {
+    player_plugin.addListener("onSrcRefresh", (data) => {
+      const { id, src, expires_at } = data as {
         id: string;
-        url: string;
+        src: string;
         expires_at: number;
       };
 
       if (audio.value && audio.value.id === id) {
-        audio.value.url = url;
+        audio.value.src = src;
         audio.value.expires_at = expires_at;
       }
 
       if (playlist_items.value) {
         const index = playlist_items.value.findIndex((a) => a.id === id);
         if (index !== -1) {
-          playlist_items.value[index].url = url;
+          playlist_items.value[index].src = src;
           playlist_items.value[index].expires_at = expires_at;
         }
       }
 
-      audio_service.refreshUrl(id, url, expires_at);
+      audio_service.refreshSrc(id, src, expires_at);
     });
     player_plugin.addListener("onSourceError", async () => {
       //TO DO: Show Error
@@ -122,7 +122,7 @@ const usePlayerStore = defineStore("player", () => {
       title: a.title,
       author: a.author,
       thumbnail: a.thumbnail,
-      url: a.url,
+      src: a.src,
       favorite: favorites_store.isFavorite(a.id),
     }));
 

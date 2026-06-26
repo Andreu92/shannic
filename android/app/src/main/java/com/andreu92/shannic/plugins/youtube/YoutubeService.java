@@ -1,9 +1,12 @@
 package com.andreu92.shannic.plugins.youtube;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static java.util.Collections.singletonList;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,32 +28,31 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 
+import android.content.Context;
+
 import com.andreu92.shannic.models.*;
 import com.andreu92.shannic.plugins.youtube.utils.*;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class YoutubeService {
-    private static YoutubeService instance;
-    private static StreamingService youtube;
+    private final Context context;
+    private StreamingService youtube;
 
     private SearchExtractor searchExtractor;
     private Page nextPage = null;
 
     private StreamExtractor streamExtractor;
 
-    public static YoutubeService init() {
+    public YoutubeService(Context context) {
+        this.context = context;
         NewPipe.init(ShannicDownloader.getInstance());
 
         try {
             youtube = NewPipe.getService(YouTube.getServiceId());
-            instance = new YoutubeService();
         } catch (ExtractionException ignored) {}
-
-        return instance;
-    }
-
-    public static YoutubeService getInstance() {
-        if (instance == null) instance = init();
-        return instance;
     }
 
     public SearchResponse search(String query) {
@@ -68,21 +70,19 @@ public class YoutubeService {
             return parseSearchResults(searchExtractor.getInitialPage());
         } catch (ExtractionException | IOException e) {
             e.printStackTrace();
+            return null;
         }
-
-        return null;
     }
 
-    public SearchResponse searchContinuation() {
+    public SearchResponse fetchNextPage() {
         if (searchExtractor == null) return null;
 
         try {
             return parseSearchResults(searchExtractor.getPage(nextPage));
         } catch (ExtractionException | IOException e) {
             e.printStackTrace();
+            return null;
         }
-
-        return null;
     }
 
 
@@ -126,9 +126,7 @@ public class YoutubeService {
 
             List<Image> thumbnails = streamExtractor.getThumbnails();
             Image thumbnail = thumbnails.get(thumbnails.size() - 1);
-            ThumbnailInfo thumbnailInfo = new ThumbnailInfo(
-                    thumbnail.getUrl(), ImageUtils.getBase64(thumbnail.getUrl())
-            );
+            String thumbnailPath = storeThumbnail(url.split("v=")[1], thumbnail.getUrl(), context);
 
             String streamUrl = bestAudioStream.getContent();
             long expiresAt = Long.parseLong(streamUrl.split("expire=")[1].split("&")[0]);
@@ -138,16 +136,55 @@ public class YoutubeService {
                     streamExtractor.getName(),
                     uploader,
                     streamExtractor.getLength(),
-                    thumbnailInfo,
-                    streamUrl,
+                    thumbnailPath,
                     streamExtractor.getUrl(),
+                    streamUrl,
                     expiresAt
             );
         } catch (ExtractionException | IOException e) {
             e.printStackTrace();
+            return null;
         }
+    }
 
-        return null;
+    private String storeThumbnail(String id, String url, Context context) {
+        OkHttpClient httpClient = HttpClient.getInstance();
+
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Unexpected code " + response);
+            }
+            if (response.body() == null) {
+                throw new IOException("Response body is null");
+            }
+
+            File appFolder = context.getFilesDir();
+            File imgFolder = new File(appFolder, "img");
+            if (!imgFolder.exists()) imgFolder.mkdirs();
+            File targetFile = new File(imgFolder, id);
+
+            try (InputStream inputStream = response.body().byteStream();
+                 FileOutputStream outputStream = new FileOutputStream(targetFile)) {
+
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+
+                outputStream.flush();
+                return targetFile.getAbsolutePath();
+            } catch (IOException e) {
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     public AudioItem getNext() {
@@ -155,9 +192,12 @@ public class YoutubeService {
 
         try {
             InfoItemsCollector<? extends InfoItem, ? extends InfoItemExtractor> relatedItems = streamExtractor.getRelatedItems();
-            List<? extends InfoItem> items = relatedItems.getItems();
+            if (relatedItems == null) return null;
 
+            List<? extends InfoItem> items = relatedItems.getItems();
             if (items.isEmpty()) return null;
+
+            StreamInfoItem next = null;
 
             for (InfoItem nextItem : items) {
                 if (nextItem instanceof StreamInfoItem streamInfoItem) {
@@ -182,30 +222,29 @@ public class YoutubeService {
                         }
                     }
 
-                    if (significantWords > 0 && (double) matches / significantWords > 0.8) {
-                        continue;
+                    if (significantWords > 0 && (double) matches / significantWords < 0.8) {
+                        next = streamInfoItem;
+                        break;
                     }
-
-                    return get(streamInfoItem.getUrl());
                 }
             }
 
+            assert next != null;
+            return get(next.getUrl());
         } catch (ExtractionException | IOException e) {
             e.printStackTrace();
+            return null;
         }
-
-        return null;
     }
 
     public AudioItem getByQuery(final String artist, final String title) {
         try {
             SearchResponse response = searchMusic(artist + " " + title);
             SearchItem bestMatch = SongMatcher.getBestYoutubeMatch(artist, title, response.items());
-            return get(bestMatch.youtubeUrl());
+            return get(bestMatch.url());
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
-
-        return null;
     }
 }

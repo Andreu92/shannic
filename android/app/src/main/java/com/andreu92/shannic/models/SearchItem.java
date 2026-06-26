@@ -5,5 +5,5 @@ public record SearchItem(
         String author,
         String thumbnail,
         long duration,
-        String youtubeUrl
+        String url
 ) {}

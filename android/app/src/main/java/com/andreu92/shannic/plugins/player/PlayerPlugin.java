@@ -40,7 +40,6 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -51,7 +50,7 @@ import com.andreu92.shannic.plugins.youtube.YoutubeService;
 
 @CapacitorPlugin(name = "PlayerPlugin")
 public class PlayerPlugin extends Plugin {
-    private final YoutubeService youtubeService = YoutubeService.getInstance();
+    private YoutubeService youtubeService;
     private MediaController mediaController;
     private ListenableFuture<MediaController> controllerFuture;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -60,6 +59,8 @@ public class PlayerPlugin extends Plugin {
     @Override
     public void load() {
         super.load();
+
+        youtubeService = new YoutubeService(getContext());
 
         SessionToken sessionToken = new SessionToken(
                 getContext(),
@@ -78,8 +79,8 @@ public class PlayerPlugin extends Plugin {
                         if (command.customAction.equals(PlayerActions.ACTION_TOGGLE_FAVORITE))
                             notifyListeners("onToggleFavorite", null);
 
-                        if (command.customAction.equals(PlayerActions.ACTION_URL_REFRESH))
-                            onUrlRefresh(args.getString("id"), args.getString("url"), args.getLong("expires_at"));
+                        if (command.customAction.equals(PlayerActions.ACTION_SRC_REFRESH))
+                            onSrcRefresh(args.getString("id"), args.getString("src"), args.getLong("expires_at"));
 
                         if (command.customAction.equals(PlayerActions.ACTION_AUDIO_UNPLAYABLE)) {
                             if (mediaController.hasNextMediaItem()) {
@@ -224,12 +225,12 @@ public class PlayerPlugin extends Plugin {
             executorService.execute(() -> {
                 try {
                     AudioItem item = youtubeService.get(itemToRefresh.mediaId);
-                    onUrlRefresh(item.id(), item.streamUrl(), item.expiresAt());
+                    onSrcRefresh(item.id(), item.src(), item.expiresAt());
 
                     getActivity().runOnUiThread(() -> {
-                        if (item.streamUrl() == null) return;
+                        if (item.src() == null) return;
                         MediaItem oldItem = mediaController.getMediaItemAt(index);
-                        MediaItem newItem = oldItem.buildUpon().setUri(item.streamUrl()).build();
+                        MediaItem newItem = oldItem.buildUpon().setUri(item.src()).build();
                         mediaController.replaceMediaItem(index, newItem);
                     });
                 } catch (Exception e) {
@@ -244,15 +245,15 @@ public class PlayerPlugin extends Plugin {
         if (item == null || item.localConfiguration == null) return;
         String cacheKey = item.localConfiguration.customCacheKey;
         SimpleCache cache = PlayerCache.getInstance(getContext());
-        cache.removeResource(cacheKey);
+        if (cacheKey != null) cache.removeResource(cacheKey);
     }
 
-    private void onUrlRefresh(String id, String url, Long expires_at) {
+    private void onSrcRefresh(String id, String src, Long expires_at) {
         JSObject data = new JSObject();
         data.put("id", id);
-        data.put("url", url);
+        data.put("src", src);
         data.put("expires_at", expires_at);
-        notifyListeners("onUrlRefresh", data);
+        notifyListeners("onSrcRefresh", data);
     }
 
     @OptIn(markerClass = UnstableApi.class)
@@ -279,7 +280,7 @@ public class PlayerPlugin extends Plugin {
                     new MediaItem.Builder()
                             .setMediaId(item.id())
                             .setCustomCacheKey(item.id())
-                            .setUri(item.url())
+                            .setUri(item.src())
                             .setMediaMetadata(
                                     new MediaMetadata.Builder()
                                             .setArtist(item.author())

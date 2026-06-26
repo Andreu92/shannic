@@ -6,16 +6,19 @@ import {
   type DexieStorageInternals,
   type RxStorage,
 } from "rxdb";
+import { RxDBMigrationSchemaPlugin } from "rxdb/plugins/migration-schema";
 import {
   getRxStorageDexie,
   type RxStorageDexie,
 } from "rxdb/plugins/storage-dexie";
 import { type App, inject, type Plugin } from "vue";
 import { FAVORITES_PLAYLIST_ID, SPOTIFY_CONFIG_ID } from "@/constants";
-import { audioSchema } from "@/schemas/audio";
+import { audioSchema, RxAudio } from "@/schemas/audio";
 import { playlistMethods, playlistSchema } from "@/schemas/playlist";
 import { spotifySchema } from "@/schemas/spotify";
 import type { RxShannicCollections, RxShannicDatabase } from "@/types";
+
+addRxPlugin(RxDBMigrationSchemaPlugin);
 
 let storage: RxStorageDexie | RxStorage<DexieStorageInternals, DexieSettings>;
 if (import.meta.env.DEV) {
@@ -39,7 +42,6 @@ export function useDatabase(): RxShannicDatabase {
 
 export async function createDatabase(): Promise<Plugin> {
   //await removeRxDatabase("shannic", storage);
-  
   const db: RxShannicDatabase = await createRxDatabase<RxShannicCollections>({
     name: "shannic",
     storage: storage,
@@ -48,6 +50,13 @@ export async function createDatabase(): Promise<Plugin> {
   await db.addCollections({
     audios: {
       schema: audioSchema,
+      migrationStrategies: {
+        1: function (doc: RxAudio) {
+          doc.src = doc.url;
+          doc.url = `https://www.youtube.com/watch?v=${doc.id}`;
+          return doc;
+        },
+      },
     },
     playlists: {
       schema: playlistSchema,

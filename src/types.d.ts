@@ -22,17 +22,16 @@ export type RxShannicDatabase = RxDatabase<RxShannicCollections>;
 
 export interface SearchResult {
   id: string;
+  url: string;
   title: string;
   author: string;
   thumbnail: string;
-  duration: string;
+  duration: number;
 }
 
-export interface Audio extends SearchResult {
-  duration: number;
-  duration_text: string;
-  expires_at?: number;
-  url: string;
+export interface AudioItem extends SearchResult {
+  src: string;
+  expires_at: number;
   colors: Palette;
 }
 

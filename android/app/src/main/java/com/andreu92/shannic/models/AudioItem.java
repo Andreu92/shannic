@@ -5,8 +5,8 @@ public record AudioItem(
         String title,
         String author,
         long duration,
-        ThumbnailInfo thumbnail,
-        String streamUrl,
-        String youtubeUrl,
+        String thumbnail,
+        String url,
+        String src,
         long expiresAt
 ) {}

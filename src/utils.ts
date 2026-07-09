@@ -21,15 +21,18 @@ export const shuffleArray = <T>(array: T[]) => {
   return array;
 };
 
-export const showToast = async (message: string, color: string = "danger") => {
+export const showToast = async (
+  message: string,
+  color: string = "danger",
+  icon: string = alertOutline,
+) => {
   const toast = await toastController.create({
     message: message,
     duration: 5000,
     color: color,
     position: "bottom",
     swipeGesture: "vertical",
-    icon: alertOutline,
-    positionAnchor: "footer",
+    icon: icon,
   });
 
   await toast.present();

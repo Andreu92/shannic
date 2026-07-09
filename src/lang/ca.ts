@@ -4,6 +4,9 @@ const ca = {
     ca: "Català",
     en: "Anglès",
   },
+  network: {
+    offline: "Sense connexió a Internet.",
+  },
   generic: {
     yes: "Sí",
     no: "No",
@@ -19,6 +22,8 @@ const ca = {
     placeholder: "Cerca al núvol... :)",
     start: "Què t'agradaria escoltar?",
     error: "Error en realitzar la cerca al núvol.",
+    all: "Tot",
+    music: "Música",
   },
   favorites: {
     placeholder: "Cerca als teus favorits... :)",

@@ -28,8 +28,6 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 
-import android.content.Context;
-
 import com.andreu92.shannic.models.*;
 import com.andreu92.shannic.plugins.youtube.utils.*;
 
@@ -38,16 +36,14 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class YoutubeService {
-    private final Context context;
+    private static YoutubeService youtubeService = null;
     private StreamingService youtube;
-
     private SearchExtractor searchExtractor;
     private Page nextPage = null;
-
     private StreamExtractor streamExtractor;
+    private File appFolder;
 
-    public YoutubeService(Context context) {
-        this.context = context;
+    private YoutubeService() {
         NewPipe.init(ShannicDownloader.getInstance());
 
         try {
@@ -55,34 +51,34 @@ public class YoutubeService {
         } catch (ExtractionException ignored) {}
     }
 
-    public SearchResponse search(String query) {
+    public static YoutubeService getInstance() {
+        if (youtubeService == null) {
+            youtubeService = new YoutubeService();
+        }
+        return youtubeService;
+    }
+
+    public void setAppFolder(File appFolder) {
+        this.appFolder = appFolder;
+    }
+
+    public SearchResponse search(String query) throws ExtractionException, IOException {
         return search(query, singletonList(YoutubeSearchQueryHandlerFactory.VIDEOS));
     }
 
-    public SearchResponse searchMusic(String query) {
+    public SearchResponse searchMusic(String query) throws ExtractionException, IOException {
         return search(query, singletonList(YoutubeSearchQueryHandlerFactory.MUSIC_SONGS));
     }
 
-    public SearchResponse search(String query, List<String> filters) {
-        try {
-            searchExtractor = youtube.getSearchExtractor(query, filters, null);
-            searchExtractor.fetchPage();
-            return parseSearchResults(searchExtractor.getInitialPage());
-        } catch (ExtractionException | IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+    public SearchResponse search(String query, List<String> filters) throws ExtractionException, IOException {
+        searchExtractor = youtube.getSearchExtractor(query, filters, null);
+        searchExtractor.fetchPage();
+        return parseSearchResults(searchExtractor.getInitialPage());
     }
 
-    public SearchResponse fetchNextPage() {
+    public SearchResponse fetchNextPage() throws ExtractionException, IOException {
         if (searchExtractor == null) return null;
-
-        try {
-            return parseSearchResults(searchExtractor.getPage(nextPage));
-        } catch (ExtractionException | IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return parseSearchResults(searchExtractor.getPage(nextPage));
     }
 
 
@@ -126,7 +122,7 @@ public class YoutubeService {
 
             List<Image> thumbnails = streamExtractor.getThumbnails();
             Image thumbnail = thumbnails.get(thumbnails.size() - 1);
-            String thumbnailPath = storeThumbnail(url.split("v=")[1], thumbnail.getUrl(), context);
+            String thumbnailPath = storeThumbnail(url.split("v=")[1], thumbnail.getUrl());
 
             String streamUrl = bestAudioStream.getContent();
             long expiresAt = Long.parseLong(streamUrl.split("expire=")[1].split("&")[0]);
@@ -147,7 +143,7 @@ public class YoutubeService {
         }
     }
 
-    private String storeThumbnail(String id, String url, Context context) {
+    private String storeThumbnail(String id, String url) {
         OkHttpClient httpClient = HttpClient.getInstance();
 
         Request request = new Request.Builder()
@@ -162,7 +158,6 @@ public class YoutubeService {
                 throw new IOException("Response body is null");
             }
 
-            File appFolder = context.getFilesDir();
             File imgFolder = new File(appFolder, "img");
             if (!imgFolder.exists()) imgFolder.mkdirs();
             File targetFile = new File(imgFolder, id);
@@ -194,11 +189,12 @@ public class YoutubeService {
             InfoItemsCollector<? extends InfoItem, ? extends InfoItemExtractor> relatedItems = streamExtractor.getRelatedItems();
             if (relatedItems == null) return null;
 
+            String category = streamExtractor.getCategory();
+
             List<? extends InfoItem> items = relatedItems.getItems();
             if (items.isEmpty()) return null;
 
             StreamInfoItem next = null;
-
             for (InfoItem nextItem : items) {
                 if (nextItem instanceof StreamInfoItem streamInfoItem) {
                     // Greedy title matching to avoid repeated items
@@ -217,9 +213,7 @@ public class YoutubeService {
                     for (String word : wordsToCheck) {
                         if (word.length() < 3) continue;
                         significantWords++;
-                        if (longer.contains(word)) {
-                            matches++;
-                        }
+                        if (longer.contains(word)) matches++;
                     }
 
                     if (significantWords > 0 && (double) matches / significantWords < 0.8) {

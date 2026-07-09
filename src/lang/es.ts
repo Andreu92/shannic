@@ -4,6 +4,9 @@ const es = {
     ca: "Catalán",
     en: "Inglés",
   },
+  network: {
+    offline: "Sin conexión a Internet.",
+  },
   generic: {
     yes: "Sí",
     no: "No",
@@ -19,6 +22,8 @@ const es = {
     placeholder: "Busca en la nube... :)",
     start: "Qué te apetece escuchar?",
     error: "Error al realizar la búsqueda en la nube.",
+    all: "Todo",
+    music: "Música",
   },
   favorites: {
     placeholder: "Busca en tus favoritos... :)",

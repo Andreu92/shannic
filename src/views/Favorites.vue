@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Keyboard } from "@capacitor/keyboard";
-import { Icon } from "@iconify/vue";
+import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
 import {
   IonAlert,
   IonButton,
@@ -233,7 +233,7 @@ watch(
                   class="spotify-icon-background"
                   style="width: 20px; height: 20px"
                 >
-                  <Icon icon="logos:spotify-icon"></Icon>
+                  <SpotifyIcon />
                 </div>
                 <div>{{ t("favorites.spotify") }}...</div>
               </div>
@@ -413,7 +413,7 @@ watch(
               class="spotify-icon-background"
               style="width: 20px; height: 20px"
             >
-              <Icon icon="logos:spotify-icon"></Icon>
+              <SpotifyIcon />
             </div>
             <ion-label style="margin-left: 5px">{{
               t("favorites.spotify")

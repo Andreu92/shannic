@@ -4,12 +4,16 @@ import {
   IonContent,
   IonIcon,
   IonPage,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
   IonSearchbar,
   IonSpinner,
   IonThumbnail,
   type SearchbarCustomEvent,
+  type SegmentCustomEvent,
 } from "@ionic/vue";
-import { heart, heartOutline } from "ionicons/icons";
+import { heart, heartOutline, mic, musicalNotes } from "ionicons/icons";
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import iconDark from "@/assets/img/icon-dark.png";
@@ -21,6 +25,7 @@ import type { YoutubeSearch } from "@/plugins/YoutubeClientPlugin";
 import type { RxAudio } from "@/schemas/audio";
 import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
+import useNetworkStore from "@/stores/NetworkStore";
 import usePlayerStore from "@/stores/PlayerStore";
 import type { SearchResult } from "@/types";
 import { formatDuration, showToast } from "@/utils";
@@ -33,10 +38,13 @@ const player_store = usePlayerStore();
 const audio_service = useAudioService();
 const favorites_store = useFavoritesStore();
 const youtube_client = useYoutubeClient();
+const network_store = useNetworkStore();
 
 const contentRef = ref<InstanceType<typeof IonContent> | null>(null);
 const scrollElement = ref<HTMLElement | null>(null);
 
+const search_query = ref<string | null | undefined>(null);
+const search_music = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const fetching_next_page = ref<boolean>(false);
 const infinite_scroll = ref<boolean>(false);
@@ -58,13 +66,21 @@ const rowVirtualizerOptions = computed(() => {
 
 const rowVirtualizer = useVirtualizer(rowVirtualizerOptions);
 
-const search = async (e: SearchbarCustomEvent) => {
+const search = async (e?: SearchbarCustomEvent) => {
   Keyboard.hide();
-  if (e.detail.value) {
+
+  if (!network_store.is_online) {
+    showToast(t("network.offline"), "warning");
+    return;
+  }
+
+  if (e != null) search_query.value = e.detail.value;
+  if (search_query.value != null && search_query.value.length > 0) {
     try {
       loading.value = true;
       const search_data: YoutubeSearch = await youtube_client.search(
-        e.detail.value,
+        search_query.value,
+        search_music.value,
       );
       search_items.value = search_data.items;
       infinite_scroll.value = true;
@@ -78,6 +94,7 @@ const search = async (e: SearchbarCustomEvent) => {
 };
 
 const clearSearch = () => {
+  search_query.value = null;
   search_items.value = [];
   infinite_scroll.value = false;
 };
@@ -94,6 +111,13 @@ const fetchNextPage = async () => {
   } finally {
     fetching_next_page.value = false;
   }
+};
+
+const toggleSearchMusic = (e: SegmentCustomEvent) => {
+  search_items.value = [];
+  infinite_scroll.value = false;
+  search_music.value = e.detail.value === "true";
+  if (search_query.value != null && search_query.value.length > 0) search();
 };
 
 const play = async (audio: SearchResult) => {
@@ -148,6 +172,21 @@ onMounted(async () => {
         @ion-change="search"
         @ion-clear="clearSearch"
       />
+
+      <ion-segment
+        :value="search_music ? 'true' : 'false'"
+        @ion-change="toggleSearchMusic"
+        style="padding: 0px 6px"
+      >
+        <ion-segment-button value="false" layout="icon-end">
+          <ion-label>{{ t("search.all") }}</ion-label>
+          <ion-icon :icon="mic"></ion-icon>
+        </ion-segment-button>
+        <ion-segment-button value="true" layout="icon-end">
+          <ion-label>{{ t("search.music") }}</ion-label>
+          <ion-icon :icon="musicalNotes"></ion-icon>
+        </ion-segment-button>
+      </ion-segment>
 
       <!-- Virtual list -->
       <div

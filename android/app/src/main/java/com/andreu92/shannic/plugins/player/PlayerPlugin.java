@@ -60,7 +60,7 @@ public class PlayerPlugin extends Plugin {
     public void load() {
         super.load();
 
-        youtubeService = new YoutubeService(getContext());
+        youtubeService = YoutubeService.getInstance();
 
         SessionToken sessionToken = new SessionToken(
                 getContext(),
@@ -110,9 +110,10 @@ public class PlayerPlugin extends Plugin {
                         data.put("index", mediaController.getCurrentMediaItemIndex());
                         notifyListeners("onMediaItemChanged", data);
 
-                        //Pre refresh if necessary
                         int nextMediaItemIndex = mediaController.getNextMediaItemIndex();
-                        if (nextMediaItemIndex != C.INDEX_UNSET) {
+                        if (nextMediaItemIndex == C.INDEX_UNSET) {
+                            executorService.execute(() -> setNext());
+                        } else {
                             MediaItem nextMediaItem = mediaController.getMediaItemAt(nextMediaItemIndex);
                             executorService.execute(() -> refreshAudioUrl(nextMediaItem, nextMediaItemIndex));
                         }
@@ -234,10 +235,39 @@ public class PlayerPlugin extends Plugin {
                         mediaController.replaceMediaItem(index, newItem);
                     });
                 } catch (Exception e) {
-                    Log.e("PlayerPlugin", "Error refreshing URL:", e);
+                    Log.e("PlayerPlugin", "Error refreshing SRC:", e);
                 }
             });
         }
+    }
+
+    @OptIn(markerClass = UnstableApi.class)
+    private void setNext() {
+        AudioItem next = youtubeService.getNext();
+        JSObject nextData = new JSObject();
+        nextData.put("audio_item", next);
+        notifyListeners("onFetchNext", nextData);
+
+        // To do: check next is fav
+        Bundle extras = new Bundle();
+        extras.putBoolean("favorite", false);
+
+        MediaItem nextMediaItem =
+                new MediaItem.Builder()
+                        .setMediaId(next.id())
+                        .setCustomCacheKey(next.id())
+                        .setUri(next.src())
+                        .setMediaMetadata(
+                                new MediaMetadata.Builder()
+                                        .setArtist(next.author())
+                                        .setTitle(next.title())
+                                        .setArtworkUri(Uri.parse(next.thumbnail()))
+                                        .setExtras(extras)
+                                        .build())
+                        .build();
+        getActivity().runOnUiThread(() -> {
+            mediaController.addMediaItem(nextMediaItem);
+        });
     }
 
     @OptIn(markerClass = UnstableApi.class)

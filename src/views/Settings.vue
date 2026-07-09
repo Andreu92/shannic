@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import EsFlagIcon from "@iconify-vue/circle-flags/es";
+import CaFlagIcon from "@iconify-vue/circle-flags/es-ct";
+import GbFlagIcon from "@iconify-vue/circle-flags/gb";
 import { InAppBrowser } from "@capgo/inappbrowser";
-import { Icon } from "@iconify/vue";
 import type {
   IonSelectCustomEvent,
   IonToggleCustomEvent,
@@ -17,7 +19,7 @@ import {
   IonToggle,
 } from "@ionic/vue";
 import { closeOutline, moonOutline, sunnyOutline } from "ionicons/icons";
-import { type Ref, ref } from "vue";
+import { Component, type Ref, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";
@@ -30,10 +32,10 @@ const { t, getLocaleMessage, locale } = useI18n();
 
 const layout = useLayout();
 const messages: Ref<LanguageMessages> = ref(getLocaleMessage(locale.value));
-const icons: Record<string, string> = {
-  es: "circle-flags:es",
-  ca: "circle-flags:es-ct",
-  en: "circle-flags:gb",
+const icons: Record<string, Component> = {
+  es: EsFlagIcon,
+  ca: CaFlagIcon,
+  en: GbFlagIcon,
 };
 
 const toggleDarkPalette = (

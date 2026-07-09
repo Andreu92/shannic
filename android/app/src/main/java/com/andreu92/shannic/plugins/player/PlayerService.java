@@ -103,7 +103,7 @@ public class PlayerService extends MediaSessionService {
     public void onCreate() {
         super.onCreate();
 
-        youtubeService = new YoutubeService(getApplicationContext());
+        youtubeService = YoutubeService.getInstance();
         createNotificationChannel();
         createPlayer();
         createMediaSession();

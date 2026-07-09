@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
+import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
 import { IonCard, IonCardContent, IonSpinner } from "@ionic/vue";
 import { useI18n } from "vue-i18n";
 import useSpotifySyncStore from "@/stores/SpotifySyncStore";
@@ -25,7 +25,7 @@ const spotify_sync_store = useSpotifySyncStore();
             class="spotify-icon-background"
             style="width: 20px; height: 20px"
           >
-            <Icon icon="logos:spotify-icon"></Icon>
+            <SpotifyIcon />
           </div>
           <div>{{ t("spotify.starting_import") }}</div>
         </div>
@@ -34,7 +34,7 @@ const spotify_sync_store = useSpotifySyncStore();
             class="spotify-icon-background"
             style="width: 20px; height: 20px"
           >
-            <Icon icon="logos:spotify-icon"></Icon>
+            <SpotifyIcon />
           </div>
           <div>
             {{

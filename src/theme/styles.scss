@@ -38,6 +38,10 @@
   outline: none !important;
 }
 
+
+ion-toast::part(wrapper) {
+  margin-bottom: 70px;
+}
 /* Custom shared styles */
 
 .audio-thumbnail {

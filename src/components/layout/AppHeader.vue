@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import {
-  IonButton,
   IonButtons,
   IonHeader,
-  IonIcon,
   IonImg,
   IonTitle,
-  IonToolbar,
+  IonToolbar
 } from "@ionic/vue";
-import { settingsOutline } from "ionicons/icons";
 import { useRouter } from "vue-router";
 import logoDarkTheme from "@/assets/img/logo-dark-theme.png";
 import logoLightTheme from "@/assets/img/logo-light-theme.png";
 import { useLayout } from "@/composables/useLayout";
+import useNetworkStore from "@/stores/NetworkStore";
+import WifiOffIcon from "@iconify-vue/material-symbols/wifi-off";
+import SettingsIcon from "@iconify-vue/material-symbols/settings";
 
 const router = useRouter();
 const layout = useLayout();
+const network_store = useNetworkStore();
 </script>
 
 <template>
@@ -28,14 +29,9 @@ const layout = useLayout();
         />
       </ion-title>
       <ion-buttons slot="end">
-        <div>
-          <ion-button
-            fill="clear"
-            shape="round"
-            @click="router.replace('/settings')"
-          >
-            <ion-icon :icon="settingsOutline" />
-          </ion-button>
+        <div style="display: flex; align-items: center; gap: 12px; margin-right: 12px">
+          <WifiOffIcon v-if="!network_store.is_online" width="22" height="22" />
+          <SettingsIcon @click="router.replace('/settings')" width="22" height="22" />
         </div>
       </ion-buttons>
     </ion-toolbar>

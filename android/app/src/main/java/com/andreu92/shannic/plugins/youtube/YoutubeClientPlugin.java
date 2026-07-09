@@ -35,49 +35,65 @@ public class YoutubeClientPlugin extends Plugin {
     @Override
     public void load() {
         super.load();
-        youtubeService = new YoutubeService(getContext());
+        youtubeService = YoutubeService.getInstance();
     }
 
     @PluginMethod
-    public void search(final PluginCall call) throws JsonProcessingException, JSONException {
-        final String query = call.getString("query");
-        final Boolean onlyMusic = call.getBoolean("only_music");
+    public void search(final PluginCall call) {
+        try {
+            final String query = call.getString("query");
+            final Boolean onlyMusic = call.getBoolean("only_music");
 
-        SearchResponse searchResponse;
-        if (onlyMusic != null && onlyMusic)
-            searchResponse = youtubeService.searchMusic(query);
-        else
-            searchResponse = youtubeService.search(query);
+            SearchResponse searchResponse;
+            if (onlyMusic != null && onlyMusic)
+                searchResponse = youtubeService.searchMusic(query);
+            else
+                searchResponse = youtubeService.search(query);
 
-        String json = mapper.writeValueAsString(searchResponse);
-        call.resolve(new JSObject(json));
+            String json = mapper.writeValueAsString(searchResponse);
+            call.resolve(new JSObject(json));
+        } catch (Exception e) {
+            call.reject(e.getMessage());
+        }
     }
 
     @PluginMethod
-    public void fetchNextPage(final PluginCall call) throws JsonProcessingException, JSONException {
-        SearchResponse searchResponse = youtubeService.fetchNextPage();
-        String json = mapper.writeValueAsString(searchResponse);
-        call.resolve(new JSObject(json));
+    public void fetchNextPage(final PluginCall call) {
+        try {
+            SearchResponse searchResponse = youtubeService.fetchNextPage();
+            String json = mapper.writeValueAsString(searchResponse);
+            call.resolve(new JSObject(json));
+        } catch (Exception e) {
+            call.reject(e.getMessage());
+        }
     }
 
     @PluginMethod
-    public void get(final PluginCall call) throws IOException, JSONException {
-        final String url = call.getString("url");
+    public void get(final PluginCall call) {
+        try {
+            final String url = call.getString("url");
 
-        AudioItem audioItem = youtubeService.get(url);
-        String json = mapper.writeValueAsString(audioItem);
+            AudioItem audioItem = youtubeService.get(url);
+            String json = mapper.writeValueAsString(audioItem);
 
-        call.resolve(new JSObject(json));
+            call.resolve(new JSObject(json));
+        } catch (Exception e) {
+            call.reject(e.getMessage());
+        }
     }
 
     @PluginMethod
     public void getByQuery(final PluginCall call) throws IOException, JSONException {
-        final String artist = call.getString("artist");
-        final String title = call.getString("title");
+        try {
+            final String artist = call.getString("artist");
+            final String title = call.getString("title");
 
-        AudioItem audioItem = youtubeService.getByQuery(artist, title);
-        String json = mapper.writeValueAsString(audioItem);
+            AudioItem audioItem = youtubeService.getByQuery(artist, title);
+            String json = mapper.writeValueAsString(audioItem);
 
-        call.resolve(new JSObject(json));
+            call.resolve(new JSObject(json));
+        } catch (Exception e) {
+            call.reject(e.getMessage());
+        }
     }
 }

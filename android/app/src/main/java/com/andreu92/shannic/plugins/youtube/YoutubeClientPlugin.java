@@ -1,5 +1,7 @@
 package com.andreu92.shannic.plugins.youtube;
 
+import android.util.Log;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -19,6 +21,8 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 import org.json.JSONException;
+import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+import org.schabi.newpipe.extractor.search.SearchExtractor;
 
 import com.andreu92.shannic.models.*;
 
@@ -52,6 +56,8 @@ public class YoutubeClientPlugin extends Plugin {
 
             String json = mapper.writeValueAsString(searchResponse);
             call.resolve(new JSObject(json));
+        } catch (SearchExtractor.NothingFoundException e) {
+            call.reject(e.getMessage(), "NO_RESULTS");
         } catch (Exception e) {
             call.reject(e.getMessage());
         }

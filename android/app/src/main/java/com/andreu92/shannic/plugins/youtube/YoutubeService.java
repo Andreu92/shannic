@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.InfoItem;
@@ -182,63 +183,42 @@ public class YoutubeService {
         }
     }
 
-    public AudioItem getNext() {
+    public List<AudioItem> getNextItems() {
         if (streamExtractor == null) return null;
 
+        AutoPlayStrategy strategy = new AutoPlayStrategy();
         try {
+            String current = streamExtractor.getUrl();
             InfoItemsCollector<? extends InfoItem, ? extends InfoItemExtractor> relatedItems = streamExtractor.getRelatedItems();
             if (relatedItems == null) return null;
 
-            String category = streamExtractor.getCategory();
+            List<StreamInfoItem> candidates = relatedItems.getItems().stream()
+                    .filter(StreamInfoItem.class::isInstance)
+                    .map(StreamInfoItem.class::cast)
+                    .toList();
 
-            List<? extends InfoItem> items = relatedItems.getItems();
-            if (items.isEmpty()) return null;
+            List<StreamInfoItem> nextItems = candidates.stream()
+                    .filter(candidate -> !candidate.getUrl().equals(current))
+                    .sorted((c1, c2) -> Double.compare(
+                            strategy.calculateScore(c2),
+                            strategy.calculateScore(c1)
+                    ))
+                    .limit(5)
+                    .toList();
 
-            StreamInfoItem next = null;
-            for (InfoItem nextItem : items) {
-                if (nextItem instanceof StreamInfoItem streamInfoItem) {
-                    // Greedy title matching to avoid repeated items
-                    String oldTitle = streamExtractor.getName().toLowerCase().replaceAll("[^a-z0-9\\s]", "");
-                    String newTitle = streamInfoItem.getName().toLowerCase().replaceAll("[^a-z0-9\\s]", "");
+            List<AudioItem> items = new ArrayList<>();
+            for (StreamInfoItem item : nextItems) items.add(get(item.getUrl()));
 
-                    if (streamInfoItem.getUrl().equals(streamExtractor.getUrl())) continue;
-
-                    String shorter = oldTitle.length() < newTitle.length() ? oldTitle : newTitle;
-                    String longer = oldTitle.length() >= newTitle.length() ? oldTitle : newTitle;
-
-                    String[] wordsToCheck = shorter.split("\\s+");
-                    int matches = 0;
-                    int significantWords = 0;
-
-                    for (String word : wordsToCheck) {
-                        if (word.length() < 3) continue;
-                        significantWords++;
-                        if (longer.contains(word)) matches++;
-                    }
-
-                    if (significantWords > 0 && (double) matches / significantWords < 0.8) {
-                        next = streamInfoItem;
-                        break;
-                    }
-                }
-            }
-
-            assert next != null;
-            return get(next.getUrl());
+            return items;
         } catch (ExtractionException | IOException e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public AudioItem getByQuery(final String artist, final String title) {
-        try {
-            SearchResponse response = searchMusic(artist + " " + title);
-            SearchItem bestMatch = SongMatcher.getBestYoutubeMatch(artist, title, response.items());
-            return get(bestMatch.url());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    public AudioItem getByQuery(final String artist, final String title) throws ExtractionException, IOException {
+        SearchResponse response = searchMusic(artist + " " + title);
+        SearchItem bestMatch = SongMatcher.getBestYoutubeMatch(artist, title, response.items());
+        return get(bestMatch.url());
     }
 }

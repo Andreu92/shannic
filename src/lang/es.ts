@@ -22,6 +22,7 @@ const es = {
     placeholder: "Busca en la nube... :)",
     start: "Qué te apetece escuchar?",
     error: "Error al realizar la búsqueda en la nube.",
+    noResults: "No se han encontrado resultados.",
     all: "Todo",
     music: "Música",
   },

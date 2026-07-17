@@ -44,6 +44,37 @@ ion-toast::part(wrapper) {
 }
 /* Custom shared styles */
 
+.flex-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.center {
+  align-items: center;
+  justify-content: center;
+}
+
+.col {
+  flex-direction: column;
+}
+
+.grow {
+  flex: 1;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
 .audio-thumbnail {
   display: flex;
   align-items: center;

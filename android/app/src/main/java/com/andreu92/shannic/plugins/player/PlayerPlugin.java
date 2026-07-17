@@ -41,6 +41,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -243,30 +244,37 @@ public class PlayerPlugin extends Plugin {
 
     @OptIn(markerClass = UnstableApi.class)
     private void setNext() {
-        AudioItem next = youtubeService.getNext();
+        List<AudioItem> nextItems = youtubeService.getNextItems();
         JSObject nextData = new JSObject();
-        nextData.put("audio_item", next);
-        notifyListeners("onFetchNext", nextData);
+        //nextData.put("audio_item", next);
+        //notifyListeners("onFetchNext", nextData);
 
-        // To do: check next is fav
-        Bundle extras = new Bundle();
-        extras.putBoolean("favorite", false);
+        List<MediaItem> nextMediaItems= new ArrayList<>();
 
-        MediaItem nextMediaItem =
-                new MediaItem.Builder()
-                        .setMediaId(next.id())
-                        .setCustomCacheKey(next.id())
-                        .setUri(next.src())
-                        .setMediaMetadata(
-                                new MediaMetadata.Builder()
-                                        .setArtist(next.author())
-                                        .setTitle(next.title())
-                                        .setArtworkUri(Uri.parse(next.thumbnail()))
-                                        .setExtras(extras)
-                                        .build())
-                        .build();
+        for (AudioItem item : nextItems) {
+            // To do: check next is fav
+            Bundle extras = new Bundle();
+            extras.putBoolean("favorite", false);
+
+            MediaItem nextMediaItem =
+                    new MediaItem.Builder()
+                            .setMediaId(item.id())
+                            .setCustomCacheKey(item.id())
+                            .setUri(item.src())
+                            .setMediaMetadata(
+                                    new MediaMetadata.Builder()
+                                            .setArtist(item.author())
+                                            .setTitle(item.title())
+                                            .setArtworkUri(Uri.parse(item.thumbnail()))
+                                            .setExtras(extras)
+                                            .build())
+                            .build();
+
+            nextMediaItems.add(nextMediaItem);
+        }
+
         getActivity().runOnUiThread(() -> {
-            mediaController.addMediaItem(nextMediaItem);
+            mediaController.addMediaItems(nextMediaItems);
         });
     }
 

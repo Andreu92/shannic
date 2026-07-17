@@ -22,6 +22,7 @@ const ca = {
     placeholder: "Cerca al núvol... :)",
     start: "Què t'agradaria escoltar?",
     error: "Error en realitzar la cerca al núvol.",
+    noResults: "No s'han trobat resultats.",
     all: "Tot",
     music: "Música",
   },

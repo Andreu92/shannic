@@ -3,7 +3,6 @@ import { Directory, Filesystem } from "@capacitor/filesystem";
 import { defineStore } from "pinia";
 import { reactive } from "vue";
 import useAudioService from "@/services/AudioService";
-import type { AudioDocument } from "@/types";
 
 export const useDownloadStore = defineStore("downloads", () => {
   const audio_service = useAudioService();
@@ -44,7 +43,8 @@ export const useDownloadStore = defineStore("downloads", () => {
 
     status.is_downloading = true;
     status.current = audio_id;
-    const audio: AudioDocument = await audio_service.getAudio(audio_id);
+    
+    const audio = await audio_service.getCreateOrUpdateAudio(audio_id);
 
     const fileInfo = await Filesystem.getUri({
       directory: Directory.Data,
@@ -52,15 +52,15 @@ export const useDownloadStore = defineStore("downloads", () => {
     });
 
     FileTransfer.downloadFile({
-      url: audio.url,
+      url: audio.src,
       path: fileInfo.uri,
       progress: true,
       headers: {
         "User-Agent": import.meta.env.VITE_YT_USER_AGENT,
-        "Accept":
+        Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Encoding": "identity",
-        "Range": "bytes=0-",
+        Range: "bytes=0-",
       },
     })
       .then((res) => {

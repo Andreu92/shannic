@@ -114,7 +114,7 @@ public class YoutubeService {
             streamExtractor.fetchPage();
 
             String uploader = streamExtractor.getUploaderName();
-            if (uploader != null) uploader = uploader.replace(" - Topic", "");
+            uploader = uploader.replace(" - Topic", "");
 
             List<AudioStream> audioStreams = streamExtractor.getAudioStreams();
             AudioStream bestAudioStream = audioStreams.stream()
@@ -183,7 +183,7 @@ public class YoutubeService {
         }
     }
 
-    public List<AudioItem> getNextItems() {
+    public List<String> getNextItems() {
         if (streamExtractor == null) return null;
 
         AutoPlayStrategy strategy = new AutoPlayStrategy();
@@ -206,8 +206,8 @@ public class YoutubeService {
                     .limit(5)
                     .toList();
 
-            List<AudioItem> items = new ArrayList<>();
-            for (StreamInfoItem item : nextItems) items.add(get(item.getUrl()));
+            List<String> items = new ArrayList<>();
+            for (StreamInfoItem item : nextItems) items.add(item.getUrl());
 
             return items;
         } catch (ExtractionException | IOException e) {

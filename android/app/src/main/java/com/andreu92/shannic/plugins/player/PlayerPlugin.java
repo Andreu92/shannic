@@ -1,5 +1,7 @@
 package com.andreu92.shannic.plugins.player;
 
+import static com.andreu92.shannic.plugins.youtube.YoutubePlugin.mapper;
+
 import android.content.ComponentName;
 import android.net.Uri;
 import android.os.Bundle;
@@ -45,9 +47,12 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 
 import com.andreu92.shannic.models.AudioItem;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
+
+import org.json.JSONException;
 
 @CapacitorPlugin(name = "PlayerPlugin")
 public class PlayerPlugin extends Plugin {
@@ -113,7 +118,13 @@ public class PlayerPlugin extends Plugin {
 
                         int nextMediaItemIndex = mediaController.getNextMediaItemIndex();
                         if (nextMediaItemIndex == C.INDEX_UNSET) {
-                            executorService.execute(() -> setNext());
+                            executorService.execute(() -> {
+                                try {
+                                    setNextItems();
+                                } catch (JSONException | JsonProcessingException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
                         } else {
                             MediaItem nextMediaItem = mediaController.getMediaItemAt(nextMediaItemIndex);
                             executorService.execute(() -> refreshAudioUrl(nextMediaItem, nextMediaItemIndex));
@@ -243,15 +254,22 @@ public class PlayerPlugin extends Plugin {
     }
 
     @OptIn(markerClass = UnstableApi.class)
-    private void setNext() {
-        List<AudioItem> nextItems = youtubeService.getNextItems();
-        JSObject nextData = new JSObject();
-        //nextData.put("audio_item", next);
-        //notifyListeners("onFetchNext", nextData);
+    private void setNextItems() throws JSONException, JsonProcessingException {
+        List<String> nextItems = youtubeService.getNextItems();
 
-        List<MediaItem> nextMediaItems= new ArrayList<>();
+        final List<String> mediaIds = new ArrayList<>();
+        getActivity().runOnUiThread(() -> {
+            mediaIds.addAll(IntStream.range(0, mediaController.getMediaItemCount())
+                    .mapToObj(i -> mediaController.getMediaItemAt(i).mediaId)
+                    .toList());
+        });
 
-        for (AudioItem item : nextItems) {
+        for (String url : nextItems) {
+            String id = url.split("v=")[1];
+            if (mediaIds.contains(id)) continue;
+
+            AudioItem item = youtubeService.get(url);
+
             // To do: check next is fav
             Bundle extras = new Bundle();
             extras.putBoolean("favorite", false);
@@ -270,12 +288,13 @@ public class PlayerPlugin extends Plugin {
                                             .build())
                             .build();
 
-            nextMediaItems.add(nextMediaItem);
-        }
+            getActivity().runOnUiThread(() -> {
+                mediaController.addMediaItem(nextMediaItem);
+            });
 
-        getActivity().runOnUiThread(() -> {
-            mediaController.addMediaItems(nextMediaItems);
-        });
+            String json = mapper.writeValueAsString(item);
+            notifyListeners("onSetNextItem", new JSObject(json));
+        }
     }
 
     @OptIn(markerClass = UnstableApi.class)

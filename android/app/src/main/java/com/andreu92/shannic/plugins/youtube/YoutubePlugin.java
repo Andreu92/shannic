@@ -1,16 +1,12 @@
 package com.andreu92.shannic.plugins.youtube;
 
-import android.util.Log;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
-import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -18,18 +14,16 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 import org.json.JSONException;
-import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 
 import com.andreu92.shannic.models.*;
 
-@CapacitorPlugin(name = "YoutubeClientPlugin")
-public class YoutubeClientPlugin extends Plugin {
+@CapacitorPlugin(name = "YoutubePlugin")
+public class YoutubePlugin extends Plugin {
     private YoutubeService youtubeService;
-    private final JsonMapper mapper = JsonMapper.builder()
+    public static final JsonMapper mapper = JsonMapper.builder()
             .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.ALWAYS))
             .visibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
             .enable(SerializationFeature.INDENT_OUTPUT)
@@ -89,7 +83,7 @@ public class YoutubeClientPlugin extends Plugin {
     }
 
     @PluginMethod
-    public void getByQuery(final PluginCall call) throws IOException, JSONException {
+    public void getByQuery(final PluginCall call) {
         try {
             final String artist = call.getString("artist");
             final String title = call.getString("title");

@@ -49,7 +49,7 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore from "@/stores/PlayerStore";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import useAudioService from "@/services/AudioService";
-import useYoutubeClient from "@/clients/YoutubeClient";
+import { youtube_plugin } from "@/plugins/YoutubePlugin";
 
 const contentRef = ref<InstanceType<typeof IonContent> | null>(null);
 const scrollElement = ref<HTMLElement | null>(null);
@@ -61,7 +61,6 @@ const layout = useLayout();
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
 const download_store = useDownloadStore();
-const youtube_client = useYoutubeClient();
 
 const audio_service = useAudioService();
 const spotify_service = useSpotifyService();
@@ -141,16 +140,16 @@ const download = (audio_id: string) => {
 };
 
 const deleteLocalAudio = async (audio_id: string) => {
-  const audio = await audio_service.getAudio(audio_id);
+  const audio = await audio_service.getCreateOrUpdateAudio(audio_id);
   if (!audio) return;
 
   Filesystem.deleteFile({
     directory: Directory.Data,
     path: audio_id,
   }).then(async () => {
-    const new_audio = await youtube_client.get(audio_id);
+    const new_audio = await youtube_plugin.get({ url: audio.url });
     audio.incrementalPatch({
-      url: new_audio.url,
+      src: new_audio.src,
       expires_at: new_audio.expires_at,
       updated_at: Date.now(),
     });

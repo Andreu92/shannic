@@ -18,10 +18,9 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import iconDark from "@/assets/img/icon-dark.png";
 import iconLight from "@/assets/img/icon-light.png";
-import useYoutubeClient from "@/clients/YoutubeClient";
+import { type YoutubeSearch, youtube_plugin } from "@/plugins/YoutubePlugin";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";
-import type { YoutubeSearch } from "@/plugins/YoutubeClientPlugin";
 import type { RxAudio } from "@/schemas/audio";
 import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
@@ -37,7 +36,6 @@ const layout = useLayout();
 const player_store = usePlayerStore();
 const audio_service = useAudioService();
 const favorites_store = useFavoritesStore();
-const youtube_client = useYoutubeClient();
 const network_store = useNetworkStore();
 
 const search_query = ref<string | null | undefined>(null);
@@ -70,10 +68,10 @@ const search = async (e?: SearchbarCustomEvent) => {
   try {
     loading.value = true;
 
-    const search_data: YoutubeSearch = await youtube_client.search(
-      search_query.value,
-      search_music.value,
-    );
+    const search_data: YoutubeSearch = await youtube_plugin.search({
+      query: search_query.value,
+      only_music: search_music.value,
+    });
 
     has_next_page.value = search_data.has_next_page;
     search_items.value = search_data.items;
@@ -108,7 +106,7 @@ const fetchNextPage = async () => {
   try {
     fetching_next_page.value = true;
 
-    const new_results: YoutubeSearch = await youtube_client.fetchNextPage();
+    const new_results: YoutubeSearch = await youtube_plugin.fetchNextPage();
 
     has_next_page.value = new_results.has_next_page;
     search_items.value.push(
@@ -133,7 +131,7 @@ const play = async (audio: SearchResult) => {
   fetching_audio.value = true;
 
   const audio_to_play: RxAudio = (
-    await audio_service.getAudio(audio.id, audio.url)
+    await audio_service.getCreateOrUpdateAudio(audio.id, audio.url)
   ).toMutableJSON();
 
   player_store.play([audio_to_play]);

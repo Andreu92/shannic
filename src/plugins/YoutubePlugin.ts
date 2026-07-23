@@ -19,7 +19,7 @@ export interface YoutubeAudioItem extends YoutubeSearchItem {
   expires_at: number;
 }
 
-export interface YoutubeClientPlugin {
+export interface YoutubePlugin {
   get(options: { url: string }): Promise<YoutubeAudioItem>;
   getByQuery(options: {
     artist: string;
@@ -32,6 +32,6 @@ export interface YoutubeClientPlugin {
   fetchNextPage(): Promise<YoutubeSearch>;
 }
 
-export const youtube_client_plugin: YoutubeClientPlugin = registerPlugin(
-  "YoutubeClientPlugin",
+export const youtube_plugin: YoutubePlugin = registerPlugin(
+  "YoutubePlugin",
 );

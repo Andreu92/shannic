@@ -61,7 +61,7 @@ const useFavoritesStore = defineStore("favorites", () => {
 
     favorites.value.push(new_favorite);
 
-    const audio: AudioDocument = await audio_service.getAudio(id);
+    const audio: AudioDocument = await audio_service.getCreateOrUpdateAudio(id);
     audios.value.push(audio.toMutableJSON());
 
     const positionsMap = new Map(

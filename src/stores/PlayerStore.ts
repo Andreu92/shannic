@@ -4,8 +4,10 @@ import { type PlayerAudio, player_plugin } from "@/plugins/PlayerPlugin";
 import type { RxAudio } from "@/schemas/audio";
 import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
-import { showToast } from "@/utils";
+import { buildAudio, showToast } from "@/utils";
 import { useI18n } from "vue-i18n";
+import { type YoutubeAudioItem } from "@/plugins/YoutubePlugin";
+import { AudioItem } from "@/types";
 
 export const states = {
   paused: 0,
@@ -103,6 +105,14 @@ const usePlayerStore = defineStore("player", () => {
       }
 
       audio_service.refreshSrc(id, src, expires_at);
+    });
+    player_plugin.addListener("onSetNextItem", async (data) => {
+      const next_item = await audio_service.createOrUpdateAudio(
+        await buildAudio(data as YoutubeAudioItem),
+      );
+
+      if (!playlist_items.value) return;
+      playlist_items.value.push(next_item.toMutableJSON());
     });
     player_plugin.addListener("onSourceError", async () => {
       //TO DO: Show Error

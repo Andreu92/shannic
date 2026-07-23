@@ -1,4 +1,5 @@
 import { type PluginListenerHandle, registerPlugin } from "@capacitor/core";
+import { type YoutubeAudioItem } from "./YoutubePlugin";
 
 export interface PlayerAudio {
   id: string;
@@ -31,7 +32,8 @@ export interface PlayerPlugin {
         | { repeating: boolean }
         | { favorite: boolean }
         | { index: number }
-        | { id: string; src: string; expires_at: number },
+        | { id: string; src: string; expires_at: number }
+        | { item: YoutubeAudioItem },
     ) => void,
   ): Promise<PluginListenerHandle>;
 }

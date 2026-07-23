@@ -1,30 +1,24 @@
-import useYoutubeClient from "@/clients/YoutubeClient";
 import { useDatabase } from "@/database";
+import { youtube_plugin, YoutubeAudioItem } from "@/plugins/YoutubePlugin";
 import type { RxAudio } from "@/schemas/audio";
 import type { AudioItem, AudioCollection, AudioDocument } from "@/types";
+import { buildAudio } from "@/utils";
 
 const useAudioService = () => {
-  const youtube_client = useYoutubeClient();
   const db = useDatabase();
   const audio_collection: AudioCollection = db.audios;
 
-  const getAudio = async (id: string, url?: string): Promise<AudioDocument> => {
+  const getAudioById = async (id: string): Promise<AudioDocument | null> => {
     const audio_doc: AudioDocument | null = await audio_collection
       .findOne(id)
       .exec();
 
-    if (!audio_doc) {
-      if (!url) throw new Error("URL is required for new audio");
-      const audio_item: AudioItem = await youtube_client.get(url);
-      return await createAudio(audio_item);
-    }
-
-    if (audio_doc.expires_at && audio_doc.expires_at - 10000 < Date.now()) {
-      const audio_item: AudioItem = await youtube_client.get(audio_doc.url);
-      return await updateAudio(audio_item);
-    }
-
     return audio_doc;
+  };
+
+  const fetchAudio = async (url: string): Promise<AudioItem> => {
+    const yt_audio_item: YoutubeAudioItem = await youtube_plugin.get({ url });
+    return await buildAudio(yt_audio_item);
   };
 
   const getAudiosByIds = async (ids: string[]): Promise<AudioDocument[]> => {
@@ -44,9 +38,7 @@ const useAudioService = () => {
   const updateAudio = async (
     updated_audio: AudioItem,
   ): Promise<AudioDocument> => {
-    const audio: AudioDocument | null = await audio_collection
-      .findOne(updated_audio.id)
-      .exec();
+    const audio: AudioDocument | null = await getAudioById(updated_audio.id);
 
     if (!audio) throw new Error("Audio not found");
 
@@ -64,14 +56,44 @@ const useAudioService = () => {
     });
   };
 
+  const getCreateOrUpdateAudio = async (
+    id: string,
+    url?: string,
+  ): Promise<AudioDocument> => {
+    const audio_doc: AudioDocument | null = await getAudioById(id);
+
+    if (!audio_doc) {
+      if (!url) throw new Error("Audio not found and no URL provided");
+      const audio_item: AudioItem = await fetchAudio(url);
+      return await createAudio(audio_item);
+    }
+
+    if (audio_doc.expires_at && audio_doc.expires_at - 10000 < Date.now()) {
+      const audio_item: AudioItem = await fetchAudio(audio_doc.url);
+      return await updateAudio(audio_item);
+    }
+
+    return audio_doc;
+  };
+
+  const createOrUpdateAudio = async (
+    audio_item: AudioItem,
+  ): Promise<AudioDocument> => {
+    const audio_doc: AudioDocument | null = await getAudioById(audio_item.id);
+
+    if (!audio_doc) {
+      return await createAudio(audio_item);
+    }
+
+    return await updateAudio(audio_item);
+  };
+
   const refreshSrc = async (
     id: string,
     src: string,
     expires_at: number,
   ): Promise<void> => {
-    const audio: AudioDocument | null = await audio_collection
-      .findOne(id)
-      .exec();
+    const audio: AudioDocument | null = await getAudioById(id);
 
     if (!audio) throw new Error("Audio not found");
 
@@ -83,11 +105,13 @@ const useAudioService = () => {
   };
 
   return {
-    getAudio,
+    getAudioById,
     getAudiosByIds,
     createAudio,
     updateAudio,
     refreshSrc,
+    getCreateOrUpdateAudio,
+    createOrUpdateAudio,
   };
 };
 

@@ -10,10 +10,11 @@ import { SPOTIFY_CONFIG_ID } from "@/constants";
 import { useDatabase } from "@/database";
 import useSpotifySyncStore from "@/stores/SpotifySyncStore";
 import type { SpotifyDocument } from "@/types";
-import useYoutubeClient from "@/clients/YoutubeClient";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import useAudioService from "@/services/AudioService";
 import { KeepAwake } from "@capgo/capacitor-keep-awake";
+import { youtube_plugin } from "@/plugins/YoutubePlugin";
+import { buildAudio } from "@/utils";
 
 const useSpotifyService = () => {
   const { t, locale } = useI18n();
@@ -25,8 +26,6 @@ const useSpotifyService = () => {
 
   const db = useDatabase();
   const spotify_db = db.spotify;
-
-  const youtube_client = useYoutubeClient();
 
   const audio_service = useAudioService();
 
@@ -153,9 +152,11 @@ const useSpotifyService = () => {
 
       await getSavedTracks(async (track: SavedTrack) => {
         try {
-          const audio = await youtube_client.getByQuery(
-            track.track.artists[0].name,
-            track.track.name,
+          const audio = await buildAudio(
+            await youtube_plugin.getByQuery({
+              artist: track.track.artists[0].name,
+              title: track.track.name,
+            }),
           );
 
           if (favorites_store.isFavorite(audio.id)) {

@@ -12,7 +12,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
 import com.getcapacitor.BridgeActivity;
 
-import com.andreu92.shannic.plugins.youtube.YoutubeClientPlugin;
+import com.andreu92.shannic.plugins.youtube.YoutubePlugin;
 import com.andreu92.shannic.plugins.player.PlayerPlugin;
 
 public class MainActivity extends BridgeActivity {
@@ -22,7 +22,7 @@ public class MainActivity extends BridgeActivity {
         youtubeService.setAppFolder(getFilesDir());
 
         registerPlugin(PlayerPlugin.class);
-        registerPlugin(YoutubeClientPlugin.class);
+        registerPlugin(YoutubePlugin.class);
 
         super.onCreate(savedInstanceState);
 

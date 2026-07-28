@@ -10,12 +10,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.InfoItem;
-import org.schabi.newpipe.extractor.InfoItemExtractor;
-import org.schabi.newpipe.extractor.InfoItemsCollector;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.StreamingService;
@@ -26,8 +23,11 @@ import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQu
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamExtractor;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
+import org.schabi.newpipe.extractor.playlist.PlaylistExtractor;
 
 import static org.schabi.newpipe.extractor.ServiceList.YouTube;
+
+import android.util.Log;
 
 import com.andreu92.shannic.models.*;
 import com.andreu92.shannic.plugins.youtube.utils.*;
@@ -37,11 +37,13 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class YoutubeService {
-    private static YoutubeService youtubeService = null;
+    private static YoutubeService youtubeService;
     private StreamingService youtube;
     private SearchExtractor searchExtractor;
-    private Page nextPage = null;
+    private Page searchNextPage;
     private StreamExtractor streamExtractor;
+    private PlaylistExtractor playlistExtractor;
+    private Page autoPlayNextPage;
     private File appFolder;
 
     private YoutubeService() {
@@ -63,6 +65,10 @@ public class YoutubeService {
         this.appFolder = appFolder;
     }
 
+    public void resetAutoPlay() {
+        playlistExtractor = null;
+    }
+
     public SearchResponse search(String query) throws ExtractionException, IOException {
         return search(query, singletonList(YoutubeSearchQueryHandlerFactory.VIDEOS));
     }
@@ -79,7 +85,7 @@ public class YoutubeService {
 
     public SearchResponse fetchNextPage() throws ExtractionException, IOException {
         if (searchExtractor == null) return null;
-        return parseSearchResults(searchExtractor.getPage(nextPage));
+        return parseSearchResults(searchExtractor.getPage(searchNextPage));
     }
 
 
@@ -90,7 +96,7 @@ public class YoutubeService {
             StreamInfoItem searchResult = (StreamInfoItem) infoItem;
             String url = searchResult.getUrl();
             results.add(new SearchItem(
-                    url.split("v=")[1],
+                    extractYoutubeId(url),
                     searchResult.getName(),
                     searchResult.getUploaderName(),
                     searchResult.getThumbnails()
@@ -102,10 +108,20 @@ public class YoutubeService {
         }
 
         if (page.hasNextPage()) {
-            nextPage = page.getNextPage();
+            searchNextPage = page.getNextPage();
         }
 
         return new SearchResponse(page.hasNextPage(), results);
+    }
+
+    public String extractYoutubeId(String url) {
+        if (url == null || !url.contains("v=")) return null;
+        String id = url.split("v=")[1];
+        int ampersandIndex = id.indexOf("&");
+        if (ampersandIndex != -1) {
+            id = id.substring(0, ampersandIndex);
+        }
+        return id;
     }
 
     public AudioItem get(String url) {
@@ -161,6 +177,7 @@ public class YoutubeService {
 
             File imgFolder = new File(appFolder, "img");
             if (!imgFolder.exists()) imgFolder.mkdirs();
+
             File targetFile = new File(imgFolder, id);
 
             try (InputStream inputStream = response.body().byteStream();
@@ -186,34 +203,27 @@ public class YoutubeService {
     public List<String> getNextItems() {
         if (streamExtractor == null) return null;
 
-        AutoPlayStrategy strategy = new AutoPlayStrategy();
         try {
+            if (playlistExtractor != null && autoPlayNextPage != null) {
+                return buildItemPageUrlList(playlistExtractor.getPage(autoPlayNextPage));
+            }
+
             String current = streamExtractor.getUrl();
-            InfoItemsCollector<? extends InfoItem, ? extends InfoItemExtractor> relatedItems = streamExtractor.getRelatedItems();
-            if (relatedItems == null) return null;
-
-            List<StreamInfoItem> candidates = relatedItems.getItems().stream()
-                    .filter(StreamInfoItem.class::isInstance)
-                    .map(StreamInfoItem.class::cast)
-                    .toList();
-
-            List<StreamInfoItem> nextItems = candidates.stream()
-                    .filter(candidate -> !candidate.getUrl().equals(current))
-                    .sorted((c1, c2) -> Double.compare(
-                            strategy.calculateScore(c2),
-                            strategy.calculateScore(c1)
-                    ))
-                    .limit(5)
-                    .toList();
-
-            List<String> items = new ArrayList<>();
-            for (StreamInfoItem item : nextItems) items.add(item.getUrl());
-
-            return items;
-        } catch (ExtractionException | IOException e) {
-            e.printStackTrace();
+            playlistExtractor = youtube.getPlaylistExtractor(current + "&list=RD" + extractYoutubeId(current));
+            playlistExtractor.fetchPage();
+            return buildItemPageUrlList(playlistExtractor.getInitialPage());
+        } catch (Exception e) {
+            Log.e("Shannic autoplay", e.toString());
             return null;
         }
+    }
+
+    private List<String> buildItemPageUrlList(InfoItemsPage<StreamInfoItem> page) {
+        if (page.hasNextPage()) autoPlayNextPage = page.getNextPage();
+        else autoPlayNextPage = null;
+        List<String> urls = new ArrayList<>();
+        for (InfoItem item : page.getItems()) urls.add(item.getUrl());
+        return urls;
     }
 
     public AudioItem getByQuery(final String artist, final String title) throws ExtractionException, IOException {

@@ -43,7 +43,10 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -117,15 +120,21 @@ public class PlayerPlugin extends Plugin {
                         notifyListeners("onMediaItemChanged", data);
 
                         int nextMediaItemIndex = mediaController.getNextMediaItemIndex();
-                        if (nextMediaItemIndex == C.INDEX_UNSET) {
+                        int mediaItemCount = mediaController.getMediaItemCount();
+                        if (nextMediaItemIndex >= mediaItemCount - 2 || nextMediaItemIndex == C.INDEX_UNSET) {
                             executorService.execute(() -> {
                                 try {
                                     setNextItems();
-                                } catch (JSONException | JsonProcessingException e) {
-                                    throw new RuntimeException(e);
+                                } catch (Exception e) {
+                                    JSObject error = new JSObject();
+                                    error.put("msg", e.getMessage());
+                                    notifyListeners("onAutoPlayError", error);
+                                    Log.e("Autoplay", e.toString());
                                 }
                             });
-                        } else {
+                        }
+
+                        if (nextMediaItemIndex != C.INDEX_UNSET) {
                             MediaItem nextMediaItem = mediaController.getMediaItemAt(nextMediaItemIndex);
                             executorService.execute(() -> refreshAudioUrl(nextMediaItem, nextMediaItemIndex));
                         }
@@ -254,19 +263,29 @@ public class PlayerPlugin extends Plugin {
     }
 
     @OptIn(markerClass = UnstableApi.class)
-    private void setNextItems() throws JSONException, JsonProcessingException {
+    private void setNextItems() throws JSONException, JsonProcessingException, InterruptedException {
         List<String> nextItems = youtubeService.getNextItems();
+        final Set<String> existingMediaIds = new HashSet<>();
 
-        final List<String> mediaIds = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(1);
         getActivity().runOnUiThread(() -> {
-            mediaIds.addAll(IntStream.range(0, mediaController.getMediaItemCount())
-                    .mapToObj(i -> mediaController.getMediaItemAt(i).mediaId)
-                    .toList());
+                try {
+                    int count = mediaController.getMediaItemCount();
+                    for (int i = 0; i < count; i++) {
+                        MediaItem item = mediaController.getMediaItemAt(i);
+                        existingMediaIds.add(item.mediaId);
+                    }
+                } finally {
+                    latch.countDown();
+                }
         });
 
+        latch.await();
+
         for (String url : nextItems) {
-            String id = url.split("v=")[1];
-            if (mediaIds.contains(id)) continue;
+            String id = youtubeService.extractYoutubeId(url);
+            if (id == null || existingMediaIds.contains(id)) continue;
+            existingMediaIds.add(id);
 
             AudioItem item = youtubeService.get(url);
 
@@ -316,6 +335,8 @@ public class PlayerPlugin extends Plugin {
     @OptIn(markerClass = UnstableApi.class)
     @PluginMethod()
     public void play(PluginCall call) throws JsonProcessingException {
+        youtubeService.resetAutoPlay();
+
         JSArray js_audio_items_array = call.getArray("audio_items");
         boolean shuffle = call.getBoolean("shuffle", false);
 

@@ -207,10 +207,10 @@ watch(
         <div class="search-container">
           <ion-searchbar
             :placeholder="t('favorites.placeholder')"
+            :debounce="300"
             @ion-change="search"
             @ion-input="clearIfEmpty"
             @ion-clear="query = ''"
-            :debounce="300"
           />
           <ion-icon
             id="open-actions-popover"
@@ -241,7 +241,7 @@ watch(
         </div>
 
         <!-- General playlist actions -->
-        <div class="flex-between" v-if="search_results.length">
+        <div v-if="search_results.length" class="flex-between">
           <ion-button
             fill="clear"
             shape="round"
@@ -264,9 +264,9 @@ watch(
             @click="shuffle = !shuffle"
           />
           <ion-button
-            @click="show_download_all_alert = true"
             fill="clear"
             shape="round"
+            @click="show_download_all_alert = true"
           >
             <ion-icon
               slot="icon-only"
@@ -288,14 +288,14 @@ watch(
             <div
               v-for="virtualRow in rowVirtualizer.getVirtualItems()"
               :key="virtualRow.index"
-              @click="
-                player_store.play([{ ...search_results[virtualRow.index] }])
-              "
               style="position: absolute; top: 0; left: 0; width: 100%"
               :style="{
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }"
+              @click="
+                player_store.play([{ ...search_results[virtualRow.index] }])
+              "
             >
               <div class="flex-column grow">
                 <div class="flex-between">
@@ -368,11 +368,11 @@ watch(
                   </div>
                 </div>
                 <ion-progress-bar
-                  style="margin-bottom: 5px"
                   v-if="
                     download_store.status.current ===
                     search_results[virtualRow.index].id
                   "
+                  style="margin-bottom: 5px"
                   :value="download_store.status.progress"
                 >
                 </ion-progress-bar>
@@ -424,9 +424,9 @@ watch(
       <!-- Scroll to top/bottom buttons -->
       <ion-fab
         v-if="favorites_store.audios.length"
+        slot="fixed"
         horizontal="end"
         vertical="bottom"
-        slot="fixed"
       >
         <div class="fab-button-placeholder">
           <Transition name="fade">

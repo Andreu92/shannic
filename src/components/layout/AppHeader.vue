@@ -39,9 +39,9 @@ const network_store = useNetworkStore();
         >
           <WifiOffIcon v-if="!network_store.is_online" width="22" height="22" />
           <SettingsIcon
-            @click="router.replace('/settings')"
             width="22"
             height="22"
+            @click="router.replace('/settings')"
           />
         </div>
       </ion-buttons>

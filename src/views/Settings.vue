@@ -76,8 +76,8 @@ const unlinkSpotify = () => {
               interface="action-sheet"
               fill="outline"
               :cancel-text="t('generic.cancel')"
-              @ionChange="changeLanguage"
               :value="locale"
+              @ion-change="changeLanguage"
             >
               <ion-select-option
                 v-for="(item, index) in messages.lang"
@@ -93,8 +93,8 @@ const unlinkSpotify = () => {
           <div class="toggle-dark-mode">
             <ion-icon :src="sunnyOutline" />
             <ion-toggle
-              @ionChange="toggleDarkPalette"
               :checked="layout.state.isDarkTheme"
+              @ion-change="toggleDarkPalette"
             />
             <ion-icon :src="moonOutline" />
           </div>

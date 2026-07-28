@@ -13,12 +13,11 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-import java.io.IOException;
-
-import org.json.JSONException;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 
 import com.andreu92.shannic.models.*;
+
+import java.io.IOException;
 
 @CapacitorPlugin(name = "YoutubePlugin")
 public class YoutubePlugin extends Plugin {
@@ -38,6 +37,7 @@ public class YoutubePlugin extends Plugin {
 
     @PluginMethod
     public void search(final PluginCall call) {
+        final String NO_RESULTS = "NO_RESULTS";
         try {
             final String query = call.getString("query");
             final Boolean onlyMusic = call.getBoolean("only_music");
@@ -48,10 +48,13 @@ public class YoutubePlugin extends Plugin {
             else
                 searchResponse = youtubeService.search(query);
 
+            if (searchResponse.items().isEmpty())
+                throw new SearchExtractor.NothingFoundException(NO_RESULTS);
+
             String json = mapper.writeValueAsString(searchResponse);
             call.resolve(new JSObject(json));
         } catch (SearchExtractor.NothingFoundException e) {
-            call.reject(e.getMessage(), "NO_RESULTS");
+            call.reject(NO_RESULTS);
         } catch (Exception e) {
             call.reject(e.getMessage());
         }

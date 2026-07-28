@@ -119,9 +119,9 @@ const toggleFavorite = async (audio_id: string) => {
 
 <template>
   <div
-    class="mini-player"
-    ref="player"
     v-if="player_store.audio"
+    ref="player"
+    class="mini-player"
     :style="{
       color: color_theme.title_text_color,
       background: color_theme.main_color,
@@ -140,37 +140,49 @@ const toggleFavorite = async (audio_id: string) => {
       </div>
     </div>
     <div class="mini-player-actions">
-      <ion-icon
-        :src="player_store.repeat ? infinite : repeat"
-        @click="player_store.toggleRepeat()"
-      ></ion-icon>
-      <ion-icon
-        :src="playSkipBack"
-        @click="player_store.skipPrevious()"
-      ></ion-icon>
-      <ion-spinner v-if="player_store.state == states.buffering"></ion-spinner>
-      <ion-icon
-        v-else
-        :src="player_store.state == states.playing ? pause : play"
-        @click="
-          player_store.state == states.playing
-            ? player_store.pause()
-            : player_store.resume()
-        "
-      ></ion-icon>
-      <ion-icon
-        v-if="player_store.hasNext"
-        :src="playSkipForward"
-        @click="player_store.skipNext()"
-      ></ion-icon>
-      <ion-icon
-        :src="
-          favorites_store.isFavorite(player_store.audio!.id)
-            ? heart
-            : heartOutline
-        "
-        @click="toggleFavorite(player_store.audio!.id)"
-      ></ion-icon>
+      <div>
+        <ion-icon
+          :src="player_store.repeat ? infinite : repeat"
+          @click="player_store.toggleRepeat()"
+        ></ion-icon>
+      </div>
+      <div>
+        <ion-icon
+          :src="playSkipBack"
+          @click="player_store.skipPrevious()"
+        ></ion-icon>
+      </div>
+      <div>
+        <ion-spinner
+          v-if="player_store.state == states.buffering"
+        ></ion-spinner>
+        <ion-icon
+          v-else
+          :src="player_store.state == states.playing ? pause : play"
+          @click="
+            player_store.state == states.playing
+              ? player_store.pause()
+              : player_store.resume()
+          "
+        ></ion-icon>
+      </div>
+      <div>
+        <ion-icon
+          v-if="player_store.hasNext"
+          :src="playSkipForward"
+          @click="player_store.skipNext()"
+        ></ion-icon>
+      </div>
+      <div>
+        <ion-icon
+          :src="
+            favorites_store.isFavorite(player_store.audio!.id)
+              ? heart
+              : heartOutline
+          "
+          @click="toggleFavorite(player_store.audio!.id)"
+        ></ion-icon>
+      </div>
     </div>
     <div class="mini-player-audio-range">
       <div>
@@ -180,9 +192,9 @@ const toggleFavorite = async (audio_id: string) => {
         :value="Math.floor(player_store.current_position / 1000)"
         :min="0"
         :max="player_store.audio!.duration"
-        @ionKnobMoveStart="onDragStart"
-        @ionKnobMoveEnd="onDragEnd"
-        @ionChange="handleSeek"
+        @ion-knob-move-start="onDragStart"
+        @ion-knob-move-end="onDragEnd"
+        @ion-change="handleSeek"
       ></ion-range>
       <div>{{ formatDuration(player_store.audio!.duration) }}</div>
     </div>
@@ -228,9 +240,23 @@ ion-range {
 .mini-player-actions {
   font-size: 1.6rem;
   display: flex;
-  justify-content: space-between;
   padding: 0 5px;
   margin-top: 18px;
+}
+
+.mini-player-actions > div {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mini-player-actions > div:first-child {
+  justify-content: flex-start;
+}
+
+.mini-player-actions > div:last-child {
+  justify-content: flex-end;
 }
 
 .mini-player-audio-range {

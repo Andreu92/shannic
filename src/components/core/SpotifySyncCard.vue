@@ -11,8 +11,8 @@ const spotify_sync_store = useSpotifySyncStore();
 
 <template>
   <ion-card
-    color="dark"
     v-if="spotify_sync_store.is_syncing"
+    color="dark"
     class="spotify-sync-card"
   >
     <ion-card-content>

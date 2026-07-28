@@ -29,6 +29,7 @@ import usePlayerStore from "@/stores/PlayerStore";
 import type { SearchResult } from "@/types";
 import { formatDuration, showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
+import { CapacitorException } from "@capacitor/core";
 
 const { t } = useI18n();
 
@@ -75,11 +76,11 @@ const search = async (e?: SearchbarCustomEvent) => {
 
     has_next_page.value = search_data.has_next_page;
     search_items.value = search_data.items;
-  } catch (error: any) {
-    if (error.code && error.code === "NO_RESULTS") {
-      showToast(t("search.noResults"), "warning");
-    } else {
-      showToast(t("search.error"));
+  } catch (error) {
+    if (error instanceof CapacitorException) {
+      if (error.message === "NO_RESULTS")
+        showToast(t("search.noResults"), "warning");
+      else showToast(t("search.error"));
     }
 
     has_next_page.value = false;
@@ -165,8 +166,8 @@ const toggleFavorite = async (audio_id: string) => {
 
         <ion-segment
           :value="search_music ? 'true' : 'false'"
-          @ion-change="toggleSearchMusic"
           style="padding: 0px 6px; margin-bottom: 10px"
+          @ion-change="toggleSearchMusic"
         >
           <ion-segment-button value="false" layout="icon-end">
             <ion-label>{{ t("search.all") }}</ion-label>
@@ -198,7 +199,16 @@ const toggleFavorite = async (audio_id: string) => {
                     name="dots"
                   ></ion-spinner>
                   <ion-thumbnail v-else>
-                    <img :src="item.thumbnail" loading="lazy" />
+                    <img
+                      :src="item.thumbnail"
+                      loading="lazy"
+                      @error="
+                        (e) => {
+                          const img = e.target as HTMLImageElement;
+                          if (img.src !== iconLight) img.src = iconLight;
+                        }
+                      "
+                    />
                   </ion-thumbnail>
                 </Transition>
               </div>

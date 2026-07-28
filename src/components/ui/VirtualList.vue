@@ -61,9 +61,9 @@ watch(
 
 <template>
   <div
+    ref="vlist_wrapper_ref"
     class="flex col grow"
     :class="loading ? 'center' : ''"
-    ref="vlist_wrapper_ref"
     style="overflow-y: auto"
   >
     <ion-spinner

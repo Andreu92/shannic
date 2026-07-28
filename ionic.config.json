@@ -1,7 +1,0 @@
-{
-  "name": "Shannic",
-  "integrations": {
-    "capacitor": {}
-  },
-  "type": "vue-vite"
-}

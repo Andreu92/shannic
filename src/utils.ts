@@ -23,7 +23,7 @@ export const buildAudio = async (
 const getFormattedColors = (
   palette: Awaited<ReturnType<typeof Vibrant.prototype.getPalette>>,
 ): Palette => {
-  const colors: Palette = {} as Palette;
+  const colors: Palette = {};
 
   Object.keys(palette).forEach((key) => {
     const item = palette[key];

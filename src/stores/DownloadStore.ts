@@ -43,7 +43,7 @@ export const useDownloadStore = defineStore("downloads", () => {
 
     status.is_downloading = true;
     status.current = audio_id;
-    
+
     const audio = await audio_service.getCreateOrUpdateAudio(audio_id);
 
     const fileInfo = await Filesystem.getUri({

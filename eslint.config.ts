@@ -1,32 +1,39 @@
-import js from "@eslint/js";
-import globals from "globals";
+import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import pluginVue from "eslint-plugin-vue";
-import { defineConfig } from "eslint/config";
-import vueConfigPrettier from "@vue/eslint-config-prettier";
-import vueConfigTypescript from "@vue/eslint-config-typescript";
+import globals from "globals";
+import eslintConfigPrettier from "eslint-config-prettier";
 
-export default defineConfig([
+export default [
   {
-    files: ["**/*.{js,mjs,cjs,ts,mts,cts,vue}"],
-    plugins: { js },
-    extends: ["js/recommended"],
-    languageOptions: { globals: globals.browser },
+    ignores: ["**/dist/**", "**/node_modules/**", "**/coverage/**", "*.d.ts"],
   },
-  tseslint.configs.recommended,
-  pluginVue.configs["flat/essential"],
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  ...pluginVue.configs["flat/recommended"],
   {
-    files: ["**/*.vue"],
-    languageOptions: { parserOptions: { parser: tseslint.parser } },
-  },
-  vueConfigTypescript(),
-  vueConfigPrettier,
-  {
+    files: ["**/*.{ts,tsx,vue,js,jsx}"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+      parserOptions: {
+        parser: tseslint.parser,
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+        extraFileExtensions: [".vue"],
+      },
+    },
     rules: {
       "vue/multi-word-component-names": "off",
-      "vue/no-deprecated-slot-attribute": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
-      "@typescript-eslint/no-unused-expressions": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_" },
+      ],
     },
   },
-]);
+  eslintConfigPrettier,
+];

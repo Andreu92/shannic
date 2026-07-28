@@ -36,7 +36,10 @@ const checkForUpdate = () => {
               update.url = data.html_url;
             }
 
-            localStorage.setItem("last_update_check_date", Date.now().toString());
+            localStorage.setItem(
+              "last_update_check_date",
+              Date.now().toString(),
+            );
           })
           .catch(() => {
             throw new Error("Error parsing check for updates response.");

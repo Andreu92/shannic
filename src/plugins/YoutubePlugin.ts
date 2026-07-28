@@ -32,6 +32,4 @@ export interface YoutubePlugin {
   fetchNextPage(): Promise<YoutubeSearch>;
 }
 
-export const youtube_plugin: YoutubePlugin = registerPlugin(
-  "YoutubePlugin",
-);
+export const youtube_plugin: YoutubePlugin = registerPlugin("YoutubePlugin");

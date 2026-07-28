@@ -7,7 +7,6 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import { buildAudio, showToast } from "@/utils";
 import { useI18n } from "vue-i18n";
 import { type YoutubeAudioItem } from "@/plugins/YoutubePlugin";
-import { AudioItem } from "@/types";
 
 export const states = {
   paused: 0,
@@ -110,24 +109,24 @@ const usePlayerStore = defineStore("player", () => {
       const next_item = await audio_service.createOrUpdateAudio(
         await buildAudio(data as YoutubeAudioItem),
       );
-      
+
       if (!playlist_items.value) return;
-      
+
       const is_favorite = favorites_store.isFavorite(next_item.id);
       playlist_items.value.push(next_item.toMutableJSON());
       toggleFavorite(is_favorite, playlist_items.value?.length - 1);
     });
-    player_plugin.addListener("onSourceError", async () => {
+    player_plugin.addListener("onSourceError", () => {
       //TO DO: Show Error
       state.value = states.buffering;
     });
-    player_plugin.addListener("onAudioUnplayable", async () => {
+    player_plugin.addListener("onAudioUnplayable", () => {
       showToast(t("errors.audio_unplayable"));
       reset();
     });
   };
 
-  const play = async (audio_items: RxAudio[], shuffle: boolean = false) => {
+  const play = (audio_items: RxAudio[], shuffle: boolean = false) => {
     playlist_items.value = audio_items;
 
     const player_audio_items: PlayerAudio[] = audio_items.map((a) => ({

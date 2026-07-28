@@ -4,7 +4,7 @@ import {
   IonHeader,
   IonImg,
   IonTitle,
-  IonToolbar
+  IonToolbar,
 } from "@ionic/vue";
 import { useRouter } from "vue-router";
 import logoDarkTheme from "@/assets/img/logo-dark-theme.png";
@@ -29,9 +29,20 @@ const network_store = useNetworkStore();
         />
       </ion-title>
       <ion-buttons slot="end">
-        <div style="display: flex; align-items: center; gap: 12px; margin-right: 12px">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-right: 12px;
+          "
+        >
           <WifiOffIcon v-if="!network_store.is_online" width="22" height="22" />
-          <SettingsIcon @click="router.replace('/settings')" width="22" height="22" />
+          <SettingsIcon
+            @click="router.replace('/settings')"
+            width="22"
+            height="22"
+          />
         </div>
       </ion-buttons>
     </ion-toolbar>

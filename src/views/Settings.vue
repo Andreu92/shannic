@@ -102,11 +102,7 @@ const unlinkSpotify = () => {
         <div>
           <div>{{ t("spotify.unlink") }}</div>
           <div>
-            <ion-button
-              color="primary"
-              shape="round"
-              @click="unlinkSpotify"
-            >
+            <ion-button color="primary" shape="round" @click="unlinkSpotify">
               <div slot="icon-only" class="spotify-button-container">
                 <div class="spotify-icon-background">
                   <Icon icon="logos:spotify-icon"></Icon>

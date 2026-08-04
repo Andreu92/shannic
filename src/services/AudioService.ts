@@ -16,8 +16,8 @@ const useAudioService = () => {
     return audio_doc;
   };
 
-  const fetchAudio = async (url: string): Promise<AudioItem> => {
-    const yt_audio_item: YoutubeAudioItem = await youtube_plugin.get({ url });
+  const fetchAudio = async (id: string): Promise<AudioItem> => {
+    const yt_audio_item: YoutubeAudioItem = await youtube_plugin.get({ id });
     return await buildAudio(yt_audio_item);
   };
 
@@ -43,7 +43,6 @@ const useAudioService = () => {
     if (!audio) throw new Error("Audio not found");
 
     return await audio.incrementalModify((audioDoc: RxAudio) => {
-      audioDoc.url = updated_audio.url;
       audioDoc.src = updated_audio.src;
       audioDoc.title = updated_audio.title;
       audioDoc.author = updated_audio.author;
@@ -56,20 +55,16 @@ const useAudioService = () => {
     });
   };
 
-  const getCreateOrUpdateAudio = async (
-    id: string,
-    url?: string,
-  ): Promise<AudioDocument> => {
+  const getCreateOrUpdateAudio = async (id: string): Promise<AudioDocument> => {
     const audio_doc: AudioDocument | null = await getAudioById(id);
 
     if (!audio_doc) {
-      if (!url) throw new Error("Audio not found and no URL provided");
-      const audio_item: AudioItem = await fetchAudio(url);
+      const audio_item: AudioItem = await fetchAudio(id);
       return await createAudio(audio_item);
     }
 
-    if (audio_doc.expires_at && audio_doc.expires_at - 10000 < Date.now()) {
-      const audio_item: AudioItem = await fetchAudio(audio_doc.url);
+    if (audio_doc.expires_at && (audio_doc.expires_at - 10) < (Date.now() / 1000)) {
+      const audio_item: AudioItem = await fetchAudio(id);
       return await updateAudio(audio_item);
     }
 
@@ -81,9 +76,7 @@ const useAudioService = () => {
   ): Promise<AudioDocument> => {
     const audio_doc: AudioDocument | null = await getAudioById(audio_item.id);
 
-    if (!audio_doc) {
-      return await createAudio(audio_item);
-    }
+    if (!audio_doc) return await createAudio(audio_item);
 
     return await updateAudio(audio_item);
   };

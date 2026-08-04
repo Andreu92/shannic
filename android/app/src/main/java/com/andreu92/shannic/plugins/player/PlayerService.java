@@ -39,6 +39,7 @@ import androidx.media3.session.SessionResult;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+import com.andreu92.shannic.plugins.youtube.YoutubeConstants;
 import com.andreu92.shannic.plugins.youtube.utils.ShannicDownloader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -66,7 +67,7 @@ public class PlayerService extends MediaSessionService {
 
             // Empty url means refresh
             if (srcString.isBlank()) {
-                String newSrc = refreshSrc(dataSpec);
+                String newSrc = refreshSrc(dataSpec.key);
                 if (newSrc != null && !newSrc.isBlank()) {
                     return dataSpec.buildUpon()
                             .setUri(Uri.parse(newSrc))
@@ -80,7 +81,7 @@ public class PlayerService extends MediaSessionService {
 
             long expires_at = Long.parseLong(expires_at_str) * 1000;
             if ((expires_at - 10000) < System.currentTimeMillis()) {
-                    String newSrc = refreshSrc(dataSpec);
+                    String newSrc = refreshSrc(dataSpec.key);
                     if (newSrc != null) {
                         return dataSpec.buildUpon()
                                 .setUri(Uri.parse(newSrc))
@@ -155,7 +156,7 @@ public class PlayerService extends MediaSessionService {
                 .build();
 
         DefaultHttpDataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory()
-                .setUserAgent(ShannicDownloader.USER_AGENT)
+                .setUserAgent(YoutubeConstants.BROWSER_USER_AGENT)
                 .setAllowCrossProtocolRedirects(true);
 
         DefaultDataSource.Factory baseDataSourceFactory =
@@ -315,9 +316,9 @@ public class PlayerService extends MediaSessionService {
         mediaSession.setMediaButtonPreferences(ImmutableList.of(repeatBtn, favoriteBtn));
     }
 
-    private String refreshSrc(DataSpec dataSpec) {
+    private String refreshSrc(String id) {
         try {
-            AudioItem item = youtubeService.get(dataSpec.key);
+            AudioItem item = youtubeService.get(id);
 
             if (item.src() == null || item.src().isBlank()) {
                 mediaSession.sendCustomCommand(appControllerInfo,
@@ -339,7 +340,7 @@ public class PlayerService extends MediaSessionService {
 
             return item.src();
         } catch (Exception e) {
-            Log.e("PlayerService", "Error refreshing SRC:" + e.getMessage());
+            Log.e("PlayerService", "Error refreshing SRC: " + e.getMessage());
             return null;
         }
     }

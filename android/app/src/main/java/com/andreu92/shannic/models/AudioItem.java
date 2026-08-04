@@ -6,7 +6,6 @@ public record AudioItem(
         String author,
         long duration,
         String thumbnail,
-        String url,
         String src,
         long expiresAt
 ) {}

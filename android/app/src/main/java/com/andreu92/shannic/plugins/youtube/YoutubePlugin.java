@@ -17,8 +17,6 @@ import org.schabi.newpipe.extractor.search.SearchExtractor;
 
 import com.andreu92.shannic.models.*;
 
-import java.io.IOException;
-
 @CapacitorPlugin(name = "YoutubePlugin")
 public class YoutubePlugin extends Plugin {
     private YoutubeService youtubeService;
@@ -74,9 +72,9 @@ public class YoutubePlugin extends Plugin {
     @PluginMethod
     public void get(final PluginCall call) {
         try {
-            final String url = call.getString("url");
+            final String id = call.getString("id");
 
-            AudioItem audioItem = youtubeService.get(url);
+            AudioItem audioItem = youtubeService.get(id);
             String json = mapper.writeValueAsString(audioItem);
 
             call.resolve(new JSObject(json));

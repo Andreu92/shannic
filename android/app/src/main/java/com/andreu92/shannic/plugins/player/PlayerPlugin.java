@@ -23,6 +23,7 @@ import androidx.media3.session.SessionCommand;
 import androidx.media3.session.SessionResult;
 import androidx.media3.session.SessionToken;
 
+import com.andreu92.shannic.plugins.youtube.YoutubeConstants;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -50,7 +51,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.IntStream;
 
 import com.andreu92.shannic.models.AudioItem;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
@@ -136,13 +136,13 @@ public class PlayerPlugin extends Plugin {
 
                         if (nextMediaItemIndex != C.INDEX_UNSET) {
                             MediaItem nextMediaItem = mediaController.getMediaItemAt(nextMediaItemIndex);
-                            executorService.execute(() -> refreshAudioUrl(nextMediaItem, nextMediaItemIndex));
+                            executorService.execute(() -> refreshAudioSrc(nextMediaItem, nextMediaItemIndex));
                         }
 
                         int previousMediaItemIndex = mediaController.getPreviousMediaItemIndex();
                         if (previousMediaItemIndex != C.INDEX_UNSET) {
                             MediaItem previousMediaItem = mediaController.getMediaItemAt(previousMediaItemIndex);
-                            executorService.execute(() -> refreshAudioUrl(previousMediaItem, previousMediaItemIndex));
+                            executorService.execute(() -> refreshAudioSrc(previousMediaItem, previousMediaItemIndex));
                         }
                     }
 
@@ -184,7 +184,7 @@ public class PlayerPlugin extends Plugin {
                         if (item == null) return;
 
                         Log.e("PlayerPlugin", "onPlayerError for audio: " + item.mediaId);
-                        Log.e("PlayerPlugin", "Audio URL: " + item.localConfiguration.uri);
+                        Log.e("PlayerPlugin", "Audio SRC: " + item.localConfiguration.uri);
                         Log.e("PlayerPlugin", "Error Code: " + error.errorCode);
                         Log.e("PlayerPlugin", "Error Code name: " + error.getErrorCodeName());
                         Log.e("PlayerPlugin", "Error Cause: " + error.getCause());
@@ -200,7 +200,7 @@ public class PlayerPlugin extends Plugin {
 
                         // File not found (user manually or android deleted it?)
                         if (error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND) {
-                            refreshAudioUrl(item, index);
+                            refreshAudioSrc(item, index);
                             mediaController.prepare();
                             mediaController.play();
                             return;
@@ -210,7 +210,7 @@ public class PlayerPlugin extends Plugin {
                         if (error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
                                 || error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED) {
                             removeMediaItemFromCache(item);
-                            refreshAudioUrl(item, index);
+                            refreshAudioSrc(item, index);
                             mediaController.prepare();
                             mediaController.seekTo(currentPos);
                             mediaController.play();
@@ -236,7 +236,7 @@ public class PlayerPlugin extends Plugin {
         else notifyListeners("onPause", data);
     }
 
-    private void refreshAudioUrl(MediaItem itemToRefresh, int index) {
+    private void refreshAudioSrc(MediaItem itemToRefresh, int index) {
         if (itemToRefresh.localConfiguration == null) return;
 
         String expires_at_str = itemToRefresh.localConfiguration.uri.getQueryParameter("expire");
@@ -246,7 +246,8 @@ public class PlayerPlugin extends Plugin {
         if ((expires_at - 10000) < System.currentTimeMillis()) {
             executorService.execute(() -> {
                 try {
-                    AudioItem item = youtubeService.get(itemToRefresh.mediaId);
+                    AudioItem item = youtubeService
+                            .get(YoutubeConstants.WATCH_FULL_URL + itemToRefresh.mediaId);
                     onSrcRefresh(item.id(), item.src(), item.expiresAt());
 
                     getActivity().runOnUiThread(() -> {
@@ -265,6 +266,8 @@ public class PlayerPlugin extends Plugin {
     @OptIn(markerClass = UnstableApi.class)
     private void setNextItems() throws JSONException, JsonProcessingException, InterruptedException {
         List<String> nextItems = youtubeService.getNextItems();
+        if (nextItems == null) return;
+
         final Set<String> existingMediaIds = new HashSet<>();
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -282,16 +285,11 @@ public class PlayerPlugin extends Plugin {
 
         latch.await();
 
-        for (String url : nextItems) {
-            String id = youtubeService.extractYoutubeId(url);
-            if (id == null || existingMediaIds.contains(id)) continue;
+        for (String id : nextItems) {
+            if (existingMediaIds.contains(id)) continue;
             existingMediaIds.add(id);
 
-            AudioItem item = youtubeService.get(url);
-
-            // To do: check next is fav
-            Bundle extras = new Bundle();
-            extras.putBoolean("favorite", false);
+            AudioItem item = youtubeService.get(id);
 
             MediaItem nextMediaItem =
                     new MediaItem.Builder()
@@ -303,7 +301,6 @@ public class PlayerPlugin extends Plugin {
                                             .setArtist(item.author())
                                             .setTitle(item.title())
                                             .setArtworkUri(Uri.parse(item.thumbnail()))
-                                            .setExtras(extras)
                                             .build())
                             .build();
 
@@ -349,6 +346,9 @@ public class PlayerPlugin extends Plugin {
 
         ArrayList<PlayerAudioItem> audioItems = mapper.readValue(js_audio_items_array.toString(), new TypeReference<>() {});
         ArrayList<MediaItem> mediaItems = new ArrayList<>();
+
+        if (audioItems.size() == 1) youtubeService.setCurrentItemId(audioItems.get(0).id());
+        else youtubeService.setCurrentItemId(null);
 
         for (PlayerAudioItem item : audioItems) {
             Bundle extras = new Bundle();

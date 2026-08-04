@@ -41,13 +41,8 @@
 ion-toast::part(wrapper) {
   margin-bottom: 70px;
 }
-/* Custom shared styles */
 
-.flex-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
+/* Custom shared styles */
 
 .flex {
   display: flex;
@@ -56,6 +51,15 @@ ion-toast::part(wrapper) {
 .center {
   align-items: center;
   justify-content: center;
+}
+
+.center-y {
+  align-items: center;
+}
+
+.between {
+  justify-content: space-between;
+  align-items: center;
 }
 
 .col {

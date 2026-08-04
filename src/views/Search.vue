@@ -45,12 +45,12 @@ const loading = ref<boolean>(false);
 const fetching_next_page = ref<boolean>(false);
 const fetching_audio = ref<boolean>(false);
 
-const search_items = ref<SearchResult[]>([]);
+const search_results = ref<SearchResult[]>([]);
 const has_next_page = ref<boolean>(false);
 const audio_id_to_play = ref<string | null>(null);
 
 const search = async (e?: SearchbarCustomEvent) => {
-  search_items.value = [];
+  search_results.value = [];
   has_next_page.value = false;
 
   Keyboard.hide();
@@ -75,7 +75,7 @@ const search = async (e?: SearchbarCustomEvent) => {
     });
 
     has_next_page.value = search_data.has_next_page;
-    search_items.value = search_data.items;
+    search_results.value = search_data.items;
   } catch (error) {
     if (error instanceof CapacitorException) {
       if (error.message === "NO_RESULTS")
@@ -84,7 +84,7 @@ const search = async (e?: SearchbarCustomEvent) => {
     }
 
     has_next_page.value = false;
-    search_items.value = [];
+    search_results.value = [];
   } finally {
     loading.value = false;
   }
@@ -93,7 +93,7 @@ const search = async (e?: SearchbarCustomEvent) => {
 const clearSearch = () => {
   search_query.value = null;
   has_next_page.value = false;
-  search_items.value = [];
+  search_results.value = [];
 };
 
 const fetchNextPage = async () => {
@@ -110,9 +110,9 @@ const fetchNextPage = async () => {
     const new_results: YoutubeSearch = await youtube_plugin.fetchNextPage();
 
     has_next_page.value = new_results.has_next_page;
-    search_items.value.push(
+    search_results.value.push(
       ...new_results.items.filter(
-        (item) => !search_items.value.some((i) => i.id === item.id),
+        (item) => !search_results.value.some((i) => i.id === item.id),
       ),
     );
   } catch {
@@ -132,7 +132,7 @@ const play = async (audio: SearchResult) => {
   fetching_audio.value = true;
 
   const audio_to_play: RxAudio = (
-    await audio_service.getCreateOrUpdateAudio(audio.id, audio.url)
+    await audio_service.getCreateOrUpdateAudio(audio.id)
   ).toMutableJSON();
 
   player_store.play([audio_to_play]);
@@ -157,7 +157,7 @@ const toggleFavorite = async (audio_id: string) => {
   <ion-page>
     <AppHeader />
     <ion-content class="ion-padding">
-      <div class="flex-container">
+      <div class="flex col h-full">
         <ion-searchbar
           :placeholder="t('search.placeholder')"
           @ion-change="search"
@@ -180,8 +180,8 @@ const toggleFavorite = async (audio_id: string) => {
         </ion-segment>
 
         <VirtualList
-          v-if="loading || search_items.length > 0"
-          :items="search_items"
+          v-if="loading || search_results.length > 0"
+          :items="search_results"
           :loading="loading"
           :loading-next-page="fetching_next_page"
           :has-more="has_next_page"

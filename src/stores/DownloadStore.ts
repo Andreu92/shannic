@@ -66,7 +66,7 @@ export const useDownloadStore = defineStore("downloads", () => {
       .then((res) => {
         if (res.path) {
           audio.incrementalPatch({
-            url: res.path,
+            src: res.path,
             expires_at: undefined,
             updated_at: Date.now(),
           });

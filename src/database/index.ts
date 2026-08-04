@@ -13,7 +13,7 @@ import {
 } from "rxdb/plugins/storage-dexie";
 import { type App, inject, type Plugin } from "vue";
 import { FAVORITES_PLAYLIST_ID, SPOTIFY_CONFIG_ID } from "@/constants";
-import { audioSchema, RxAudio } from "@/schemas/audio";
+import { audioSchema } from "@/schemas/audio";
 import { playlistMethods, playlistSchema } from "@/schemas/playlist";
 import { spotifySchema } from "@/schemas/spotify";
 import type { RxShannicCollections, RxShannicDatabase } from "@/types";
@@ -50,13 +50,6 @@ export async function createDatabase(): Promise<Plugin> {
   await db.addCollections({
     audios: {
       schema: audioSchema,
-      migrationStrategies: {
-        1: function (doc: RxAudio) {
-          doc.src = doc.url;
-          doc.url = `https://www.youtube.com/watch?v=${doc.id}`;
-          return doc;
-        },
-      },
     },
     playlists: {
       schema: playlistSchema,

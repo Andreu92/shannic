@@ -11,7 +11,6 @@ export interface YoutubeSearchItem {
   author: string;
   thumbnail: string;
   duration: number;
-  url: string;
 }
 
 export interface YoutubeAudioItem extends YoutubeSearchItem {
@@ -20,7 +19,7 @@ export interface YoutubeAudioItem extends YoutubeSearchItem {
 }
 
 export interface YoutubePlugin {
-  get(options: { url: string }): Promise<YoutubeAudioItem>;
+  get(options: { id: string }): Promise<YoutubeAudioItem>;
   getByQuery(options: {
     artist: string;
     title: string;

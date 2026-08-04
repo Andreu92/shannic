@@ -4,6 +4,5 @@ public record SearchItem(
         String title,
         String author,
         String thumbnail,
-        long duration,
-        String url
+        long duration
 ) {}

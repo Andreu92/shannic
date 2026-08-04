@@ -2,6 +2,7 @@
 import EsFlagIcon from "@iconify-vue/circle-flags/es";
 import CaFlagIcon from "@iconify-vue/circle-flags/es-ct";
 import GbFlagIcon from "@iconify-vue/circle-flags/gb";
+import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
 import { InAppBrowser } from "@capgo/inappbrowser";
 import type {
   IonSelectCustomEvent,
@@ -68,7 +69,7 @@ const unlinkSpotify = () => {
         <div>
           <div style="display: flex; align-items: center; gap: 5px">
             <div>{{ t("settings.language") }}</div>
-            <Icon :icon="icons[locale]" :style="{ fontSize: '20px' }" />
+            <Component :is="icons[locale]" :style="{ fontSize: '20px' }" />
           </div>
           <div>
             <ion-select
@@ -105,7 +106,7 @@ const unlinkSpotify = () => {
             <ion-button color="primary" shape="round" @click="unlinkSpotify">
               <div slot="icon-only" class="spotify-button-container">
                 <div class="spotify-icon-background">
-                  <Icon icon="logos:spotify-icon"></Icon>
+                  <SpotifyIcon />
                 </div>
                 <ion-icon :icon="closeOutline" class="close-icon-overlay" />
               </div>

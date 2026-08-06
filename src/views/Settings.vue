@@ -2,6 +2,16 @@
 import EsFlagIcon from "@iconify-vue/circle-flags/es";
 import CaFlagIcon from "@iconify-vue/circle-flags/es-ct";
 import GbFlagIcon from "@iconify-vue/circle-flags/gb";
+import ZhFlagIcon from "@iconify-vue/circle-flags/lang-zh";
+import ArFlagIcon from "@iconify-vue/circle-flags/lang-ar";
+import ItFlagIcon from "@iconify-vue/circle-flags/it";
+import FrFlagIcon from "@iconify-vue/circle-flags/fr";
+import DeFlagIcon from "@iconify-vue/circle-flags/de";
+import PtFlagIcon from "@iconify-vue/circle-flags/pt";
+import RuFlagIcon from "@iconify-vue/circle-flags/ru";
+import PlFlagIcon from "@iconify-vue/circle-flags/pl";
+import NlFlagIcon from "@iconify-vue/circle-flags/nl";
+import JaFlagIcon from "@iconify-vue/circle-flags/jp";
 import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
 import { InAppBrowser } from "@capgo/inappbrowser";
 import type {
@@ -37,6 +47,16 @@ const icons: Record<string, Component> = {
   es: EsFlagIcon,
   ca: CaFlagIcon,
   en: GbFlagIcon,
+  zh_CN: ZhFlagIcon,
+  ar: ArFlagIcon,
+  it: ItFlagIcon,
+  fr: FrFlagIcon,
+  de: DeFlagIcon,
+  pt_PT: PtFlagIcon,
+  ru: RuFlagIcon,
+  pl: PlFlagIcon,
+  nl: NlFlagIcon,
+  ja: JaFlagIcon,
 };
 
 const toggleDarkPalette = (
@@ -69,11 +89,10 @@ const unlinkSpotify = () => {
         <div>
           <div style="display: flex; align-items: center; gap: 5px">
             <div>{{ t("settings.language") }}</div>
-            <Component :is="icons[locale]" :style="{ fontSize: '20px' }" />
+            <Component :is="icons[locale]" height="24" />
           </div>
           <div>
             <ion-select
-              aria-label="Fruit"
               interface="action-sheet"
               fill="outline"
               :cancel-text="t('generic.cancel')"

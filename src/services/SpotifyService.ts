@@ -21,7 +21,7 @@ const useSpotifyService = () => {
 
   const SPOTIFY_DEVELOPER_URL = "https://developer.spotify.com";
   const SPOTIFY_TOKEN_URL: string = "https://accounts.spotify.com/api/token";
-  const SPOTIFY_AUTH_URL: string = `https://accounts.spotify.com/${locale.value}/v2/login`;
+  const SPOTIFY_AUTH_URL: string = `https://accounts.spotify.com/${locale.value.replace("_", "-")}/login`;
   const SPOTIFY_CLIENT_ID: string = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 
   const db = useDatabase();

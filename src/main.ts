@@ -5,7 +5,7 @@ import { createI18n } from "vue-i18n";
 
 import App from "@/App.vue";
 import { createDatabase } from "@/database";
-import { ca, en, es } from "@/lang";
+import { ar, ca, zh_CN, nl, en, es, fr, de, it, ja, pl, ru, pt_PT } from "@/lang";
 import router from "@/router";
 
 /* Core CSS required for Ionic components to work properly */
@@ -31,12 +31,22 @@ import "./theme/styles.scss";
 
 const i18n = createI18n({
   legacy: false,
-  locale: "es",
-  fallbackLocale: "es",
+  locale: "en",
+  fallbackLocale: "en",
   messages: {
     es: es,
     en: en,
     ca: ca,
+    zh_CN: zh_CN,
+    ar: ar,
+    it: it,
+    fr: fr,
+    de: de,
+    pt_PT: pt_PT,
+    ru: ru,
+    pl: pl,
+    nl: nl,
+    ja: ja,
   },
 });
 

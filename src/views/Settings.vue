@@ -87,7 +87,7 @@ const unlinkSpotify = () => {
     <ion-content fullscreen class="ion-padding">
       <div class="settings-container">
         <div>
-          <div style="display: flex; align-items: center; gap: 5px">
+          <div classs="flex center-y" style="gap: 5px">
             <div>{{ t("settings.language") }}</div>
             <Component :is="icons[locale]" height="24" />
           </div>

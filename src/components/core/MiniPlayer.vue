@@ -221,7 +221,7 @@ ion-range {
 
 .mini-player {
   position: fixed;
-  bottom: 135px;
+  bottom: 180px;
   left: 10px;
   right: 10px;
   z-index: 9999;

@@ -259,9 +259,15 @@ public class PlayerService extends MediaSessionService {
                                     favorite = args.getBoolean("favorite");
                                 }
 
-                                MediaItem item = player.getMediaItemAt(toggledIndex);
-                                    Bundle extras = new Bundle();
-                                    extras.putBoolean("favorite", favorite);
+                                MediaItem item;
+                                try {
+                                    item = player.getMediaItemAt(toggledIndex);
+                                } catch (IndexOutOfBoundsException e) {
+                                    return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));
+                                }
+
+                                Bundle extras = new Bundle();
+                                extras.putBoolean("favorite", favorite);
 
                                 MediaMetadata newMetadata = item.mediaMetadata.buildUpon()
                                         .setExtras(extras)

@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import { IonSpinner } from "@ionic/vue";
 import { IonFab, IonFabButton } from "@ionic/vue";
@@ -45,9 +45,11 @@ const handleScroll = () => {
   if (!vlist_ref.value) return;
 
   const { scrollTop, scrollHeight, clientHeight } = vlist_ref.value;
+
   show_up.value = scrollTop > 100;
   show_down.value =
-    scrollHeight > clientHeight && scrollTop < scrollHeight - 100;
+    scrollHeight > clientHeight &&
+    scrollTop < scrollHeight - clientHeight - 100;
 };
 
 const scrollToTop = () => {
@@ -81,21 +83,22 @@ watch(
 watch(
   () => vlist_ref.value,
   (el) => {
-    if (el) {
-      el.scrollTop = 0;
-      const { scrollHeight, clientHeight } = el;
-      is_scrollable.value = scrollHeight > clientHeight;
-      handleScroll();
-    }
+    if (el) el.scrollTop = 0;
   },
 );
 
 watch(
   () => props.items,
-  (items) => {
-    if (items.length) handleScroll();
+  async (items) => {
+    if (items.length) {
+      await nextTick();
+      if (!vlist_ref.value) return;
+      const { scrollHeight, clientHeight } = vlist_ref.value;
+      is_scrollable.value = scrollHeight > clientHeight;
+      handleScroll();
+    }
   },
-  { deep: true },
+  { deep: true, immediate: true },
 );
 </script>
 
@@ -159,16 +162,16 @@ watch(
     horizontal="end"
     vertical="bottom"
   >
-    <div class="flex center">
+    <div class="flex center" style="width: 55px; height: 55px">
       <Transition name="fade">
-        <ion-fab-button v-show="show_up" size="small" @click="scrollToTop">
+        <ion-fab-button v-if="show_up" size="small" @click="scrollToTop">
           <ion-icon :icon="arrowUp" color="dark"></ion-icon>
         </ion-fab-button>
       </Transition>
     </div>
-    <div class="flex center">
+    <div class="flex center" style="width: 55px; height: 55px">
       <Transition name="fade">
-        <ion-fab-button v-show="show_down" size="small" @click="scrollToBottom">
+        <ion-fab-button v-if="show_down" size="small" @click="scrollToBottom">
           <ion-icon :icon="arrowDown" color="dark"></ion-icon>
         </ion-fab-button>
       </Transition>

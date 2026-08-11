@@ -24,6 +24,7 @@ export interface PlayerPlugin {
   toggleRepeat(options: { repeating: boolean }): Promise<void>;
   toggleFavorite(options: { favorite: boolean; index: number }): Promise<void>;
   getCurrentPosition(): Promise<{ position: number }>;
+  isInQueue(options: { id: string }): Promise<{ is_in_queue: boolean }>;
   addListener(
     event: string,
     callback: (
@@ -31,7 +32,7 @@ export interface PlayerPlugin {
         | { position: number }
         | { repeating: boolean }
         | { favorite: boolean }
-        | { index: number }
+        | { id: string, index: number }
         | { id: string; src: string; expires_at: number }
         | { item: YoutubeAudioItem },
     ) => void,

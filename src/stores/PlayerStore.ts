@@ -70,11 +70,30 @@ const usePlayerStore = defineStore("player", () => {
       stopProgressTimer();
       state.value = states.paused;
     });
-    player_plugin.addListener("onMediaItemChanged", (data) => {
+    player_plugin.addListener("onMediaItemChanged", async (data) => {
       if (!playlist_items.value) return;
-      const { index } = data as { index: number };
-      audio.value = playlist_items.value[index];
-      current_index.value = index;
+
+      try {
+        const { id, index } = data as { id: string, index: number };
+        const current_audio: RxAudio = playlist_items.value[index];
+        
+        if (current_audio.id == id) {
+          audio.value = current_audio;
+          current_index.value = index;
+        } else {
+          // fix autoplay thread interrupt possible disaster
+          const { is_in_queue } = await player_plugin.isInQueue({id: current_audio.id});
+          if (!is_in_queue) playlist_items.value.splice(index, 1);
+          
+          const current_audio_index: number = playlist_items.value.findIndex(a => a.id == id);
+          if (current_audio_index != -1) {
+            audio.value = playlist_items.value[current_audio_index];
+            current_index.value = current_audio_index;
+          }
+        }
+      } catch (e) {
+        console.log(e);
+      }
     });
     player_plugin.addListener("onToggleRepeat", (data) => {
       const { repeating } = data as { repeating: boolean };
@@ -122,7 +141,8 @@ const usePlayerStore = defineStore("player", () => {
     });
     player_plugin.addListener("onAudioUnplayable", () => {
       showToast(t("errors.audio_unplayable"));
-      reset();
+      if (hasNext.value) skipNext();
+      else reset();
     });
   };
 
@@ -186,7 +206,7 @@ const usePlayerStore = defineStore("player", () => {
     player_plugin.toggleRepeat({ repeating: repeat.value });
   };
 
-  const isInPlaylist = (audio_id: string): boolean => {
+  const alreadyInQueue = (audio_id: string): boolean => {
     return playlist_items.value?.some((a) => a.id === audio_id) ?? false;
   };
 
@@ -213,7 +233,7 @@ const usePlayerStore = defineStore("player", () => {
     toggleFavorite,
     stopProgressTimer,
     startProgressTimer,
-    isInPlaylist,
+    alreadyInQueue,
     getIndexById,
   };
 });

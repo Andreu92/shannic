@@ -1,7 +1,5 @@
 package com.andreu92.shannic.plugins.player;
 
-import static com.andreu92.shannic.plugins.youtube.YoutubePlugin.mapper;
-
 import android.content.ComponentName;
 import android.net.Uri;
 import android.os.Bundle;
@@ -23,18 +21,13 @@ import androidx.media3.session.SessionCommand;
 import androidx.media3.session.SessionResult;
 import androidx.media3.session.SessionToken;
 
+import com.andreu92.shannic.plugins.Constants;
 import com.andreu92.shannic.plugins.youtube.YoutubeConstants;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -44,13 +37,12 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.andreu92.shannic.models.AudioItem;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
@@ -62,6 +54,9 @@ public class PlayerPlugin extends Plugin {
     private YoutubeService youtubeService;
     private MediaController mediaController;
     private ListenableFuture<MediaController> controllerFuture;
+    private Future<?> autoPlayTask;
+    private final AtomicInteger autoPlaySession = new AtomicInteger(0);
+    private int autoPlaySessionId = 0;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @OptIn(markerClass = UnstableApi.class)
@@ -89,7 +84,8 @@ public class PlayerPlugin extends Plugin {
                             notifyListeners("onToggleFavorite", null);
 
                         if (command.customAction.equals(PlayerActions.ACTION_SRC_REFRESH))
-                            onSrcRefresh(args.getString("id"), args.getString("src"), args.getLong("expires_at"));
+                            onSrcRefresh(args.getString("id"), args.getString("src"),
+                                    args.getLong("expires_at"));
 
                         if (command.customAction.equals(PlayerActions.ACTION_AUDIO_UNPLAYABLE)) {
                             if (mediaController.hasNextMediaItem()) {
@@ -101,7 +97,9 @@ public class PlayerPlugin extends Plugin {
                             }
                         }
 
-                        return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));
+                        return Futures.immediateFuture(
+                                new SessionResult(SessionResult.RESULT_SUCCESS)
+                        );
                     }
                 })
                 .buildAsync();
@@ -116,22 +114,14 @@ public class PlayerPlugin extends Plugin {
                         if (mediaItem == null || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) return;
 
                         JSObject data = new JSObject();
+                        data.put("id", mediaController.getCurrentMediaItem().mediaId);
                         data.put("index", mediaController.getCurrentMediaItemIndex());
                         notifyListeners("onMediaItemChanged", data);
 
                         int nextMediaItemIndex = mediaController.getNextMediaItemIndex();
-                        int mediaItemCount = mediaController.getMediaItemCount();
-                        if (nextMediaItemIndex >= mediaItemCount - 2 || nextMediaItemIndex == C.INDEX_UNSET) {
-                            executorService.execute(() -> {
-                                try {
-                                    setNextItems();
-                                } catch (Exception e) {
-                                    JSObject error = new JSObject();
-                                    error.put("msg", e.getMessage());
-                                    notifyListeners("onAutoPlayError", error);
-                                    Log.e("Autoplay", e.toString());
-                                }
-                            });
+                        if (autoPlayTask != null && autoPlayTask.isDone()
+                                && nextMediaItemIndex >= mediaController.getMediaItemCount() - 2) {
+                            runAutoPlay();
                         }
 
                         if (nextMediaItemIndex != C.INDEX_UNSET) {
@@ -239,7 +229,8 @@ public class PlayerPlugin extends Plugin {
     private void refreshAudioSrc(MediaItem itemToRefresh, int index) {
         if (itemToRefresh.localConfiguration == null) return;
 
-        String expires_at_str = itemToRefresh.localConfiguration.uri.getQueryParameter("expire");
+        String expires_at_str = itemToRefresh.localConfiguration.uri
+                .getQueryParameter(YoutubeConstants.EXPIRE_QUERY_PARAM);
         if (expires_at_str == null) return;
 
         long expires_at = Long.parseLong(expires_at_str) * 1000;
@@ -263,32 +254,27 @@ public class PlayerPlugin extends Plugin {
         }
     }
 
-    @OptIn(markerClass = UnstableApi.class)
-    private void setNextItems() throws JSONException, JsonProcessingException, InterruptedException {
-        List<String> nextItems = youtubeService.getNextItems();
-        if (nextItems == null) return;
-
-        final Set<String> existingMediaIds = new HashSet<>();
-
-        CountDownLatch latch = new CountDownLatch(1);
-        getActivity().runOnUiThread(() -> {
-                try {
-                    int count = mediaController.getMediaItemCount();
-                    for (int i = 0; i < count; i++) {
-                        MediaItem item = mediaController.getMediaItemAt(i);
-                        existingMediaIds.add(item.mediaId);
-                    }
-                } finally {
-                    latch.countDown();
-                }
+    private void runAutoPlay() {
+        autoPlayTask = executorService.submit(() -> {
+            try {
+                pushAutoPlayItems(autoPlaySessionId);
+            } catch (RuntimeException e) {
+                Log.d("AutoPlay", e.toString());
+            } catch (Exception e) {
+                JSObject error = new JSObject();
+                error.put("msg", e.getMessage());
+                notifyListeners("onAutoPlayError", error);
+                Log.e("AutoPlay", e.toString());
+            }
         });
+    }
 
-        latch.await();
+    @OptIn(markerClass = UnstableApi.class)
+    private void pushAutoPlayItems(int sessionId) throws JSONException, JsonProcessingException {
+        List<String> nextItems = youtubeService.getNextItems();
+        if (nextItems == null || nextItems.isEmpty()) return;
 
         for (String id : nextItems) {
-            if (existingMediaIds.contains(id)) continue;
-            existingMediaIds.add(id);
-
             AudioItem item = youtubeService.get(id);
 
             MediaItem nextMediaItem =
@@ -304,12 +290,11 @@ public class PlayerPlugin extends Plugin {
                                             .build())
                             .build();
 
-            getActivity().runOnUiThread(() -> {
-                mediaController.addMediaItem(nextMediaItem);
-            });
-
-            String json = mapper.writeValueAsString(item);
-            notifyListeners("onSetNextItem", new JSObject(json));
+            if (sessionId == autoPlaySession.get()) {
+                getActivity().runOnUiThread(() -> mediaController.addMediaItem(nextMediaItem));
+                String json = Constants.mapper.writeValueAsString(item);
+                notifyListeners("onSetNextItem", new JSObject(json));
+            }
         }
     }
 
@@ -332,22 +317,24 @@ public class PlayerPlugin extends Plugin {
     @OptIn(markerClass = UnstableApi.class)
     @PluginMethod()
     public void play(PluginCall call) throws JsonProcessingException {
-        youtubeService.resetAutoPlay();
+        if (autoPlayTask != null && !autoPlayTask.isDone()) {
+            autoPlayTask.cancel(true);
+        }
+        youtubeService.clearCurrentPlaylistExtractor();
 
         JSArray js_audio_items_array = call.getArray("audio_items");
         boolean shuffle = call.getBoolean("shuffle", false);
 
-        JsonMapper mapper = JsonMapper.builder()
-                .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.ALWAYS))
-                .visibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
-                .enable(SerializationFeature.INDENT_OUTPUT)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .build();
-
-        ArrayList<PlayerAudioItem> audioItems = mapper.readValue(js_audio_items_array.toString(), new TypeReference<>() {});
+        ArrayList<PlayerAudioItem> audioItems = Constants.mapper
+                .readValue(js_audio_items_array.toString(), new TypeReference<>() {});
         ArrayList<MediaItem> mediaItems = new ArrayList<>();
 
-        if (audioItems.size() == 1) youtubeService.setCurrentItemId(audioItems.get(0).id());
+        // Enable autoplay if is not a playlist
+        if (audioItems.size() == 1) {
+            autoPlaySessionId = autoPlaySession.incrementAndGet();
+            youtubeService.setCurrentItemId(audioItems.get(0).id());
+            runAutoPlay();
+        }
         else youtubeService.setCurrentItemId(null);
 
         for (PlayerAudioItem item : audioItems) {
@@ -441,6 +428,8 @@ public class PlayerPlugin extends Plugin {
         boolean favorite = call.getBoolean("favorite");
 
         getActivity().runOnUiThread(() -> {
+            if (mediaController.getMediaItemCount() == 0) return;
+
             Bundle args = new Bundle();
             args.putBoolean("favorite", favorite);
             args.putInt("index", index);
@@ -457,6 +446,24 @@ public class PlayerPlugin extends Plugin {
         getActivity().runOnUiThread(() -> {
             JSObject data = new JSObject();
             data.put("position", mediaController.getCurrentPosition());
+            call.resolve(data);
+        });
+    }
+
+    @PluginMethod
+    public void isInQueue(PluginCall call) {
+        String id = call.getString("id");
+        JSObject data = new JSObject();
+        getActivity().runOnUiThread(() -> {
+            for (int i = 0; i < mediaController.getMediaItemCount(); i++) {
+                MediaItem item = mediaController.getMediaItemAt(i);
+                if (id.equals(item.mediaId)) {
+                    data.put("is_in_queue", true);
+                    call.resolve(data);
+                    return;
+                }
+            }
+            data.put("is_in_queue", false);
             call.resolve(data);
         });
     }

@@ -1,12 +1,6 @@
 package com.andreu92.shannic.plugins.youtube;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-
+import com.andreu92.shannic.plugins.Constants;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -20,12 +14,6 @@ import com.andreu92.shannic.models.*;
 @CapacitorPlugin(name = "YoutubePlugin")
 public class YoutubePlugin extends Plugin {
     private YoutubeService youtubeService;
-    public static final JsonMapper mapper = JsonMapper.builder()
-            .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.ALWAYS))
-            .visibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
-            .build();
 
     @Override
     public void load() {
@@ -49,7 +37,7 @@ public class YoutubePlugin extends Plugin {
             if (searchResponse.items().isEmpty())
                 throw new SearchExtractor.NothingFoundException(NO_RESULTS);
 
-            String json = mapper.writeValueAsString(searchResponse);
+            String json = Constants.mapper.writeValueAsString(searchResponse);
             call.resolve(new JSObject(json));
         } catch (SearchExtractor.NothingFoundException e) {
             call.reject(NO_RESULTS);
@@ -62,7 +50,7 @@ public class YoutubePlugin extends Plugin {
     public void fetchNextPage(final PluginCall call) {
         try {
             SearchResponse searchResponse = youtubeService.fetchNextPage();
-            String json = mapper.writeValueAsString(searchResponse);
+            String json = Constants.mapper.writeValueAsString(searchResponse);
             call.resolve(new JSObject(json));
         } catch (Exception e) {
             call.reject(e.getMessage());
@@ -75,7 +63,7 @@ public class YoutubePlugin extends Plugin {
             final String id = call.getString("id");
 
             AudioItem audioItem = youtubeService.get(id);
-            String json = mapper.writeValueAsString(audioItem);
+            String json = Constants.mapper.writeValueAsString(audioItem);
 
             call.resolve(new JSObject(json));
         } catch (Exception e) {
@@ -90,7 +78,7 @@ public class YoutubePlugin extends Plugin {
             final String title = call.getString("title");
 
             AudioItem audioItem = youtubeService.getByQuery(artist, title);
-            String json = mapper.writeValueAsString(audioItem);
+            String json = Constants.mapper.writeValueAsString(audioItem);
 
             call.resolve(new JSObject(json));
         } catch (Exception e) {

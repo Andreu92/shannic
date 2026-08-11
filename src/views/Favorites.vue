@@ -17,6 +17,7 @@ import {
   type SearchbarCustomEvent,
 } from "@ionic/vue";
 import {
+  cloudDoneOutline,
   cloudDownloadOutline,
   ellipsisVertical,
   heart,
@@ -45,6 +46,8 @@ import useAudioService from "@/services/AudioService";
 import { youtube_plugin } from "@/plugins/YoutubePlugin";
 import { Capacitor } from "@capacitor/core";
 import VirtualList from "@/components/ui/VirtualList.vue";
+import useNetworkStore from "@/stores/NetworkStore";
+import { showToast } from "@/utils";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -53,6 +56,7 @@ const layout = useLayout();
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
 const download_store = useDownloadStore();
+const network_store = useNetworkStore();
 
 const audio_service = useAudioService();
 const spotify_service = useSpotifyService();
@@ -63,16 +67,27 @@ const show_remove_alert = ref(false);
 const to_remove = ref<RxAudio | null>(null);
 const query = ref<string>("");
 const shuffle = ref(false);
+const show_only_downloaded = ref(false);
 
 const search_results = computed(() => {
+  let results = favorites_store.audios;
+
+  if (show_only_downloaded.value) {
+    results = results.filter((audio: RxAudio) => {
+      return audio.src.startsWith("file://");
+    });
+  }
+
   const searchTerm = query.value.trim().toLowerCase();
   if (searchTerm.length) {
-    return favorites_store.audios.filter(
+    results = results.filter(
       (audio: RxAudio) =>
         audio.title.toLowerCase().includes(searchTerm) ||
         audio.author.toLowerCase().includes(searchTerm),
     );
-  } else return favorites_store.audios;
+  }
+
+  return results;
 });
 
 const search = (e: SearchbarCustomEvent) => {
@@ -82,6 +97,25 @@ const search = (e: SearchbarCustomEvent) => {
 
 const clearIfEmpty = (e: SearchbarCustomEvent) => {
   if (!e.detail.value) query.value = "";
+};
+
+const playAll = async () => {
+  if (search_results.value.length === 0) return;
+
+  if (network_store.is_online) {
+    player_store.play([...search_results.value], shuffle.value);
+  } else {
+    const offline_results = search_results.value.filter((audio: RxAudio) => {
+      return !audio.src.startsWith("http");
+    });
+
+    if (offline_results.length === 0) {
+      showToast(t("network.offline"), "warning");
+      return;
+    }
+
+    player_store.play([...offline_results], shuffle.value);
+  }
 };
 
 const showRemoveFromFavoritesAlert = (audio_id: string) => {
@@ -98,7 +132,7 @@ const removeFromFavorites = async () => {
   if (!to_remove.value) return;
 
   favorites_store.deleteFavorite(to_remove.value.id);
-  if (player_store.isInPlaylist(to_remove.value.id)) {
+  if (player_store.alreadyInQueue(to_remove.value.id)) {
     const index = player_store.getIndexById(to_remove.value.id);
     player_store.toggleFavorite(false, index);
   }
@@ -149,6 +183,13 @@ const deleteLocalAudio = async (audio_id: string) => {
               @ion-input="clearIfEmpty"
               @ion-clear="query = ''"
             />
+
+            <toggle-button
+              :enabled="show_only_downloaded"
+              :icon="cloudDoneOutline"
+              @click="show_only_downloaded = !show_only_downloaded"
+            />
+
             <ion-icon
               id="open-actions-popover"
               color="dark"
@@ -180,11 +221,7 @@ const deleteLocalAudio = async (audio_id: string) => {
 
           <!-- General playlist actions -->
           <div v-if="search_results.length" class="flex between">
-            <ion-button
-              fill="clear"
-              shape="round"
-              @click="player_store.play([...search_results], shuffle)"
-            >
+            <ion-button fill="clear" shape="round" @click="playAll">
               <ion-icon
                 slot="icon-only"
                 color="dark"
@@ -220,7 +257,13 @@ const deleteLocalAudio = async (audio_id: string) => {
                 <div class="flex between">
                   <div class="audio-thumbnail">
                     <ion-thumbnail>
-                      <img :src="Capacitor.convertFileSrc(item.thumbnail)" />
+                      <img
+                        :src="
+                          item.thumbnail.startsWith('http')
+                            ? item.thumbnail
+                            : Capacitor.convertFileSrc(item.thumbnail)
+                        "
+                      />
                     </ion-thumbnail>
                   </div>
 

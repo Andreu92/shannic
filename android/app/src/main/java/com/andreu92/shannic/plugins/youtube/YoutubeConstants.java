@@ -8,7 +8,7 @@ public class YoutubeConstants {
     public static final String PLAYER_ENDPOINT = "/player";
 
     public static final String VIDEO_QUERY_PARAM = "v=";
-    public static final String EXPIRE_QUERY_PARAM = "expire=";
+    public static final String EXPIRE_QUERY_PARAM = "expire";
     public static final String LIST_QUERY_PARAM = "list=";
     public static final String VIDEO_TO_RADIO_ID = "RD";
     public static final String LIST_QUERY_PARAM_FULL = LIST_QUERY_PARAM + VIDEO_TO_RADIO_ID;

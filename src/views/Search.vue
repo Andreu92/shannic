@@ -29,7 +29,12 @@ import usePlayerStore from "@/stores/PlayerStore";
 import type { SearchResult } from "@/types";
 import { formatDuration, showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
-import { CapacitorException } from "@capacitor/core";
+import {
+  CapacitorException,
+  CapacitorHttp,
+  HttpOptions,
+  HttpResponse,
+} from "@capacitor/core";
 
 const { t } = useI18n();
 
@@ -128,6 +133,11 @@ const toggleSearchMusic = (e: SegmentCustomEvent) => {
 };
 
 const play = async (audio: SearchResult) => {
+  if (!network_store.is_online) {
+    showToast(t("network.offline"), "warning");
+    return;
+  }
+
   audio_id_to_play.value = audio.id;
   fetching_audio.value = true;
 
@@ -135,8 +145,8 @@ const play = async (audio: SearchResult) => {
     await audio_service.getCreateOrUpdateAudio(audio.id)
   ).toMutableJSON();
 
-  player_store.play([audio_to_play]);
   fetching_audio.value = false;
+  player_store.play([audio_to_play]);
 };
 
 const toggleFavorite = async (audio_id: string) => {
@@ -146,9 +156,40 @@ const toggleFavorite = async (audio_id: string) => {
   }
 
   const is_fav = await favorites_store.toggleFavorite(audio_id);
-  if (player_store.isInPlaylist(audio_id)) {
+  if (player_store.alreadyInQueue(audio_id)) {
     const index = player_store.getIndexById(audio_id);
     player_store.toggleFavorite(is_fav, index);
+  }
+};
+
+const fetchImage = async (item: SearchResult, e: Event) => {
+  const img = e.target as HTMLImageElement;
+  try {
+    const options: HttpOptions = {
+      url: item.thumbnail,
+      responseType: "blob",
+      headers: {
+        Origin: import.meta.env.VITE_YT_BASE_URL,
+        "User-Agent": import.meta.env.VITE_YT_USER_AGENT,
+      },
+    };
+    const response: HttpResponse = await CapacitorHttp.get(options);
+
+    if (response.status === 200 && response.data) {
+      const blob = new Blob([response.data], {
+        type: response.headers["Content-Type"],
+      });
+      const imageUrl = URL.createObjectURL(blob);
+
+      img.src = imageUrl;
+      await img.decode();
+
+      URL.revokeObjectURL(imageUrl);
+    } else {
+      if (img.src !== iconLight) img.src = iconLight;
+    }
+  } catch (error) {
+    if (img.src !== iconLight) img.src = iconLight;
   }
 };
 </script>
@@ -202,12 +243,7 @@ const toggleFavorite = async (audio_id: string) => {
                     <img
                       :src="item.thumbnail"
                       loading="lazy"
-                      @error="
-                        (e) => {
-                          const img = e.target as HTMLImageElement;
-                          if (img.src !== iconLight) img.src = iconLight;
-                        }
-                      "
+                      @error="fetchImage(item, $event)"
                     />
                   </ion-thumbnail>
                 </Transition>

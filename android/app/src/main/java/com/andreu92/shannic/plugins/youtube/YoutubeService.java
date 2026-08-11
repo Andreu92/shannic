@@ -1,7 +1,5 @@
 package com.andreu92.shannic.plugins.youtube;
 
-import static com.andreu92.shannic.plugins.youtube.YoutubePlugin.mapper;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,7 +29,15 @@ import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 import android.util.Log;
 
 import com.andreu92.shannic.models.*;
+import com.andreu92.shannic.plugins.youtube.models.Client;
+import com.andreu92.shannic.plugins.youtube.models.ContentPlaybackContext;
+import com.andreu92.shannic.plugins.youtube.models.Context;
+import com.andreu92.shannic.plugins.youtube.models.PlaybackContext;
+import com.andreu92.shannic.plugins.youtube.models.PlayerRequest;
 import com.andreu92.shannic.plugins.youtube.utils.*;
+import com.andreu92.shannic.plugins.Constants;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import okhttp3.Headers;
@@ -76,7 +82,7 @@ public class YoutubeService {
         this.appFolder = appFolder;
     }
 
-    public void resetAutoPlay() {
+    public void clearCurrentPlaylistExtractor() {
         playlistExtractor = null;
         autoPlayNextPage = null;
     }
@@ -155,7 +161,7 @@ public class YoutubeService {
 
             String streamUrl = bestAudioStream.getContent();
             long expiresAt = Long.parseLong(streamUrl
-                            .split(YoutubeConstants.EXPIRE_QUERY_PARAM)[1]
+                            .split(YoutubeConstants.EXPIRE_QUERY_PARAM + "=")[1]
                             .split("&")[0]);
 
             return new AudioItem(
@@ -173,7 +179,7 @@ public class YoutubeService {
         }
     }*/
 
-    public AudioItem get(String id) {
+    public AudioItem get(String id) throws JsonProcessingException {
         OkHttpClient httpClient = HttpClient.getInstance();
 
         if (visitorId == null) {
@@ -204,38 +210,12 @@ public class YoutubeService {
             .add("Origin", YoutubeConstants.BASE_URL)
             .build();
 
-        String jsonPayload = String.format(Locale.ROOT, """
-            {
-              "context": {
-                "client": {
-                  "clientName": "ANDROID_VR",
-                  "clientVersion": "%s",
-                  "userAgent": "%s",
-                  "osName": "Android",
-                  "osVersion": "12L",
-                  "hl": "en",
-                  "timeZone": "UTC",
-                  "utcOffsetMinutes": 0,
-                  "deviceMake": "Oculus",
-                  "deviceModel": "Quest 3",
-                  "androidSdkVersion": 32
-                }
-              },
-              "videoId": "%s",
-              "playbackContext": {
-                "contentPlaybackContext": {
-                  "html5Preference": "HTML5_PREF_WANTS",
-                  "signatureTimestamp": %d
-                }
-              },
-              "contentCheckOk": true,
-              "racyCheckOk": true
-            }
-            """,
-                YoutubeConstants.VR_CLIENT_VERSION,
-                YoutubeConstants.VR_USER_AGENT,
-                id,
-                signatureTimestamp);
+        Client client = new Client(YoutubeConstants.VR_CLIENT_VERSION, YoutubeConstants.VR_USER_AGENT);
+        Context context = new Context(client);
+        ContentPlaybackContext cpc = new ContentPlaybackContext(signatureTimestamp);
+        PlaybackContext playbackContext = new PlaybackContext(cpc);
+        PlayerRequest req = new PlayerRequest(context, id, playbackContext);
+        String jsonPayload = Constants.mapper.writeValueAsString(req);
 
         RequestBody requestBody = RequestBody.create(
                 jsonPayload, MediaType.get("application/json; charset=utf-8"));
@@ -255,7 +235,7 @@ public class YoutubeService {
             }
 
             String body = response.body().string();
-            JsonNode root = mapper.readTree(body);
+            JsonNode root = Constants.mapper.readTree(body);
             return parsePlayerResponse(root);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -316,10 +296,8 @@ public class YoutubeService {
             try {
                 okhttp3.HttpUrl httpUrl = okhttp3.HttpUrl.parse(src);
                 if (httpUrl != null) {
-                    String expire = httpUrl.queryParameter("expire");
-                    if (expire != null) {
-                        expiresAt = Long.parseLong(expire);
-                    }
+                    String expire = httpUrl.queryParameter(YoutubeConstants.EXPIRE_QUERY_PARAM);
+                    if (expire != null) expiresAt = Long.parseLong(expire);
                 }
             } catch (Exception ignored) {}
         }
@@ -393,7 +371,9 @@ public class YoutubeService {
                     YoutubeConstants.WATCH_FULL_URL + currentItemId + "&"
                             + YoutubeConstants.LIST_QUERY_PARAM_FULL + currentItemId);
             playlistExtractor.fetchPage();
-            return buildItemPageIdsList(playlistExtractor.getInitialPage());
+            List<String> nextItemsIdsList = buildItemPageIdsList(playlistExtractor.getInitialPage());
+            if (nextItemsIdsList.isEmpty()) return null;
+            return nextItemsIdsList.subList(1, nextItemsIdsList.size());
         } catch (Exception e) {
             Log.e("Shannic autoplay", e.toString());
             return null;

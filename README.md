@@ -20,19 +20,19 @@ Want some new features? Open an issue and i will try to work on it.
 
 ## Languages
 
-- Español
-- Català
+- Spanish
+- Catalan
 - English
-- 中文
-- العربية
-- Italiano
-- Français
-- Deutsch
-- Português
-- Русский
-- Polski
-- Nederlands
-- 日本語
+- Chinese
+- Arabic
+- Italian
+- French
+- German
+- Portuguese
+- Russian
+- Polish
+- Dutch
+- Japanese
 
 Request for new languages and suggestions for translations are accepted, just open an issue.
 

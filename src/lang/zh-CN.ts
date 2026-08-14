@@ -56,6 +56,7 @@ const zh_CN = {
   },
   errors: {
     audio_unplayable: "无法播放此音频。",
+    src_error: "播放音频时出错。",
   },
   spotify: {
     link: "关联 Spotify",

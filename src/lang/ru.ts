@@ -57,6 +57,7 @@ const ru = {
   },
   errors: {
     audio_unplayable: "Это аудио не может быть воспроизведено.",
+    src_error: "Ошибка воспроизведения аудио.",
   },
   spotify: {
     link: "Подключить Spotify",

@@ -57,6 +57,7 @@ const fr = {
   },
   errors: {
     audio_unplayable: "Cet audio ne peut pas être lu.",
+    src_error: "Erreur lors de la lecture de l'audio.",
   },
   spotify: {
     link: "Lier Spotify",

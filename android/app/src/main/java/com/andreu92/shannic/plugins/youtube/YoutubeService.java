@@ -8,8 +8,8 @@ import static java.util.Collections.singletonList;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,6 +21,10 @@ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.ListExtractor.InfoItemsPage;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory;
+import org.schabi.newpipe.extractor.stream.Stream;
+import org.schabi.newpipe.extractor.stream.StreamExtractor;
+import org.schabi.newpipe.extractor.Image;
+import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.extractor.playlist.PlaylistExtractor;
 
@@ -29,22 +33,12 @@ import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 import android.util.Log;
 
 import com.andreu92.shannic.models.*;
-import com.andreu92.shannic.plugins.youtube.models.Client;
-import com.andreu92.shannic.plugins.youtube.models.ContentPlaybackContext;
-import com.andreu92.shannic.plugins.youtube.models.Context;
-import com.andreu92.shannic.plugins.youtube.models.PlaybackContext;
-import com.andreu92.shannic.plugins.youtube.models.PlayerRequest;
 import com.andreu92.shannic.plugins.youtube.utils.*;
-import com.andreu92.shannic.plugins.Constants;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import okhttp3.Headers;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class YoutubeService {
@@ -141,10 +135,9 @@ public class YoutubeService {
         return id;
     }
 
-    // NEWPIPE EXTRACTOR WAY (SLOWER BUT MAY BE NECESSARY IN THE FUTURE)
-    /*public AudioItem get(String id) {
+    public AudioItem get(String id) {
         try {
-            streamExtractor = youtube.getStreamExtractor(YoutubeConstants.WATCH_FULL_URL + id);
+            StreamExtractor streamExtractor = youtube.getStreamExtractor(YoutubeConstants.WATCH_FULL_URL + id);
             streamExtractor.fetchPage();
 
             String uploader = streamExtractor.getUploaderName();
@@ -152,6 +145,7 @@ public class YoutubeService {
 
             List<AudioStream> audioStreams = streamExtractor.getAudioStreams();
             AudioStream bestAudioStream = audioStreams.stream()
+                    .filter(Stream::isUrl)
                     .max(Comparator.comparingInt(AudioStream::getBitrate))
                     .orElse(null);
 
@@ -177,147 +171,6 @@ public class YoutubeService {
             e.printStackTrace();
             return null;
         }
-    }*/
-
-    public AudioItem get(String id) throws JsonProcessingException {
-        OkHttpClient httpClient = HttpClient.getInstance();
-
-        if (visitorId == null) {
-            Request request = new Request.Builder()
-                    .url(YoutubeConstants.BASE_URL)
-                    .get()
-                    .build();
-
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (!response.isSuccessful() || response.body() == null) return null;
-                String html = response.body().string();
-                visitorId = extract(html, "\"VISITOR_DATA\":\"([^\"]+)\"");
-
-                String sts = extract(html, "STS\":(\\d+)");
-                if (sts == null) sts = extract(html, "\"signatureTimestamp\":(\\d+)");
-                if (sts != null) signatureTimestamp = Integer.parseInt(sts);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        Headers headers = new Headers.Builder()
-            .add("Content-Type", "application/json")
-            .add("X-YouTube-Client-Name", "28")
-            .add("User-Agent", YoutubeConstants.VR_USER_AGENT)
-            .add("X-YouTube-Client-Version", YoutubeConstants.VR_CLIENT_VERSION)
-            .add("X-Goog-Visitor-Id", visitorId)
-            .add("Origin", YoutubeConstants.BASE_URL)
-            .build();
-
-        Client client = new Client(YoutubeConstants.VR_CLIENT_VERSION, YoutubeConstants.VR_USER_AGENT);
-        Context context = new Context(client);
-        ContentPlaybackContext cpc = new ContentPlaybackContext(signatureTimestamp);
-        PlaybackContext playbackContext = new PlaybackContext(cpc);
-        PlayerRequest req = new PlayerRequest(context, id, playbackContext);
-        String jsonPayload = Constants.mapper.writeValueAsString(req);
-
-        RequestBody requestBody = RequestBody.create(
-                jsonPayload, MediaType.get("application/json; charset=utf-8"));
-
-        Request request = new Request.Builder()
-                .method("POST", requestBody)
-                .url(YoutubeConstants.PLAYER_FULL_URL)
-                .headers(headers)
-                .build();
-
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Unexpected code " + response);
-            }
-            if (response.body() == null) {
-                throw new IOException("Response body is null");
-            }
-
-            String body = response.body().string();
-            JsonNode root = Constants.mapper.readTree(body);
-            return parsePlayerResponse(root);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String extract(String html, String patternStr) {
-        Pattern pattern = Pattern.compile(patternStr);
-        Matcher matcher = pattern.matcher(html);
-        return matcher.find() ? matcher.group(1) : null;
-    }
-
-    public AudioItem parsePlayerResponse(JsonNode root) {
-        JsonNode videoDetails = root.path("videoDetails");
-        String videoId = videoDetails.path("videoId").asText();
-        String title = videoDetails.path("title").asText();
-        String uploader = videoDetails.path("author").asText()
-                .replace(" - Topic", "");;
-        long duration = videoDetails.path("lengthSeconds").asLong(0);
-
-        JsonNode streamingData = root.path("streamingData");
-        List<JsonNode> allFormats = new ArrayList<>();
-        if (streamingData.has("formats"))
-            streamingData.path("formats").forEach(allFormats::add);
-        if (streamingData.has("adaptiveFormats"))
-            streamingData.path("adaptiveFormats").forEach(allFormats::add);
-
-        String src = "";
-        long expiresAt = 0;
-        long maxAudioBitrate = -1;
-
-        for (JsonNode format : allFormats) {
-            String mimeType = format.path("mimeType").asText();
-            long bitrate = format.path("bitrate").asLong(0);
-            String formatUrl = format.path("url").asText();
-            if (formatUrl.isEmpty())
-                continue;
-            if (mimeType.startsWith("audio/")) {
-                if (bitrate > maxAudioBitrate) {
-                    maxAudioBitrate = bitrate;
-                    src = formatUrl;
-                }
-            }
-        }
-
-        if (src.isEmpty()) {
-            for (JsonNode format : allFormats) {
-                String formatUrl = format.path("url").asText();
-                long bitrate = format.path("bitrate").asLong(0);
-                if (!formatUrl.isEmpty() && bitrate > maxAudioBitrate) {
-                    maxAudioBitrate = bitrate;
-                    src = formatUrl;
-                }
-            }
-        }
-
-        if (!src.isEmpty()) {
-            try {
-                okhttp3.HttpUrl httpUrl = okhttp3.HttpUrl.parse(src);
-                if (httpUrl != null) {
-                    String expire = httpUrl.queryParameter(YoutubeConstants.EXPIRE_QUERY_PARAM);
-                    if (expire != null) expiresAt = Long.parseLong(expire);
-                }
-            } catch (Exception ignored) {}
-        }
-
-        JsonNode thumbnails = videoDetails.path("thumbnail").path("thumbnails");
-        String thumbnailPath = "";
-        if (thumbnails.isArray() && !thumbnails.isEmpty()) {
-            thumbnailPath = storeThumbnail(videoId,
-                    thumbnails.get(thumbnails.size() - 1).path("url").asText());
-        }
-
-        return new AudioItem(
-                videoId,
-                title,
-                uploader,
-                duration,
-                thumbnailPath,
-                src,
-                expiresAt
-        );
     }
 
     private String storeThumbnail(String id, String url) {

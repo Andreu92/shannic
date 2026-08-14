@@ -57,6 +57,7 @@ const pl = {
   },
   errors: {
     audio_unplayable: "Nie można odtworzyć tego dźwięku.",
+    src_error: "Błąd podczas odtwarzania dźwięku.",
   },
   spotify: {
     link: "Połącz Spotify",

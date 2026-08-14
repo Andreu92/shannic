@@ -155,11 +155,10 @@ const toggleFavorite = async (audio_id: string) => {
     return;
   }
 
-  const is_fav = await favorites_store.toggleFavorite(audio_id);
-  if (player_store.alreadyInQueue(audio_id)) {
-    const index = player_store.getIndexById(audio_id);
-    player_store.toggleFavorite(is_fav, index);
-  }
+  const favorite = await favorites_store.toggleFavorite(audio_id);
+
+  if (player_store.audio?.id === audio_id)
+    player_store.toggleFavorite(favorite);
 };
 
 const fetchImage = async (item: SearchResult, e: Event) => {

@@ -57,6 +57,7 @@ const it = {
   },
   errors: {
     audio_unplayable: "Impossibile riprodurre questo audio.",
+    src_error: "Errore durante la riproduzione dell'audio.",
   },
   spotify: {
     link: "Collega Spotify",

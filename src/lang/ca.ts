@@ -57,6 +57,7 @@ const ca = {
   },
   errors: {
     audio_unplayable: "Aquest àudio no es pot reproduir.",
+    src_error: "Error en reproduir l'àudio.",
   },
   spotify: {
     link: "Vincular Spotify",

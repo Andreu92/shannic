@@ -130,13 +130,11 @@ const showRemoveFromFavoritesAlert = (audio_id: string) => {
 
 const removeFromFavorites = async () => {
   if (!to_remove.value) return;
-
   favorites_store.deleteFavorite(to_remove.value.id);
-  if (player_store.alreadyInQueue(to_remove.value.id)) {
-    const index = player_store.getIndexById(to_remove.value.id);
-    player_store.toggleFavorite(false, index);
-  }
 
+  if (player_store.audio?.id === to_remove.value.id)
+    player_store.toggleFavorite(false);
+  
   to_remove.value = null;
 };
 

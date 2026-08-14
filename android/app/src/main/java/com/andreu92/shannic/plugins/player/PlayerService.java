@@ -14,7 +14,6 @@ import androidx.annotation.OptIn;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
-import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DataSource;
@@ -36,11 +35,7 @@ import androidx.media3.session.SessionCommand;
 import androidx.media3.session.SessionCommands;
 import androidx.media3.session.SessionResult;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
 import com.andreu92.shannic.plugins.youtube.YoutubeConstants;
-import com.andreu92.shannic.plugins.youtube.utils.ShannicDownloader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -55,6 +50,7 @@ public class PlayerService extends MediaSessionService {
     private MediaSession mediaSession;
     private YoutubeService youtubeService;
     private SessionCommand favoriteCommand;
+    private boolean favorite;
     private SessionCommand repeatCommand;
     private MediaSession.ControllerInfo appControllerInfo;
     private final ResolvingDataSource.Resolver urlResolver = new ResolvingDataSource.Resolver() {
@@ -250,34 +246,8 @@ public class PlayerService extends MediaSessionService {
                                         ? Player.REPEAT_MODE_OFF : Player.REPEAT_MODE_ONE);
                                 break;
                             case PlayerActions.ACTION_TOGGLE_FAVORITE:
-                                int toggledIndex = player.getCurrentMediaItemIndex();
-                                boolean favorite = !player.getCurrentMediaItem().mediaMetadata.extras
-                                        .getBoolean("favorite", false);
-
-                                if (!args.isEmpty()) {
-                                    toggledIndex = args.getInt("index");
-                                    favorite = args.getBoolean("favorite");
-                                }
-
-                                MediaItem item;
-                                try {
-                                    item = player.getMediaItemAt(toggledIndex);
-                                } catch (IndexOutOfBoundsException e) {
-                                    return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));
-                                }
-
-                                Bundle extras = new Bundle();
-                                extras.putBoolean("favorite", favorite);
-
-                                MediaMetadata newMetadata = item.mediaMetadata.buildUpon()
-                                        .setExtras(extras)
-                                        .build();
-
-                                MediaItem updatedItem = item.buildUpon()
-                                        .setMediaMetadata(newMetadata)
-                                        .build();
-
-                                player.replaceMediaItem(toggledIndex, updatedItem);
+                                if (!args.isEmpty()) favorite = args.getBoolean("favorite");
+                                else favorite = !favorite;
 
                                 if (!controller.equals(appControllerInfo))
                                     mediaSession.sendCustomCommand(appControllerInfo, favoriteCommand, Bundle.EMPTY);
@@ -293,16 +263,8 @@ public class PlayerService extends MediaSessionService {
 
     @OptIn(markerClass = UnstableApi.class)
     private void syncNotificationButtons() {
-        MediaItem currentItem = player.getCurrentMediaItem();
-        if (currentItem == null) return;
-
-        boolean isFavorite = false;
-        if (currentItem.mediaMetadata.extras != null) {
-            isFavorite = currentItem.mediaMetadata.extras.getBoolean("favorite", false);
-        }
-
         CommandButton favoriteBtn = new CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-                .setCustomIconResId(isFavorite
+                .setCustomIconResId(favorite
                         ? R.drawable.heart : R.drawable.heart_outline)
                 .setSessionCommand(favoriteCommand)
                 .setDisplayName("Favorite")

@@ -9,6 +9,5 @@ public record PlayerAudioItem(
         @JsonProperty("title") String title,
         @JsonProperty("author") String author,
         @JsonProperty("thumbnail") String thumbnail,
-        @JsonProperty("src") String src,
-        @JsonProperty("favorite") Boolean favorite
+        @JsonProperty("src") String src
 ) implements Serializable {}

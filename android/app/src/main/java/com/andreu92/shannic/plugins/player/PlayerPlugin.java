@@ -168,17 +168,9 @@ public class PlayerPlugin extends Plugin {
                     @Override
                     public void onPlayerError(@NonNull PlaybackException error) {
                         MediaItem item = mediaController.getCurrentMediaItem();
+                        if (item == null) return;
                         int index = mediaController.getCurrentMediaItemIndex();
                         long currentPos = mediaController.getCurrentPosition();
-
-                        if (item == null) return;
-
-                        Log.e("PlayerPlugin", "onPlayerError for audio: " + item.mediaId);
-                        Log.e("PlayerPlugin", "Audio SRC: " + item.localConfiguration.uri);
-                        Log.e("PlayerPlugin", "Error Code: " + error.errorCode);
-                        Log.e("PlayerPlugin", "Error Code name: " + error.getErrorCodeName());
-                        Log.e("PlayerPlugin", "Error Cause: " + error.getCause());
-                        Log.e("PlayerPlugin", "Error Message: " + error.getMessage());
 
                         // Decoder OPUS sometimes fails in older androids
                         if (error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED) {
@@ -207,9 +199,15 @@ public class PlayerPlugin extends Plugin {
                             return;
                         }
 
+                        Log.e("PlayerPlugin", "onPlayerError for audio: " + item.mediaId);
+                        Log.e("PlayerPlugin", "Audio SRC: " + item.localConfiguration.uri);
+                        Log.e("PlayerPlugin", "Error Code: " + error.errorCode);
+                        Log.e("PlayerPlugin", "Error Code name: " + error.getErrorCodeName());
+                        Log.e("PlayerPlugin", "Error Cause: " + error.getCause());
+                        Log.e("PlayerPlugin", "Error Message: " + error.getMessage());
+
                         JSObject data = new JSObject();
                         data.put("code", error.errorCode);
-                        data.put("cause", error.getCause());
                         data.put("message", error.getMessage());
                         notifyListeners("onSourceError", data);
                     }
@@ -338,9 +336,6 @@ public class PlayerPlugin extends Plugin {
         else youtubeService.setCurrentItemId(null);
 
         for (PlayerAudioItem item : audioItems) {
-            Bundle extras = new Bundle();
-            extras.putBoolean("favorite", item.favorite());
-
             MediaItem mediaItem =
                     new MediaItem.Builder()
                             .setMediaId(item.id())
@@ -351,7 +346,6 @@ public class PlayerPlugin extends Plugin {
                                             .setArtist(item.author())
                                             .setTitle(item.title())
                                             .setArtworkUri(Uri.parse(item.thumbnail()))
-                                            .setExtras(extras)
                                             .build())
                             .build();
 
@@ -424,17 +418,13 @@ public class PlayerPlugin extends Plugin {
 
     @PluginMethod()
     public void toggleFavorite(PluginCall call) {
-        int index = call.getInt("index");
         boolean favorite = call.getBoolean("favorite");
-
         getActivity().runOnUiThread(() -> {
-            if (mediaController.getMediaItemCount() == 0) return;
-
             Bundle args = new Bundle();
             args.putBoolean("favorite", favorite);
-            args.putInt("index", index);
 
-            SessionCommand customCommand = new SessionCommand(PlayerActions.ACTION_TOGGLE_FAVORITE, Bundle.EMPTY);
+            SessionCommand customCommand = new SessionCommand(
+                    PlayerActions.ACTION_TOGGLE_FAVORITE, Bundle.EMPTY);
             mediaController.sendCustomCommand(customCommand, args);
 
             call.resolve();

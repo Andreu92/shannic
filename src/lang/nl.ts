@@ -58,6 +58,7 @@ const nl = {
   },
   errors: {
     audio_unplayable: "Deze audio kan niet worden afgespeeld.",
+    src_error: "Fout bij het afspelen van de audio.",
   },
   spotify: {
     link: "Spotify koppelen",

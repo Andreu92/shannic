@@ -58,6 +58,7 @@ const de = {
   },
   errors: {
     audio_unplayable: "Dieses Audio kann nicht wiedergegeben werden.",
+    src_error: "Fehler beim Abspielen des Audios.",
   },
   spotify: {
     link: "Spotify verknüpfen",

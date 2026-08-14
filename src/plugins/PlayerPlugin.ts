@@ -7,7 +7,6 @@ export interface PlayerAudio {
   author: string;
   thumbnail: string;
   src: string;
-  favorite: boolean;
 }
 
 export interface PlayerPlugin {
@@ -22,7 +21,7 @@ export interface PlayerPlugin {
   skipNext(): Promise<void>;
   skipPrevious(): Promise<void>;
   toggleRepeat(options: { repeating: boolean }): Promise<void>;
-  toggleFavorite(options: { favorite: boolean; index: number }): Promise<void>;
+  toggleFavorite(options: { favorite: boolean; }): Promise<void>;
   getCurrentPosition(): Promise<{ position: number }>;
   isInQueue(options: { id: string }): Promise<{ is_in_queue: boolean }>;
   addListener(
@@ -34,7 +33,8 @@ export interface PlayerPlugin {
         | { favorite: boolean }
         | { id: string, index: number }
         | { id: string; src: string; expires_at: number }
-        | { item: YoutubeAudioItem },
+        | { item: YoutubeAudioItem }
+        | { code: number, message: string}
     ) => void,
   ): Promise<PluginListenerHandle>;
 }

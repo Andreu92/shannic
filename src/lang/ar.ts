@@ -57,6 +57,7 @@ const ar = {
   },
   errors: {
     audio_unplayable: "لا يمكن تشغيل هذا الصوت.",
+    src_error: "حدث خطأ أثناء تشغيل الصوت.",
   },
   spotify: {
     link: "ربط سبوتيفاي",

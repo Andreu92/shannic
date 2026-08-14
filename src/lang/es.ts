@@ -57,6 +57,7 @@ const es = {
   },
   errors: {
     audio_unplayable: "Este audio no se puede reproducir.",
+    src_error: "Error al reproducir el audio."
   },
   spotify: {
     link: "Vincular Spotify",

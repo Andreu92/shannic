@@ -57,6 +57,7 @@ const en = {
   },
   errors: {
     audio_unplayable: "This audio cannot be played.",
+    src_error: "Error playing the audio.",
   },
   spotify: {
     link: "Link Spotify",

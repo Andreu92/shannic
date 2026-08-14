@@ -57,6 +57,7 @@ const ja = {
   },
   errors: {
     audio_unplayable: "このオーディオは再生できません。",
+    src_error: "オーディオの再生中にエラーが発生しました。",
   },
   spotify: {
     link: "Spotifyをリンク",

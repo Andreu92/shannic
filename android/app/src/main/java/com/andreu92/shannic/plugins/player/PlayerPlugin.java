@@ -165,8 +165,6 @@ public class PlayerPlugin extends Plugin {
                         notifyListeners("onToggleRepeat", data);
                     }
 
-
-
                     @Override
                     public void onPlayerError(@NonNull PlaybackException error) {
                         MediaItem item = mediaController.getCurrentMediaItem();
@@ -356,12 +354,8 @@ public class PlayerPlugin extends Plugin {
 
         getActivity().runOnUiThread(() -> {
             mediaController.stop();
-            mediaController.setMediaItems(mediaItems);
             mediaController.setShuffleModeEnabled(shuffle);
-            if (!mediaItems.isEmpty() && shuffle) {
-                int randomIndex = (int) (Math.random() * mediaItems.size());
-                mediaController.seekTo(randomIndex, 0);
-            }
+            mediaController.setMediaItems(mediaItems);
             mediaController.prepare();
             mediaController.play();
             call.resolve();
@@ -456,6 +450,15 @@ public class PlayerPlugin extends Plugin {
                 }
             }
             data.put("is_in_queue", false);
+            call.resolve(data);
+        });
+    }
+
+    @PluginMethod
+    public void hasNext(PluginCall call) {
+        JSObject data = new JSObject();
+        getActivity().runOnUiThread(() -> {
+            data.put("has_next", mediaController.hasNextMediaItem());
             call.resolve(data);
         });
     }

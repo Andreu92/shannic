@@ -10,9 +10,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.Page;
@@ -21,10 +20,9 @@ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.ListExtractor.InfoItemsPage;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory;
+import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.StreamExtractor;
-import org.schabi.newpipe.extractor.Image;
-import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.extractor.playlist.PlaylistExtractor;
 
@@ -34,8 +32,6 @@ import android.util.Log;
 
 import com.andreu92.shannic.models.*;
 import com.andreu92.shannic.plugins.youtube.utils.*;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -49,8 +45,6 @@ public class YoutubeService {
     private PlaylistExtractor playlistExtractor;
     private Page autoPlayNextPage;
     private String currentItemId;
-    private String visitorId;
-    private int signatureTimestamp;
     private File appFolder;
 
     private YoutubeService() {
@@ -244,7 +238,8 @@ public class YoutubeService {
     public AudioItem getByQuery(final String artist, final String title)
             throws ExtractionException, IOException {
         SearchResponse response = searchMusic(artist + " " + title);
-        SearchItem bestMatch = SongMatcher.getBestYoutubeMatch(artist, title, response.items());
-        return get(bestMatch.id());
+        List<SearchItem> items = response.items();
+        if (!items.isEmpty()) return get(items.get(0).id());
+        else return null;
     }
 }

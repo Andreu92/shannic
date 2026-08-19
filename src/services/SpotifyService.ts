@@ -9,7 +9,7 @@ import { useI18n } from "vue-i18n";
 import { SPOTIFY_CONFIG_ID } from "@/constants";
 import { useDatabase } from "@/database";
 import useSpotifySyncStore from "@/stores/SpotifySyncStore";
-import type { SpotifyDocument } from "@/types";
+import type { AudioDocument, SpotifyDocument } from "@/types";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import useAudioService from "@/services/AudioService";
 import { KeepAwake } from "@capgo/capacitor-keep-awake";
@@ -164,8 +164,9 @@ const useSpotifyService = () => {
             return;
           }
 
-          await audio_service.createAudio(audio);
-          favorites_store.addFavorite(audio.id);
+          audio_service
+            .createAudio(audio)
+            .then((a: AudioDocument) => favorites_store.addFavorite(a.id));
         } catch {
           // TO DO: Show error to user
         } finally {

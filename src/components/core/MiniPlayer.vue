@@ -168,7 +168,7 @@ const toggleFavorite = async (audio_id: string) => {
       </div>
       <div>
         <ion-icon
-          v-if="player_store.hasNext"
+          v-if="player_store.has_next"
           :src="playSkipForward"
           @click="player_store.skipNext()"
         ></ion-icon>

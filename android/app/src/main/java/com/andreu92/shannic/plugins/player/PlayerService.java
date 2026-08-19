@@ -61,7 +61,6 @@ public class PlayerService extends MediaSessionService {
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ResolvingDataSource.Resolver urlResolver = new ResolvingDataSource.Resolver() {
         @NonNull
-        @OptIn(markerClass = UnstableApi.class)
         @Override
         public DataSpec resolveDataSpec(DataSpec dataSpec) {
             Uri audioSrc = dataSpec.uri;
@@ -101,7 +100,6 @@ public class PlayerService extends MediaSessionService {
         return mediaSession;
     }
 
-    @OptIn(markerClass = UnstableApi.class)
     @Override
     public void onCreate() {
         super.onCreate();
@@ -134,7 +132,6 @@ public class PlayerService extends MediaSessionService {
         super.onDestroy();
     }
 
-    @OptIn(markerClass = UnstableApi.class)
     @Override
     public void onTaskRemoved(@Nullable Intent rootIntent) {
         pauseAllPlayersAndStopSelf();
@@ -150,7 +147,6 @@ public class PlayerService extends MediaSessionService {
         notificationManager.createNotificationChannel(channel);
     }
 
-    @OptIn(markerClass = UnstableApi.class)
     private void createPlayer() {
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(C.USAGE_MEDIA)
@@ -238,7 +234,6 @@ public class PlayerService extends MediaSessionService {
                         }, executorService);
                     }
 
-                    @OptIn(markerClass = UnstableApi.class)
                     @NonNull
                     @Override
                     public MediaSession.ConnectionResult onConnect(
@@ -254,12 +249,11 @@ public class PlayerService extends MediaSessionService {
                                 .add(repeatCommand).add(favoriteCommand)
                                 .build();
 
-                        return new MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                        return new MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
                                 .setAvailableSessionCommands(sessionCommands)
                                 .build();
                     }
 
-                    @OptIn(markerClass = UnstableApi.class)
                     @NonNull
                     @Override
                     public ListenableFuture<SessionResult> onCustomCommand(
@@ -294,7 +288,6 @@ public class PlayerService extends MediaSessionService {
                 .build();
     }
 
-    @OptIn(markerClass = UnstableApi.class)
     private void syncNotificationButtons() {
         CommandButton favoriteBtn = new CommandButton.Builder(CommandButton.ICON_UNDEFINED)
                 .setCustomIconResId(favorite

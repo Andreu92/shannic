@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { type PlayerAudio, player_plugin } from "@/plugins/PlayerPlugin";
 import type { RxAudio } from "@/schemas/audio";
 import useAudioService from "@/services/AudioService";
@@ -26,6 +26,7 @@ const usePlayerStore = defineStore("player", () => {
   const state = ref<number>(states.paused);
   const repeat = ref<boolean>(false);
   const current_position = ref<number>(0);
+  const has_next = ref<boolean>(false);
   let progress_timer: number | null = null;
 
   const startProgressTimer = () => {
@@ -98,6 +99,9 @@ const usePlayerStore = defineStore("player", () => {
         }
       }
 
+      const response = await player_plugin.hasNext();
+      has_next.value = response.has_next;
+      
       toggleFavorite(favorites_store.isFavorite(current_audio.id));
     });
 
@@ -143,22 +147,22 @@ const usePlayerStore = defineStore("player", () => {
     });
 
     player_plugin.addListener("onSourceError", (data) => {
-      const { code, code_name, message } = data as {
+      const { code, name, message } = data as {
         code: number;
-        code_name: string;
+        name: string;
         message: string;
       };
       if (code === 2001) showToast(t("network.offline"));
       else
         showToast(
-          t("errors.src_error") + code + " - " + code_name + " - " + message,
+          t("errors.src_error") + " " + code + " - " + name + " - " + message,
         );
       state.value = states.paused;
     });
 
-    player_plugin.addListener("onAudioUnplayable", () => {
+    player_plugin.addListener("onAudioUnplayable", async () => {
       showToast(t("errors.audio_unplayable"));
-      if (hasNext.value) skipNext();
+      if (has_next.value) skipNext();
       else reset();
     });
   };
@@ -201,11 +205,6 @@ const usePlayerStore = defineStore("player", () => {
     player_plugin.skipNext();
   };
 
-  const hasNext = computed<boolean>(() => {
-    if (current_index.value === null || !playlist_items.value) return false;
-    return current_index.value < playlist_items.value.length - 1;
-  });
-
   const skipPrevious = () => {
     player_plugin.skipPrevious();
   };
@@ -232,6 +231,7 @@ const usePlayerStore = defineStore("player", () => {
     state,
     repeat,
     current_position,
+    has_next,
     initListeners,
     play,
     resume,
@@ -240,7 +240,6 @@ const usePlayerStore = defineStore("player", () => {
     stop,
     reset,
     skipNext,
-    hasNext,
     skipPrevious,
     toggleRepeat,
     toggleFavorite,

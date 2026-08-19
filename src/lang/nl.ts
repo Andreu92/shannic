@@ -29,7 +29,6 @@ const nl = {
     playlists: "Afspeellijsten",
   },
   search: {
-    placeholder: "Zoeken in de cloud... :)",
     start: "Waar wil je naar luisteren?",
     error: "Fout bij het zoeken in de cloud.",
     noResults: "Geen resultaten gevonden.",
@@ -37,7 +36,6 @@ const nl = {
     music: "Muziek",
   },
   favorites: {
-    placeholder: "Zoeken in je favorieten... :)",
     no_results: "Oeps! Het lijkt erop dat ik niets kan vinden.",
     start: "Heb je nog geen favorieten? :O",
     spotify: "Importeren van Spotify",
@@ -51,6 +49,9 @@ const nl = {
       message:
         "Weet je zeker dat je al je favorieten wilt downloaden? Zorg ervoor dat je genoeg ruimte op je apparaat hebt!",
     },
+  },
+  playlist: {
+    alreadyDownloaded: "De selectie is al gedownload.",
   },
   settings: {
     language: "Taal",

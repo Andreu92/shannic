@@ -29,7 +29,6 @@ const it = {
     playlists: "Playlist",
   },
   search: {
-    placeholder: "Cerca nel cloud... :)",
     start: "Cosa ti piacerebbe ascoltare?",
     error: "Errore durante la ricerca nel cloud.",
     noResults: "Nessun risultato trovato.",
@@ -37,7 +36,6 @@ const it = {
     music: "Musica",
   },
   favorites: {
-    placeholder: "Cerca nei tuoi preferiti... :)",
     no_results: "Ops! Sembra che non riesca a trovare nulla.",
     start: "Non hai ancora nessun preferito? :O",
     spotify: "Importa da Spotify",
@@ -50,6 +48,9 @@ const it = {
       message:
         "Sei sicuro di voler scaricare tutti i tuoi preferiti? Assicurati di avere abbastanza spazio sul tuo dispositivo!",
     },
+  },
+  playlist: {
+    alreadyDownloaded: "La selezione è già stata scaricata.",
   },
   settings: {
     language: "Lingua",

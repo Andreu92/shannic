@@ -6,7 +6,7 @@ export interface PlayerAudio {
   title: string;
   author: string;
   thumbnail: string;
-  src: string;
+  src?: string;
 }
 
 export interface PlayerPlugin {
@@ -34,7 +34,7 @@ export interface PlayerPlugin {
         | { id: string, index: number }
         | { id: string; src: string; expires_at: number }
         | { item: YoutubeAudioItem }
-        | { code: number, message: string}
+        | { code: number, code_name: string, message: string}
     ) => void,
   ): Promise<PluginListenerHandle>;
 }

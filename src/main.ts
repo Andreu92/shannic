@@ -31,7 +31,7 @@ import "./theme/styles.scss";
 
 const i18n = createI18n({
   legacy: false,
-  locale: "en",
+  locale: localStorage.getItem("lang") || "en",
   fallbackLocale: "en",
   messages: {
     es: es,

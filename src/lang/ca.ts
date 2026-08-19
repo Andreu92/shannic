@@ -29,7 +29,6 @@ const ca = {
     playlists: "Llistes",
   },
   search: {
-    placeholder: "Cerca al núvol... :)",
     start: "Què t'agradaria escoltar?",
     error: "Error en realitzar la cerca al núvol.",
     noResults: "No s'han trobat resultats.",
@@ -37,7 +36,6 @@ const ca = {
     music: "Música",
   },
   favorites: {
-    placeholder: "Cerca als teus favorits... :)",
     no_results: "Vaja! Sembla que no trobo res.",
     start: "Encara no tens favorits? :O",
     spotify: "Importar de Spotify",
@@ -50,6 +48,9 @@ const ca = {
       message:
         "Segur que vols descarregar tots els teus favorits? Assegura't de tenir espai suficient al teu dispositiu!",
     },
+  },
+  playlist: {
+    alreadyDownloaded: "La selecció ja s'ha descarregat.",
   },
   settings: {
     language: "Idioma",

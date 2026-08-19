@@ -29,7 +29,6 @@ const zh_CN = {
     playlists: "播放列表",
   },
   search: {
-    placeholder: "在云端搜索... :)",
     start: "你想听点什么？",
     error: "云端搜索出错。",
     noResults: "未找到结果。",
@@ -37,7 +36,6 @@ const zh_CN = {
     music: "音乐",
   },
   favorites: {
-    placeholder: "在收藏中搜索... :)",
     no_results: "哎呀！好像找不到任何东西。",
     start: "还没有收藏吗？ :O",
     spotify: "从 Spotify 导入",
@@ -49,6 +47,9 @@ const zh_CN = {
       header: "下载收藏",
       message: "确定要下载所有收藏吗？请确保设备上有足够的空间！",
     },
+  },
+  playlist: {
+    alreadyDownloaded: "所选内容已下载。",
   },
   settings: {
     language: "语言",

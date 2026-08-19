@@ -29,7 +29,6 @@ const pt_PT = {
     playlists: "Listas",
   },
   search: {
-    placeholder: "Pesquise na nuvem... :)",
     start: "O que você gostaria de ouvir?",
     error: "Erro ao realizar a pesquisa na nuvem.",
     noResults: "Nenhum resultado encontrado.",
@@ -37,7 +36,6 @@ const pt_PT = {
     music: "Música",
   },
   favorites: {
-    placeholder: "Pesquise nos seus favoritos... :)",
     no_results: "Ops! Parece que não consigo encontrar nada.",
     start: "Você ainda não tem nenhum favorito? :O",
     spotify: "Importar do Spotify",
@@ -50,6 +48,9 @@ const pt_PT = {
       message:
         "Tem certeza de que deseja baixar todos os seus favoritos? Certifique-se de ter espaço suficiente no seu dispositivo!",
     },
+  },
+  playlist: {
+    alreadyDownloaded: "A seleção já foi descarregada.",
   },
   settings: {
     language: "Idioma",

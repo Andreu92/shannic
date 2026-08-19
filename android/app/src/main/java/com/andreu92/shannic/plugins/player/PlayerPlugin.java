@@ -165,6 +165,8 @@ public class PlayerPlugin extends Plugin {
                         notifyListeners("onToggleRepeat", data);
                     }
 
+
+
                     @Override
                     public void onPlayerError(@NonNull PlaybackException error) {
                         MediaItem item = mediaController.getCurrentMediaItem();
@@ -208,6 +210,7 @@ public class PlayerPlugin extends Plugin {
 
                         JSObject data = new JSObject();
                         data.put("code", error.errorCode);
+                        data.put("name", error.getErrorCodeName());
                         data.put("message", error.getMessage());
                         notifyListeners("onSourceError", data);
                     }
@@ -235,12 +238,11 @@ public class PlayerPlugin extends Plugin {
         if ((expires_at - 10000) < System.currentTimeMillis()) {
             executorService.execute(() -> {
                 try {
-                    AudioItem item = youtubeService
-                            .get(YoutubeConstants.WATCH_FULL_URL + itemToRefresh.mediaId);
+                    AudioItem item = youtubeService.get(itemToRefresh.mediaId);
+                    if (item == null) return;
                     onSrcRefresh(item.id(), item.src(), item.expiresAt());
 
                     getActivity().runOnUiThread(() -> {
-                        if (item.src() == null) return;
                         MediaItem oldItem = mediaController.getMediaItemAt(index);
                         MediaItem newItem = oldItem.buildUpon().setUri(item.src()).build();
                         mediaController.replaceMediaItem(index, newItem);

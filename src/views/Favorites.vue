@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Keyboard } from "@capacitor/keyboard";
 import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
+import SyncSavedLocallyRoundedIcon from "@iconify-vue/material-symbols/sync-saved-locally-rounded";
 import {
   IonAlert,
   IonButton,
@@ -17,8 +18,7 @@ import {
   type SearchbarCustomEvent,
 } from "@ionic/vue";
 import {
-  cloudDoneOutline,
-  cloudDownloadOutline,
+  downloadOutline as download_icon,
   ellipsisVertical,
   heart,
   heartOutline,
@@ -74,7 +74,7 @@ const search_results = computed(() => {
 
   if (show_only_downloaded.value) {
     results = results.filter((audio: RxAudio) => {
-      return audio.src.startsWith("file://");
+      return audio.src?.startsWith("file://");
     });
   }
 
@@ -99,6 +99,18 @@ const clearIfEmpty = (e: SearchbarCustomEvent) => {
   if (!e.detail.value) query.value = "";
 };
 
+const play = (audio: RxAudio[]) => {
+  if (
+    (!audio[0].src || audio[0].src.startsWith("http")) &&
+    !network_store.is_online
+  ) {
+    showToast(t("network.offline"), "warning");
+    return;
+  }
+
+  player_store.play(audio);
+};
+
 const playAll = async () => {
   if (search_results.value.length === 0) return;
 
@@ -106,15 +118,12 @@ const playAll = async () => {
     player_store.play([...search_results.value], shuffle.value);
   } else {
     const offline_results = search_results.value.filter((audio: RxAudio) => {
-      return !audio.src.startsWith("http");
+      return audio.src?.startsWith("file://");
     });
 
-    if (offline_results.length === 0) {
+    if (offline_results.length === 0)
       showToast(t("network.offline"), "warning");
-      return;
-    }
-
-    player_store.play([...offline_results], shuffle.value);
+    else player_store.play([...offline_results], shuffle.value);
   }
 };
 
@@ -134,18 +143,32 @@ const removeFromFavorites = async () => {
 
   if (player_store.audio?.id === to_remove.value.id)
     player_store.toggleFavorite(false);
-  
+
   to_remove.value = null;
 };
 
+const showDownloadAllAlert = () => {
+  if (show_only_downloaded.value) {
+    showToast(t("playlist.alreadyDownloaded"), "warning");
+    return;
+  }
+
+  if (network_store.is_online) show_download_all_alert.value = true;
+  else showToast(t("network.offline"), "warning");
+};
+
 const downloadAll = () => {
-  download_store.downloadMultiple(
-    search_results.value.map((audio: RxAudio) => audio.id),
-  );
+  if (network_store.is_online)
+    download_store.downloadMultiple(
+      search_results.value
+        .filter((a: RxAudio) => !a.src || a.src.startsWith("http"))
+        .map((a: RxAudio) => a.id),
+    );
 };
 
 const download = (audio_id: string) => {
-  download_store.addToQueue(audio_id);
+  if (network_store.is_online) download_store.addToQueue(audio_id);
+  else showToast(t("network.offline"), "warning");
 };
 
 const deleteLocalAudio = async (audio_id: string) => {
@@ -156,12 +179,20 @@ const deleteLocalAudio = async (audio_id: string) => {
     directory: Directory.Data,
     path: audio_id,
   }).then(async () => {
-    const new_audio = await youtube_plugin.get({ id: audio_id });
-    audio.incrementalPatch({
-      src: new_audio.src,
-      expires_at: new_audio.expires_at,
-      updated_at: Date.now(),
-    });
+    if (network_store.is_online) {
+      const new_audio = await youtube_plugin.get({ id: audio_id });
+      audio.incrementalPatch({
+        src: new_audio.src,
+        expires_at: new_audio.expires_at,
+        updated_at: Date.now(),
+      });
+    } else {
+      audio.incrementalPatch({
+        src: undefined,
+        expires_at: 0,
+        updated_at: Date.now(),
+      });
+    }
   });
 };
 </script>
@@ -175,7 +206,7 @@ const deleteLocalAudio = async (audio_id: string) => {
           <!-- Search bar -->
           <div class="flex center-y">
             <ion-searchbar
-              :placeholder="t('favorites.placeholder')"
+              :placeholder="`${t('pages.search')}... :)`"
               :debounce="300"
               @ion-change="search"
               @ion-input="clearIfEmpty"
@@ -184,7 +215,7 @@ const deleteLocalAudio = async (audio_id: string) => {
 
             <toggle-button
               :enabled="show_only_downloaded"
-              :icon="cloudDoneOutline"
+              :icon="SyncSavedLocallyRoundedIcon"
               @click="show_only_downloaded = !show_only_downloaded"
             />
 
@@ -234,12 +265,12 @@ const deleteLocalAudio = async (audio_id: string) => {
             <ion-button
               fill="clear"
               shape="round"
-              @click="show_download_all_alert = true"
+              @click="showDownloadAllAlert"
             >
               <ion-icon
                 slot="icon-only"
                 color="dark"
-                :icon="cloudDownloadOutline"
+                :icon="download_icon"
               ></ion-icon>
             </ion-button>
           </div>
@@ -250,7 +281,7 @@ const deleteLocalAudio = async (audio_id: string) => {
               <div
                 class="flex col grow"
                 style="min-width: 0"
-                @click="player_store.play([{ ...item }])"
+                @click="play([{ ...item }])"
               >
                 <div class="flex between">
                   <div class="audio-thumbnail">
@@ -275,7 +306,7 @@ const deleteLocalAudio = async (audio_id: string) => {
                   </div>
 
                   <div class="audio-actions">
-                    <Transition name="fade" mode="out-in">
+                    <Transition :key="item.id" name="fade" mode="out-in">
                       <ion-spinner
                         v-if="
                           download_store.status.queue.includes(item.id) ||
@@ -285,7 +316,7 @@ const deleteLocalAudio = async (audio_id: string) => {
                       ></ion-spinner>
                       <ion-icon
                         v-else-if="!item.src || item.src.startsWith('http')"
-                        :icon="cloudDownloadOutline"
+                        :icon="download_icon"
                         @click.stop="download(item.id)"
                       ></ion-icon>
                       <ion-icon

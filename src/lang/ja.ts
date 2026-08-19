@@ -29,7 +29,6 @@ const ja = {
     playlists: "プレイリスト",
   },
   search: {
-    placeholder: "クラウド内を検索... :)",
     start: "何を聞きたいですか？",
     error: "クラウド検索中にエラーが発生しました。",
     noResults: "結果が見つかりませんでした。",
@@ -37,7 +36,6 @@ const ja = {
     music: "音楽",
   },
   favorites: {
-    placeholder: "お気に入り内を検索... :)",
     no_results: "おっと！何も見つからないようです。",
     start: "まだお気に入りがありませんか？ :O",
     spotify: "Spotifyからインポート",
@@ -50,6 +48,9 @@ const ja = {
       message:
         "すべてのお気に入りをダウンロードしてもよろしいですか？デバイスに十分な空き容量があることを確認してください！",
     },
+  },
+  playlist: {
+    alreadyDownloaded: "選択項目はすでにダウンロードされています。",
   },
   settings: {
     language: "言語",

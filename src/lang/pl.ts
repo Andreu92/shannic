@@ -29,7 +29,6 @@ const pl = {
     playlists: "Playlisty",
   },
   search: {
-    placeholder: "Szukaj w chmurze... :)",
     start: "Czego chcesz posłuchać?",
     error: "Błąd podczas wyszukiwania w chmurze.",
     noResults: "Nie znaleziono wyników.",
@@ -37,7 +36,6 @@ const pl = {
     music: "Muzyka",
   },
   favorites: {
-    placeholder: "Szukaj w ulubionych... :)",
     no_results: "Ups! Wygląda na to, że nic nie znalazłem.",
     start: "Nie masz jeszcze żadnych ulubionych? :O",
     spotify: "Importuj ze Spotify",
@@ -50,6 +48,9 @@ const pl = {
       message:
         "Czy na pewno chcesz pobrać wszystkie ulubione? Upewnij się, że masz wystarczająco dużo miejsca na urządzeniu!",
     },
+  },
+  playlist: {
+    alreadyDownloaded: "Zaznaczenie zostało już pobrane.",
   },
   settings: {
     language: "Język",

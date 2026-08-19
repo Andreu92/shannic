@@ -174,19 +174,9 @@ const fetchImage = async (item: SearchResult, e: Event) => {
     };
     const response: HttpResponse = await CapacitorHttp.get(options);
 
-    if (response.status === 200 && response.data) {
-      const blob = new Blob([response.data], {
-        type: response.headers["Content-Type"],
-      });
-      const imageUrl = URL.createObjectURL(blob);
-
-      img.src = imageUrl;
-      await img.decode();
-
-      URL.revokeObjectURL(imageUrl);
-    } else {
-      if (img.src !== iconLight) img.src = iconLight;
-    }
+    if (response.status === 200 && response.data)
+      img.src = `data:${response.headers["Content-Type"]};base64,${response.data}`;
+    else if (img.src !== iconLight) img.src = iconLight;
   } catch (error) {
     if (img.src !== iconLight) img.src = iconLight;
   }
@@ -199,7 +189,7 @@ const fetchImage = async (item: SearchResult, e: Event) => {
     <ion-content class="ion-padding">
       <div class="flex col h-full">
         <ion-searchbar
-          :placeholder="t('search.placeholder')"
+          :placeholder="`${t('pages.search')}... :)`"
           @ion-change="search"
           @ion-clear="clearSearch"
         />

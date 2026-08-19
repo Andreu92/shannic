@@ -44,6 +44,11 @@ import com.andreu92.shannic.R;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
 import com.andreu92.shannic.models.AudioItem;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @UnstableApi
 public class PlayerService extends MediaSessionService {
     private ExoPlayer player;
@@ -53,6 +58,7 @@ public class PlayerService extends MediaSessionService {
     private boolean favorite;
     private SessionCommand repeatCommand;
     private MediaSession.ControllerInfo appControllerInfo;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ResolvingDataSource.Resolver urlResolver = new ResolvingDataSource.Resolver() {
         @NonNull
         @OptIn(markerClass = UnstableApi.class)
@@ -212,17 +218,40 @@ public class PlayerService extends MediaSessionService {
         mediaSession = new MediaSession.Builder(this, player)
                 .setSessionActivity(sessionActivityPendingIntent)
                 .setCallback(new MediaSession.Callback() {
+                    @NonNull
+                    @Override
+                    public ListenableFuture<List<MediaItem>> onAddMediaItems(
+                            @NonNull MediaSession mediaSession,
+                            @NonNull MediaSession.ControllerInfo controller,
+                            @NonNull List<MediaItem> mediaItems
+                    ) {
+                        return Futures.submit(() -> {
+                            List<MediaItem> updatedItems = new ArrayList<>();
+                            for (MediaItem item : mediaItems) {
+                                if (item.localConfiguration == null) {
+                                    String realUri = refreshSrc(item.mediaId);
+                                    updatedItems.add(item.buildUpon().setUri(realUri).build());
+                                } else updatedItems.add(item);
+                            }
+
+                            return updatedItems;
+                        }, executorService);
+                    }
+
                     @OptIn(markerClass = UnstableApi.class)
                     @NonNull
                     @Override
-                    public MediaSession.ConnectionResult onConnect(@NonNull MediaSession session, @NonNull MediaSession.ControllerInfo controller) {
-                        if (controller.getPackageName().equals(getPackageName()) && !mediaSession.isMediaNotificationController(controller)) {
+                    public MediaSession.ConnectionResult onConnect(
+                            @NonNull MediaSession session,
+                            @NonNull MediaSession.ControllerInfo controller) {
+                        if (controller.getPackageName().equals(getPackageName())
+                                && !mediaSession.isMediaNotificationController(controller)) {
                             appControllerInfo = controller;
                         }
 
-                        SessionCommands sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
-                                .add(repeatCommand)
-                                .add(favoriteCommand)
+                        SessionCommands sessionCommands = MediaSession.
+                                ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+                                .add(repeatCommand).add(favoriteCommand)
                                 .build();
 
                         return new MediaSession.ConnectionResult.AcceptedResultBuilder(session)
@@ -237,8 +266,8 @@ public class PlayerService extends MediaSessionService {
                             @NonNull MediaSession session,
                             @NonNull MediaSession.ControllerInfo controller,
                             @NonNull SessionCommand customCommand,
-                            @NonNull Bundle args) {
-
+                            @NonNull Bundle args
+                    ) {
                         switch (customCommand.customAction) {
                             case PlayerActions.ACTION_TOGGLE_REPEAT:
                                 int repeatMode = player.getRepeatMode();
@@ -250,12 +279,16 @@ public class PlayerService extends MediaSessionService {
                                 else favorite = !favorite;
 
                                 if (!controller.equals(appControllerInfo))
-                                    mediaSession.sendCustomCommand(appControllerInfo, favoriteCommand, Bundle.EMPTY);
+                                    mediaSession.sendCustomCommand(
+                                            appControllerInfo, favoriteCommand, Bundle.EMPTY
+                                    );
 
                                 syncNotificationButtons();
                         }
 
-                        return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS));
+                        return Futures.immediateFuture(
+                                new SessionResult(SessionResult.RESULT_SUCCESS)
+                        );
                     }
                 })
                 .build();

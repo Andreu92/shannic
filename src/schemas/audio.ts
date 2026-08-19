@@ -17,7 +17,7 @@ const colorThemeSchema = {
 export const audioSchemaLiteral = {
   title: "Audio schema",
   description: "Shannic audio model abstraction",
-  version: 2,
+  version: 0,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -48,7 +48,6 @@ export const audioSchemaLiteral = {
     "author",
     "duration",
     "thumbnail",
-    "src",
     "expires_at",
     "colors",
     "created_at",

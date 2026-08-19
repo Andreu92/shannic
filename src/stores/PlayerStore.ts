@@ -56,7 +56,7 @@ const usePlayerStore = defineStore("player", () => {
     player_plugin.addListener("onBuffering", () => {
       state.value = states.buffering;
     });
-    
+
     player_plugin.addListener("onPlay", (data) => {
       const { position } = data as { position: number };
 
@@ -64,7 +64,7 @@ const usePlayerStore = defineStore("player", () => {
       startProgressTimer();
       state.value = states.playing;
     });
-    
+
     player_plugin.addListener("onPause", (data) => {
       const { position } = data as { position: number };
 
@@ -72,7 +72,7 @@ const usePlayerStore = defineStore("player", () => {
       stopProgressTimer();
       state.value = states.paused;
     });
-    
+
     player_plugin.addListener("onMediaItemChanged", async (data) => {
       if (!playlist_items.value) return;
 
@@ -100,16 +100,16 @@ const usePlayerStore = defineStore("player", () => {
 
       toggleFavorite(favorites_store.isFavorite(current_audio.id));
     });
-    
+
     player_plugin.addListener("onToggleRepeat", (data) => {
       const { repeating } = data as { repeating: boolean };
       repeat.value = repeating;
     });
-    
+
     player_plugin.addListener("onToggleFavorite", () => {
       if (audio.value) favorites_store.toggleFavorite(audio.value.id);
     });
-    
+
     player_plugin.addListener("onSrcRefresh", (data) => {
       const { id, src, expires_at } = data as {
         id: string;
@@ -132,7 +132,7 @@ const usePlayerStore = defineStore("player", () => {
 
       audio_service.refreshSrc(id, src, expires_at);
     });
-    
+
     player_plugin.addListener("onSetNextItem", async (data) => {
       const next_item = await audio_service.createOrUpdateAudio(
         await buildAudio(data as YoutubeAudioItem),
@@ -141,13 +141,21 @@ const usePlayerStore = defineStore("player", () => {
       if (!playlist_items.value) return;
       playlist_items.value.push(next_item.toMutableJSON());
     });
-    
+
     player_plugin.addListener("onSourceError", (data) => {
-      const { code, message } = data as { code: number; message: string };
-      showToast(t("errors.src_error") + "\n" + code + " - "  + message);
+      const { code, code_name, message } = data as {
+        code: number;
+        code_name: string;
+        message: string;
+      };
+      if (code === 2001) showToast(t("network.offline"));
+      else
+        showToast(
+          t("errors.src_error") + code + " - " + code_name + " - " + message,
+        );
       state.value = states.paused;
     });
-    
+
     player_plugin.addListener("onAudioUnplayable", () => {
       showToast(t("errors.audio_unplayable"));
       if (hasNext.value) skipNext();

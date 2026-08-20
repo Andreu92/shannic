@@ -63,7 +63,7 @@ const useAudioService = () => {
       return await createAudio(audio_item);
     }
 
-    if (audio_doc.expires_at && (audio_doc.expires_at - 10) < (Date.now() / 1000)) {
+    if (audio_doc.expires_at && audio_doc.expires_at - 10 < Date.now() / 1000) {
       const audio_item: AudioItem = await fetchAudio(id);
       return await updateAudio(audio_item);
     }

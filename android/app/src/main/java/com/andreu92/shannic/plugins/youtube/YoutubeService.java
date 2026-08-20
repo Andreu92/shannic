@@ -31,6 +31,7 @@ import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 import android.util.Log;
 
 import com.andreu92.shannic.models.*;
+import com.andreu92.shannic.plugins.Constants;
 import com.andreu92.shannic.plugins.youtube.utils.*;
 
 import okhttp3.OkHttpClient;
@@ -131,11 +132,9 @@ public class YoutubeService {
 
     public AudioItem get(String id) {
         try {
-            StreamExtractor streamExtractor = youtube.getStreamExtractor(YoutubeConstants.WATCH_FULL_URL + id);
+            StreamExtractor streamExtractor = youtube
+                    .getStreamExtractor(YoutubeConstants.WATCH_FULL_URL + id);
             streamExtractor.fetchPage();
-
-            String uploader = streamExtractor.getUploaderName();
-            uploader = uploader.replace(" - Topic", "");
 
             List<AudioStream> audioStreams = streamExtractor.getAudioStreams();
             AudioStream bestAudioStream = audioStreams.stream()
@@ -155,14 +154,14 @@ public class YoutubeService {
             return new AudioItem(
                     id,
                     streamExtractor.getName(),
-                    uploader,
+                    streamExtractor.getUploaderName().replace(" - Topic", ""),
                     streamExtractor.getLength(),
                     thumbnailPath,
                     streamUrl,
                     expiresAt
             );
         } catch (ExtractionException | IOException e) {
-            e.printStackTrace();
+            Log.e("YoutubeService", e.toString());
             return null;
         }
     }
@@ -239,7 +238,20 @@ public class YoutubeService {
             throws ExtractionException, IOException {
         SearchResponse response = searchMusic(artist + " " + title);
         List<SearchItem> items = response.items();
-        if (!items.isEmpty()) return get(items.get(0).id());
-        else return null;
+
+        if (!items.isEmpty()) {
+            SearchItem item = items.get(0);
+            String thumbnailPath = storeThumbnail(item.id(), item.thumbnail());
+            return new AudioItem(
+                    item.id(),
+                    item.title(),
+                    item.author().replace(" - Topic", ""),
+                    item.duration(),
+                    thumbnailPath,
+                    Constants.FAKE_SRC + item.id(),
+                    0
+            );
+        }
+        return null;
     }
 }

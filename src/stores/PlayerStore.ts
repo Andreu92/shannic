@@ -144,6 +144,9 @@ const usePlayerStore = defineStore("player", () => {
 
       if (!playlist_items.value) return;
       playlist_items.value.push(next_item.toMutableJSON());
+
+      const response = await player_plugin.hasNext();
+      has_next.value = response.has_next;
     });
 
     player_plugin.addListener("onSourceError", (data) => {

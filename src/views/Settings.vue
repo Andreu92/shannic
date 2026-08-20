@@ -29,13 +29,14 @@ import {
   IonSelectOption,
   IonToggle,
 } from "@ionic/vue";
-import { closeOutline, moonOutline, sunnyOutline } from "ionicons/icons";
+import { closeOutline, moonOutline, sunnyOutline, trashOutline } from "ionicons/icons";
 import { Component, type Ref, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";
 import type { LanguageMessages } from "@/types";
 import useSpotifyService from "@/services/SpotifyService";
+import { player_plugin } from "@/plugins/PlayerPlugin";
 
 const spotify_service = useSpotifyService();
 
@@ -86,6 +87,7 @@ const unlinkSpotify = () => {
     <AppHeader />
     <ion-content fullscreen class="ion-padding">
       <div class="settings-container">
+
         <div>
           <div class="flex center-y" style="gap: 5px">
             <div>{{ t("settings.language") }}</div>
@@ -108,6 +110,7 @@ const unlinkSpotify = () => {
             </ion-select>
           </div>
         </div>
+
         <div>
           <div>{{ t("settings.theme") }}</div>
           <div class="toggle-dark-mode">
@@ -119,6 +122,7 @@ const unlinkSpotify = () => {
             <ion-icon :src="moonOutline" />
           </div>
         </div>
+
         <div>
           <div>{{ t("spotify.unlink") }}</div>
           <div>
@@ -129,6 +133,15 @@ const unlinkSpotify = () => {
                 </div>
                 <ion-icon :icon="closeOutline" class="close-icon-overlay" />
               </div>
+            </ion-button>
+          </div>
+        </div>
+
+        <div>
+          <div>{{ t("settings.cache") }}</div>
+          <div>
+            <ion-button color="primary" shape="round" @click="player_plugin.clearCache()">
+              <ion-icon slot="icon-only" :icon="trashOutline" />
             </ion-button>
           </div>
         </div>

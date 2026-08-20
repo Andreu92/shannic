@@ -16,4 +16,6 @@ public class Constants {
             .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .build();
+
+    public static final String FAKE_SRC = "app://resolve/";
 }

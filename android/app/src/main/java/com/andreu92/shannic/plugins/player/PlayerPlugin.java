@@ -84,8 +84,11 @@ public class PlayerPlugin extends Plugin {
                             notifyListeners("onToggleFavorite", null);
 
                         if (command.customAction.equals(PlayerActions.ACTION_SRC_REFRESH))
-                            onSrcRefresh(args.getString("id"), args.getString("src"),
-                                    args.getLong("expires_at"));
+                            onSrcRefresh(
+                                    args.getString("id"),
+                                    args.getString("src"),
+                                    args.getLong("expires_at")
+                            );
 
                         if (command.customAction.equals(PlayerActions.ACTION_AUDIO_UNPLAYABLE)) {
                             if (mediaController.hasNextMediaItem()) {
@@ -126,13 +129,13 @@ public class PlayerPlugin extends Plugin {
 
                         if (nextMediaItemIndex != C.INDEX_UNSET) {
                             MediaItem nextMediaItem = mediaController.getMediaItemAt(nextMediaItemIndex);
-                            executorService.execute(() -> refreshAudioSrc(nextMediaItem, nextMediaItemIndex));
+                            refreshAudioSrc(nextMediaItem, nextMediaItemIndex);
                         }
 
                         int previousMediaItemIndex = mediaController.getPreviousMediaItemIndex();
                         if (previousMediaItemIndex != C.INDEX_UNSET) {
                             MediaItem previousMediaItem = mediaController.getMediaItemAt(previousMediaItemIndex);
-                            executorService.execute(() -> refreshAudioSrc(previousMediaItem, previousMediaItemIndex));
+                            refreshAudioSrc(previousMediaItem, previousMediaItemIndex);
                         }
                     }
 
@@ -189,8 +192,7 @@ public class PlayerPlugin extends Plugin {
                         }
 
                         // Dirty cache error
-                        if (error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
-                                || error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED) {
+                        if (error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED) {
                             removeMediaItemFromCache(item);
                             refreshAudioSrc(item, index);
                             mediaController.prepare();
@@ -226,30 +228,39 @@ public class PlayerPlugin extends Plugin {
     }
 
     private void refreshAudioSrc(MediaItem itemToRefresh, int index) {
-        if (itemToRefresh.localConfiguration == null) return;
+        MediaItem.LocalConfiguration localConfig = itemToRefresh.localConfiguration;
+        if (localConfig == null) return;
 
-        String expires_at_str = itemToRefresh.localConfiguration.uri
+        String uriStr = localConfig.uri.toString();
+        if (uriStr.isBlank() || uriStr.startsWith(Constants.FAKE_SRC)) {
+            refresh(itemToRefresh, index); return;
+        }
+
+        String expires_at_str = localConfig.uri
                 .getQueryParameter(YoutubeConstants.EXPIRE_QUERY_PARAM);
         if (expires_at_str == null) return;
 
         long expires_at = Long.parseLong(expires_at_str) * 1000;
-        if ((expires_at - 10000) < System.currentTimeMillis()) {
-            executorService.execute(() -> {
-                try {
-                    AudioItem item = youtubeService.get(itemToRefresh.mediaId);
-                    if (item == null) return;
-                    onSrcRefresh(item.id(), item.src(), item.expiresAt());
+        if ((expires_at - 10000) < System.currentTimeMillis())
+            refresh(itemToRefresh, index);
+    }
 
-                    getActivity().runOnUiThread(() -> {
-                        MediaItem oldItem = mediaController.getMediaItemAt(index);
-                        MediaItem newItem = oldItem.buildUpon().setUri(item.src()).build();
-                        mediaController.replaceMediaItem(index, newItem);
-                    });
-                } catch (Exception e) {
-                    Log.e("PlayerPlugin", "Error refreshing SRC:", e);
-                }
-            });
-        }
+    private void refresh(MediaItem itemToRefresh, int index) {
+        executorService.execute(() -> {
+            try {
+                AudioItem item = youtubeService.get(itemToRefresh.mediaId);
+                if (item == null) return;
+                onSrcRefresh(item.id(), item.src(), item.expiresAt());
+
+                getActivity().runOnUiThread(() -> {
+                    MediaItem oldItem = mediaController.getMediaItemAt(index);
+                    MediaItem newItem = oldItem.buildUpon().setUri(item.src()).build();
+                    mediaController.replaceMediaItem(index, newItem);
+                });
+            } catch (Exception e) {
+                Log.e("PlayerPlugin", "Error refreshing SRC:", e);
+            }
+        });
     }
 
     private void runAutoPlay() {
@@ -461,6 +472,13 @@ public class PlayerPlugin extends Plugin {
             data.put("has_next", mediaController.hasNextMediaItem());
             call.resolve(data);
         });
+    }
+
+    @OptIn(markerClass = UnstableApi.class)
+    @PluginMethod
+    public void clearCache(PluginCall call) {
+        PlayerCache.clear();
+        call.resolve();
     }
 
     @PluginMethod()

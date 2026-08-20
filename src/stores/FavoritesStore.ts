@@ -55,13 +55,17 @@ const useFavoritesStore = defineStore("favorites", () => {
     return !is_fav;
   };
 
-  const addFavorite = async (id: string) => {
+  const addFavorite = async (id: string, exists: boolean = false) => {
     const new_favorite: PlaylistAudio =
       await playlist_service.addAudioToPlaylist(FAVORITES_PLAYLIST_ID, id);
 
     favorites.value.push(new_favorite);
 
-    const audio: AudioDocument = await audio_service.getCreateOrUpdateAudio(id);
+    let audio: AudioDocument | null;
+    if (exists) audio = await audio_service.getAudioById(id);
+    else audio = await audio_service.getCreateOrUpdateAudio(id);
+
+    if (!audio) throw new Error("Audio not found");
     audios.value.push(audio.toMutableJSON());
 
     const positionsMap = new Map(
@@ -86,7 +90,7 @@ const useFavoritesStore = defineStore("favorites", () => {
     return favorites.value.some((o) => o.audio_id === id);
   };
 
-  const reorder = async (from: number, to: number) => {
+  const changeOrder = async (from: number, to: number) => {
     const audio = audios.value.splice(from, 1)[0];
     audios.value.splice(to, 0, audio);
 
@@ -113,7 +117,7 @@ const useFavoritesStore = defineStore("favorites", () => {
     isFavorite,
     addFavorite,
     deleteFavorite,
-    reorder,
+    changeOrder,
   };
 });
 

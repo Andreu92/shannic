@@ -6,7 +6,7 @@ export interface PlayerAudio {
   title: string;
   author: string;
   thumbnail: string;
-  src?: string;
+  src: string;
 }
 
 export interface PlayerPlugin {
@@ -25,6 +25,7 @@ export interface PlayerPlugin {
   getCurrentPosition(): Promise<{ position: number }>;
   isInQueue(options: { id: string }): Promise<{ is_in_queue: boolean }>;
   hasNext(): Promise<{ has_next: boolean }>;
+  clearCache(): Promise<void>;
   addListener(
     event: string,
     callback: (

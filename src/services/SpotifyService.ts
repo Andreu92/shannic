@@ -143,43 +143,38 @@ const useSpotifyService = () => {
 
     await linkAccount();
 
-    try {
-      if (isTokenExpired()) await refreshToken();
+    if (isTokenExpired()) await refreshToken();
 
-      spotify_sync_store.is_syncing = true;
+    spotify_sync_store.is_syncing = true;
 
-      KeepAwake.keepAwake();
+    KeepAwake.keepAwake();
 
-      await getSavedTracks(async (track: SavedTrack) => {
-        try {
-          const audio = await buildAudio(
-            await youtube_plugin.getByQuery({
-              artist: track.track.artists[0].name,
-              title: track.track.name,
-            }),
-          );
+    getSavedTracks(async (track: SavedTrack) => {
+      try {
+        const audio = await buildAudio(
+          await youtube_plugin.getByQuery({
+            artist: track.track.artists[0].name,
+            title: track.track.name,
+          }),
+        );
 
-          if (favorites_store.isFavorite(audio.id)) {
-            spotify_sync_store.incrementCounter();
-            return;
-          }
-
+        if (!favorites_store.isFavorite(audio.id)) {
           audio_service
             .createAudio(audio)
-            .then((a: AudioDocument) => favorites_store.addFavorite(a.id));
-        } catch {
-          // TO DO: Show error to user
-        } finally {
-          spotify_sync_store.incrementCounter();
+            .then((a: AudioDocument) => favorites_store.addFavorite(a.id, true));
         }
-      });
-    } catch (error) {
+      } catch {
+        // TO DO: Show error to user
+      } finally {
+        spotify_sync_store.incrementCounter();
+      }
+    }).catch((error) => {
       console.error("Error importing Spotify saved tracks:", error);
       // TO DO: Show error to user
-    } finally {
+    }).finally(() => {
       spotify_sync_store.finishSync();
       KeepAwake.allowSleep();
-    }
+    });
   };
 
   const linkAccount = async (): Promise<void> => {

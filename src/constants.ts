@@ -8,3 +8,5 @@ export const DEFAULT_COLOR_THEME: ColorTheme = {
   title_text_color: "#FFFFFF",
   body_text_color: "#FFFFFF",
 };
+
+export const FAKE_SRC = "app://resolve/"

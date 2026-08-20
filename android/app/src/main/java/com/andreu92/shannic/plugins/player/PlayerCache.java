@@ -1,6 +1,7 @@
 package com.andreu92.shannic.plugins.player;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.database.StandaloneDatabaseProvider;
@@ -27,5 +28,13 @@ public class PlayerCache {
             );
         }
         return simpleCache;
+    }
+
+    public static synchronized void clear() {
+        if (simpleCache != null) {
+            for (String key : simpleCache.getKeys()) {
+                simpleCache.removeResource(key);
+            }
+        }
     }
 }

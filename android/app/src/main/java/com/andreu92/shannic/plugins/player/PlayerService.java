@@ -10,7 +10,6 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.OptIn;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
@@ -35,6 +34,7 @@ import androidx.media3.session.SessionCommand;
 import androidx.media3.session.SessionCommands;
 import androidx.media3.session.SessionResult;
 
+import com.andreu92.shannic.plugins.Constants;
 import com.andreu92.shannic.plugins.youtube.YoutubeConstants;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -43,11 +43,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.andreu92.shannic.R;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
 import com.andreu92.shannic.models.AudioItem;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @UnstableApi
 public class PlayerService extends MediaSessionService {
@@ -58,7 +53,6 @@ public class PlayerService extends MediaSessionService {
     private boolean favorite;
     private SessionCommand repeatCommand;
     private MediaSession.ControllerInfo appControllerInfo;
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ResolvingDataSource.Resolver urlResolver = new ResolvingDataSource.Resolver() {
         @NonNull
         @Override
@@ -66,8 +60,8 @@ public class PlayerService extends MediaSessionService {
             Uri audioSrc = dataSpec.uri;
             String srcString = audioSrc.toString();
 
-            // Empty url means refresh
-            if (srcString.isBlank()) {
+            // Empty or fake url means refresh
+            if (srcString.isBlank() || srcString.startsWith(Constants.FAKE_SRC)) {
                 String newSrc = refreshSrc(dataSpec.key);
                 if (newSrc != null && !newSrc.isBlank()) {
                     return dataSpec.buildUpon()
@@ -77,13 +71,13 @@ public class PlayerService extends MediaSessionService {
             }
 
             // If not empty check if it's expired
-            String expires_at_str = audioSrc.getQueryParameter("expire");
+            String expires_at_str = audioSrc.getQueryParameter(YoutubeConstants.EXPIRE_QUERY_PARAM);
             if (expires_at_str == null) return dataSpec;
 
             long expires_at = Long.parseLong(expires_at_str) * 1000;
             if ((expires_at - 10000) < System.currentTimeMillis()) {
                     String newSrc = refreshSrc(dataSpec.key);
-                    if (newSrc != null) {
+                    if (newSrc != null && !newSrc.isBlank()) {
                         return dataSpec.buildUpon()
                                 .setUri(Uri.parse(newSrc))
                                 .build();
@@ -153,15 +147,12 @@ public class PlayerService extends MediaSessionService {
                 .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
                 .build();
 
-        DefaultHttpDataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory()
+        DataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory()
                 .setUserAgent(YoutubeConstants.BROWSER_USER_AGENT)
                 .setAllowCrossProtocolRedirects(true);
 
-        DefaultDataSource.Factory baseDataSourceFactory =
-                new DefaultDataSource.Factory(this, httpDataSourceFactory);
-
         ResolvingDataSource.Factory resolvingDataSourceFactory =
-                new ResolvingDataSource.Factory(baseDataSourceFactory, urlResolver);
+                new ResolvingDataSource.Factory(httpDataSourceFactory, urlResolver);
 
         SimpleCache simpleCache = PlayerCache.getInstance(this);
 
@@ -214,26 +205,6 @@ public class PlayerService extends MediaSessionService {
         mediaSession = new MediaSession.Builder(this, player)
                 .setSessionActivity(sessionActivityPendingIntent)
                 .setCallback(new MediaSession.Callback() {
-                    @NonNull
-                    @Override
-                    public ListenableFuture<List<MediaItem>> onAddMediaItems(
-                            @NonNull MediaSession mediaSession,
-                            @NonNull MediaSession.ControllerInfo controller,
-                            @NonNull List<MediaItem> mediaItems
-                    ) {
-                        return Futures.submit(() -> {
-                            List<MediaItem> updatedItems = new ArrayList<>();
-                            for (MediaItem item : mediaItems) {
-                                if (item.localConfiguration == null) {
-                                    String realUri = refreshSrc(item.mediaId);
-                                    updatedItems.add(item.buildUpon().setUri(realUri).build());
-                                } else updatedItems.add(item);
-                            }
-
-                            return updatedItems;
-                        }, executorService);
-                    }
-
                     @NonNull
                     @Override
                     public MediaSession.ConnectionResult onConnect(

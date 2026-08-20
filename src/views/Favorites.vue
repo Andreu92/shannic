@@ -48,6 +48,7 @@ import { Capacitor } from "@capacitor/core";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import useNetworkStore from "@/stores/NetworkStore";
 import { showToast } from "@/utils";
+import { FAKE_SRC } from "@/constants";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -74,7 +75,7 @@ const search_results = computed(() => {
 
   if (show_only_downloaded.value) {
     results = results.filter((audio: RxAudio) => {
-      return audio.src?.startsWith("file://");
+      return audio.src.startsWith("file");
     });
   }
 
@@ -100,10 +101,7 @@ const clearIfEmpty = (e: SearchbarCustomEvent) => {
 };
 
 const play = (audio: RxAudio[]) => {
-  if (
-    (!audio[0].src || audio[0].src.startsWith("http")) &&
-    !network_store.is_online
-  ) {
+  if (!network_store.is_online && !audio[0].src.startsWith("file")) {
     showToast(t("network.offline"), "warning");
     return;
   }
@@ -118,7 +116,7 @@ const playAll = async () => {
     player_store.play([...search_results.value], shuffle.value);
   } else {
     const offline_results = search_results.value.filter((audio: RxAudio) => {
-      return audio.src?.startsWith("file://");
+      return audio.src.startsWith("file");
     });
 
     if (offline_results.length === 0)
@@ -161,7 +159,7 @@ const downloadAll = () => {
   if (network_store.is_online)
     download_store.downloadMultiple(
       search_results.value
-        .filter((a: RxAudio) => !a.src || a.src.startsWith("http"))
+        .filter((a: RxAudio) => !a.src.startsWith("file"))
         .map((a: RxAudio) => a.id),
     );
 };
@@ -188,7 +186,7 @@ const deleteLocalAudio = async (audio_id: string) => {
       });
     } else {
       audio.incrementalPatch({
-        src: undefined,
+        src: FAKE_SRC + audio_id,
         expires_at: 0,
         updated_at: Date.now(),
       });
@@ -315,7 +313,7 @@ const deleteLocalAudio = async (audio_id: string) => {
                         name="dots"
                       ></ion-spinner>
                       <ion-icon
-                        v-else-if="!item.src || item.src.startsWith('http')"
+                        v-else-if="!item.src.startsWith('file')"
                         :icon="download_icon"
                         @click.stop="download(item.id)"
                       ></ion-icon>

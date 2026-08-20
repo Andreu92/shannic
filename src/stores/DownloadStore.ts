@@ -52,7 +52,7 @@ export const useDownloadStore = defineStore("downloads", () => {
     });
 
     FileTransfer.downloadFile({
-      url: audio.src!,
+      url: audio.src,
       path: fileInfo.uri,
       progress: true,
       headers: {

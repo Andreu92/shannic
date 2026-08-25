@@ -1,5 +1,7 @@
 package com.andreu92.shannic.plugins.youtube;
 
+import static com.andreu92.shannic.plugins.Constants.FAKE_SRC;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -206,18 +208,19 @@ public class YoutubeService {
         }
     }
 
-    public List<String> getNextItems() {
+    public List<AudioItem> getNextItems() {
         if (currentItemId == null) return null;
 
         try {
             if (playlistExtractor != null && autoPlayNextPage != null)
-                return buildItemPageIdsList(playlistExtractor.getPage(autoPlayNextPage));
+                return buildNextItemsList(playlistExtractor.getPage(autoPlayNextPage));
 
             playlistExtractor = youtube.getPlaylistExtractor(
                     YoutubeConstants.WATCH_FULL_URL + currentItemId + "&"
                             + YoutubeConstants.LIST_QUERY_PARAM_FULL + currentItemId);
             playlistExtractor.fetchPage();
-            List<String> nextItemsIdsList = buildItemPageIdsList(playlistExtractor.getInitialPage());
+
+            List<AudioItem> nextItemsIdsList = buildNextItemsList(playlistExtractor.getInitialPage());
             if (nextItemsIdsList.isEmpty()) return null;
             return nextItemsIdsList.subList(1, nextItemsIdsList.size());
         } catch (Exception e) {
@@ -226,12 +229,26 @@ public class YoutubeService {
         }
     }
 
-    private List<String> buildItemPageIdsList(InfoItemsPage<StreamInfoItem> page) {
+    private List<AudioItem> buildNextItemsList(InfoItemsPage<StreamInfoItem> page) {
         if (page.hasNextPage()) autoPlayNextPage = page.getNextPage();
         else autoPlayNextPage = null;
-        List<String> ids = new ArrayList<>();
-        for (InfoItem item : page.getItems()) ids.add(extractYoutubeId(item.getUrl()));
-        return ids;
+        List<AudioItem> nextItems = new ArrayList<>();
+        for (StreamInfoItem item : page.getItems()) {
+            String id = extractYoutubeId(item.getUrl());
+            List<Image> thumbnails = item.getThumbnails();
+
+            nextItems.add(new AudioItem(
+                    id,
+                    item.getName(),
+                    item.getUploaderName(),
+                    item.getDuration(),
+                    thumbnails.get(thumbnails.size()-1).getUrl(),
+                    FAKE_SRC + id,
+                    0
+            ));
+        }
+
+        return nextItems;
     }
 
     public AudioItem getByQuery(final String artist, final String title)
@@ -248,7 +265,7 @@ public class YoutubeService {
                     item.author().replace(" - Topic", ""),
                     item.duration(),
                     thumbnailPath,
-                    Constants.FAKE_SRC + item.id(),
+                    FAKE_SRC + item.id(),
                     0
             );
         }

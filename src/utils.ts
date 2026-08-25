@@ -1,46 +1,5 @@
 import { toastController } from "@ionic/vue";
 import { alertOutline } from "ionicons/icons";
-import { Vibrant } from "node-vibrant/browser";
-import { Capacitor } from "@capacitor/core";
-import { type YoutubeAudioItem } from "@/plugins/YoutubePlugin";
-import type { AudioItem, Palette } from "@/types";
-
-export const buildAudio = async (
-  yt_audio_item: YoutubeAudioItem,
-): Promise<AudioItem> => {
-  const palette = await Vibrant.from(
-    Capacitor.convertFileSrc(yt_audio_item.thumbnail),
-  ).getPalette();
-
-  const audio: AudioItem = {
-    ...yt_audio_item,
-    colors: getFormattedColors(palette),
-  };
-
-  return audio;
-};
-
-const getFormattedColors = (
-  palette: Awaited<ReturnType<typeof Vibrant.prototype.getPalette>>,
-): Palette => {
-  const colors: Palette = {};
-
-  Object.keys(palette).forEach((key) => {
-    const item = palette[key];
-    const snake_case_key = key
-      .replace(/([a-z])([A-Z])/g, "$1_$2")
-      .toLowerCase() as keyof Palette;
-    if (item) {
-      colors[snake_case_key] = {
-        main_color: item.hex,
-        title_text_color: item.titleTextColor,
-        body_text_color: item.bodyTextColor,
-      };
-    }
-  });
-
-  return colors;
-};
 
 export const formatDuration = (sec: number) => {
   const h = Math.floor(sec / 3600);

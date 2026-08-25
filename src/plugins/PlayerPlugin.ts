@@ -20,8 +20,8 @@ export interface PlayerPlugin {
   stop(): Promise<void>;
   skipNext(): Promise<void>;
   skipPrevious(): Promise<void>;
-  toggleRepeat(options: { repeating: boolean }): Promise<void>;
-  toggleFavorite(options: { favorite: boolean; }): Promise<void>;
+  setRepeat(options: { repeating: boolean }): Promise<void>;
+  setFavorite(options: { favorite: boolean; }): Promise<void>;
   getCurrentPosition(): Promise<{ position: number }>;
   isInQueue(options: { id: string }): Promise<{ is_in_queue: boolean }>;
   hasNext(): Promise<{ has_next: boolean }>;

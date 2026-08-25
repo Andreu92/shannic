@@ -14,7 +14,7 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import useAudioService from "@/services/AudioService";
 import { KeepAwake } from "@capgo/capacitor-keep-awake";
 import { youtube_plugin } from "@/plugins/YoutubePlugin";
-import { buildAudio } from "@/utils";
+import { AudioItemBuilder } from "@/AudioItemBuilder";
 
 const useSpotifyService = () => {
   const { t, locale } = useI18n();
@@ -151,7 +151,7 @@ const useSpotifyService = () => {
 
     getSavedTracks(async (track: SavedTrack) => {
       try {
-        const audio = await buildAudio(
+        const audio = await AudioItemBuilder.build(
           await youtube_plugin.getByQuery({
             artist: track.track.artists[0].name,
             title: track.track.name,
@@ -161,7 +161,7 @@ const useSpotifyService = () => {
         if (!favorites_store.isFavorite(audio.id)) {
           audio_service
             .createAudio(audio)
-            .then((a: AudioDocument) => favorites_store.addFavorite(a.id, true));
+            .then((a: AudioDocument) => favorites_store.addFavorite(a.id));
         }
       } catch {
         // TO DO: Show error to user

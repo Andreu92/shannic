@@ -54,6 +54,7 @@ const zh_CN = {
   settings: {
     language: "语言",
     theme: "主题",
+    cache: "清除缓存",
   },
   errors: {
     audio_unplayable: "无法播放此音频。",

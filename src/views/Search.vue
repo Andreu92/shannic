@@ -26,7 +26,7 @@ import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import useNetworkStore from "@/stores/NetworkStore";
 import usePlayerStore from "@/stores/PlayerStore";
-import type { SearchResult } from "@/types";
+import type { AudioItem, SearchResult } from "@/types";
 import { formatDuration, showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import {
@@ -35,6 +35,7 @@ import {
   HttpOptions,
   HttpResponse,
 } from "@capacitor/core";
+import { AudioItemBuilder } from "@/AudioItemBuilder";
 
 const { t } = useI18n();
 
@@ -149,16 +150,21 @@ const play = async (audio: SearchResult) => {
   player_store.play([audio_to_play]);
 };
 
-const toggleFavorite = async (audio_id: string) => {
-  if (!favorites_store.isFavorite(audio_id) && !network_store.is_online) {
-    showToast(t("network.offline"), "warning");
-    return;
+const toggleFavorite = async (search_item: SearchResult) => {
+  let favorite: boolean;
+  if (favorites_store.isFavorite(search_item.id)) {
+    favorites_store.deleteFavorite(search_item.id);
+    favorite = false;
+  } else {
+    const audio_item: AudioItem =
+      await AudioItemBuilder.fromSearchResult(search_item);
+    await audio_service.createAudio(audio_item);
+    await favorites_store.addFavorite(audio_item.id);
+    favorite = true;
   }
 
-  const favorite = await favorites_store.toggleFavorite(audio_id);
-
-  if (player_store.audio?.id === audio_id)
-    player_store.toggleFavorite(favorite);
+  if (player_store.audio?.id === search_item.id)
+    player_store.setFavorite(favorite);
 };
 
 const fetchImage = async (item: SearchResult, e: Event) => {
@@ -254,7 +260,7 @@ const fetchImage = async (item: SearchResult, e: Event) => {
                     favorites_store.isFavorite(item.id) ? heart : heartOutline
                   "
                   :color="favorites_store.isFavorite(item.id) ? 'danger' : ''"
-                  @click.stop="toggleFavorite(item.id)"
+                  @click.stop="toggleFavorite(item)"
                 ></ion-icon>
               </div>
             </div>

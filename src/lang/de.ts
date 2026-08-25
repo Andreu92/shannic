@@ -56,6 +56,7 @@ const de = {
   settings: {
     language: "Sprache",
     theme: "Thema",
+    cache: "Cache leeren",
   },
   errors: {
     audio_unplayable: "Dieses Audio kann nicht wiedergegeben werden.",

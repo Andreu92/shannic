@@ -113,7 +113,7 @@ const onDragEnd = () => {
 
 const toggleFavorite = async (audio_id: string) => {
   const is_fav = await favorites_store.toggleFavorite(audio_id);
-  player_store.toggleFavorite(is_fav);
+  player_store.setFavorite(is_fav);
 };
 </script>
 

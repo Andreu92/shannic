@@ -55,6 +55,7 @@ const pl = {
   settings: {
     language: "Język",
     theme: "Motyw",
+    cache: "Wyczyść pamięć podręczną",
   },
   errors: {
     audio_unplayable: "Nie można odtworzyć tego dźwięku.",

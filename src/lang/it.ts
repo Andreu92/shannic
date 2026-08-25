@@ -55,6 +55,7 @@ const it = {
   settings: {
     language: "Lingua",
     theme: "Tema",
+    cache: "Svuota cache",
   },
   errors: {
     audio_unplayable: "Impossibile riprodurre questo audio.",

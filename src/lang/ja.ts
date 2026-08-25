@@ -55,6 +55,7 @@ const ja = {
   settings: {
     language: "言語",
     theme: "テーマ",
+    cache: "キャッシュをクリア",
   },
   errors: {
     audio_unplayable: "このオーディオは再生できません。",

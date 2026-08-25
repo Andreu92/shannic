@@ -56,6 +56,7 @@ const nl = {
   settings: {
     language: "Taal",
     theme: "Thema",
+    cache: "Cache wissen",
   },
   errors: {
     audio_unplayable: "Deze audio kan niet worden afgespeeld.",

@@ -55,15 +55,13 @@ const useFavoritesStore = defineStore("favorites", () => {
     return !is_fav;
   };
 
-  const addFavorite = async (id: string, exists: boolean = false) => {
+  const addFavorite = async (id: string) => {
     const new_favorite: PlaylistAudio =
       await playlist_service.addAudioToPlaylist(FAVORITES_PLAYLIST_ID, id);
 
     favorites.value.push(new_favorite);
 
-    let audio: AudioDocument | null;
-    if (exists) audio = await audio_service.getAudioById(id);
-    else audio = await audio_service.getCreateOrUpdateAudio(id);
+    const audio: AudioDocument | null = await audio_service.getAudioById(id);
 
     if (!audio) throw new Error("Audio not found");
     audios.value.push(audio.toMutableJSON());

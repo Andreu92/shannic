@@ -2,7 +2,7 @@ import { useDatabase } from "@/database";
 import { youtube_plugin, YoutubeAudioItem } from "@/plugins/YoutubePlugin";
 import type { RxAudio } from "@/schemas/audio";
 import type { AudioItem, AudioCollection, AudioDocument } from "@/types";
-import { buildAudio } from "@/utils";
+import { AudioItemBuilder } from "@/AudioItemBuilder";
 
 const useAudioService = () => {
   const db = useDatabase();
@@ -18,7 +18,7 @@ const useAudioService = () => {
 
   const fetchAudio = async (id: string): Promise<AudioItem> => {
     const yt_audio_item: YoutubeAudioItem = await youtube_plugin.get({ id });
-    return await buildAudio(yt_audio_item);
+    return await AudioItemBuilder.build(yt_audio_item);
   };
 
   const getAudiosByIds = async (ids: string[]): Promise<AudioDocument[]> => {

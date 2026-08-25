@@ -55,6 +55,7 @@ const en = {
   settings: {
     language: "Language",
     theme: "Theme",
+    cache: "Clear cache",
   },
   errors: {
     audio_unplayable: "This audio cannot be played.",

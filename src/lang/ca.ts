@@ -55,6 +55,7 @@ const ca = {
   settings: {
     language: "Idioma",
     theme: "Tema",
+    cache: "Netejar memòria cau",
   },
   errors: {
     audio_unplayable: "Aquest àudio no es pot reproduir.",

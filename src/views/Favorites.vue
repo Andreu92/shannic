@@ -140,7 +140,7 @@ const removeFromFavorites = async () => {
   favorites_store.deleteFavorite(to_remove.value.id);
 
   if (player_store.audio?.id === to_remove.value.id)
-    player_store.toggleFavorite(false);
+    player_store.setFavorite(false);
 
   to_remove.value = null;
 };

@@ -55,6 +55,7 @@ const ar = {
   settings: {
     language: "اللغة",
     theme: "المظهر",
+    cache: "مسح ذاكرة التخزين المؤقت",
   },
   errors: {
     audio_unplayable: "لا يمكن تشغيل هذا الصوت.",

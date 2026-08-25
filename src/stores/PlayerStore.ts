@@ -4,9 +4,10 @@ import { type PlayerAudio, player_plugin } from "@/plugins/PlayerPlugin";
 import type { RxAudio } from "@/schemas/audio";
 import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
-import { buildAudio, showToast } from "@/utils";
+import { showToast } from "@/utils";
 import { useI18n } from "vue-i18n";
 import { type YoutubeAudioItem } from "@/plugins/YoutubePlugin";
+import { AudioItemBuilder } from "@/AudioItemBuilder";
 
 export const states = {
   paused: 0,
@@ -102,7 +103,7 @@ const usePlayerStore = defineStore("player", () => {
       const response = await player_plugin.hasNext();
       has_next.value = response.has_next;
       
-      toggleFavorite(favorites_store.isFavorite(current_audio.id));
+      setFavorite(favorites_store.isFavorite(current_audio.id));
     });
 
     player_plugin.addListener("onToggleRepeat", (data) => {
@@ -139,7 +140,7 @@ const usePlayerStore = defineStore("player", () => {
 
     player_plugin.addListener("onSetNextItem", async (data) => {
       const next_item = await audio_service.createOrUpdateAudio(
-        await buildAudio(data as YoutubeAudioItem),
+        await AudioItemBuilder.build(data as YoutubeAudioItem),
       );
 
       if (!playlist_items.value) return;
@@ -212,13 +213,13 @@ const usePlayerStore = defineStore("player", () => {
     player_plugin.skipPrevious();
   };
 
-  const toggleFavorite = (is_fav: boolean) => {
-    player_plugin.toggleFavorite({ favorite: is_fav });
+  const setFavorite = (is_fav: boolean) => {
+    player_plugin.setFavorite({ favorite: is_fav });
   };
 
   const toggleRepeat = () => {
     repeat.value = !repeat.value;
-    player_plugin.toggleRepeat({ repeating: repeat.value });
+    player_plugin.setRepeat({ repeating: repeat.value });
   };
 
   const alreadyInQueue = (audio_id: string): boolean => {
@@ -245,7 +246,7 @@ const usePlayerStore = defineStore("player", () => {
     skipNext,
     skipPrevious,
     toggleRepeat,
-    toggleFavorite,
+    setFavorite,
     stopProgressTimer,
     startProgressTimer,
     alreadyInQueue,

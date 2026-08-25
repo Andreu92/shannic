@@ -55,6 +55,7 @@ const ru = {
   settings: {
     language: "Язык",
     theme: "Тема",
+    cache: "Очистить кэш",
   },
   errors: {
     audio_unplayable: "Это аудио не может быть воспроизведено.",

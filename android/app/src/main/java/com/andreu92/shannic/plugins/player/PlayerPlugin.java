@@ -280,12 +280,10 @@ public class PlayerPlugin extends Plugin {
 
     @OptIn(markerClass = UnstableApi.class)
     private void pushAutoPlayItems(int sessionId) throws JSONException, JsonProcessingException {
-        List<String> nextItems = youtubeService.getNextItems();
+        List<AudioItem> nextItems = youtubeService.getNextItems();
         if (nextItems == null || nextItems.isEmpty()) return;
 
-        for (String id : nextItems) {
-            AudioItem item = youtubeService.get(id);
-
+        for (AudioItem item : nextItems) {
             MediaItem nextMediaItem =
                     new MediaItem.Builder()
                             .setMediaId(item.id())
@@ -399,7 +397,7 @@ public class PlayerPlugin extends Plugin {
     }
 
     @PluginMethod()
-    public void toggleRepeat(PluginCall call) {
+    public void setRepeat(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             Boolean repeating = call.getBoolean("repeating", false);
             mediaController.setRepeatMode(repeating ? Player.REPEAT_MODE_ONE : Player.REPEAT_MODE_OFF);
@@ -424,7 +422,7 @@ public class PlayerPlugin extends Plugin {
     }
 
     @PluginMethod()
-    public void toggleFavorite(PluginCall call) {
+    public void setFavorite(PluginCall call) {
         boolean favorite = call.getBoolean("favorite");
         getActivity().runOnUiThread(() -> {
             Bundle args = new Bundle();

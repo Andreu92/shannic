@@ -55,6 +55,7 @@ const pt_PT = {
   settings: {
     language: "Idioma",
     theme: "Tema",
+    cache: "Limpar cache",
   },
   errors: {
     audio_unplayable: "Este áudio não pode ser reproduzido.",

@@ -8,7 +8,6 @@ import {
   IonSegmentButton,
   IonLabel,
   IonSearchbar,
-  IonSpinner,
   IonThumbnail,
   type SearchbarCustomEvent,
   type SegmentCustomEvent,
@@ -18,15 +17,18 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import iconDark from "@/assets/img/icon-dark.png";
 import iconLight from "@/assets/img/icon-light.png";
-import { type YoutubeSearch, youtube_plugin } from "@/plugins/YoutubePlugin";
+import {
+  type YoutubeSearch,
+  YoutubeSearchItem,
+  youtube_plugin,
+} from "@/plugins/YoutubePlugin";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";
-import type { RxAudio } from "@/schemas/audio";
 import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import useNetworkStore from "@/stores/NetworkStore";
 import usePlayerStore from "@/stores/PlayerStore";
-import type { AudioItem, SearchResult } from "@/types";
+import type { AudioItem } from "@/types";
 import { formatDuration, showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import {
@@ -35,13 +37,17 @@ import {
   HttpOptions,
   HttpResponse,
 } from "@capacitor/core";
-import { AudioItemBuilder } from "@/AudioItemBuilder";
+import { useAudioItem } from "@/composables/useAudioItem";
+import { BROWSER_USER_AGENT, YT_BASE_URL } from "@/constants";
 
 const { t } = useI18n();
 
 const layout = useLayout();
-const player_store = usePlayerStore();
+const audio_item = useAudioItem();
+
 const audio_service = useAudioService();
+
+const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
 const network_store = useNetworkStore();
 
@@ -49,11 +55,9 @@ const search_query = ref<string | null | undefined>(null);
 const search_music = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const fetching_next_page = ref<boolean>(false);
-const fetching_audio = ref<boolean>(false);
 
-const search_results = ref<SearchResult[]>([]);
+const search_results = ref<YoutubeSearchItem[]>([]);
 const has_next_page = ref<boolean>(false);
-const audio_id_to_play = ref<string | null>(null);
 
 const search = async (e?: SearchbarCustomEvent) => {
   search_results.value = [];
@@ -133,33 +137,33 @@ const toggleSearchMusic = (e: SegmentCustomEvent) => {
   if (search_query.value != null && search_query.value.length > 0) search();
 };
 
-const play = async (audio: SearchResult) => {
+const play = async (item: YoutubeSearchItem) => {
   if (!network_store.is_online) {
     showToast(t("network.offline"), "warning");
     return;
   }
 
-  audio_id_to_play.value = audio.id;
-  fetching_audio.value = true;
+  const audio = await audio_service.createOrUpdateAudio(
+    await audio_item.build(item),
+  );
 
-  const audio_to_play: RxAudio = (
-    await audio_service.getCreateOrUpdateAudio(audio.id)
-  ).toMutableJSON();
-
-  fetching_audio.value = false;
-  player_store.play([audio_to_play]);
+  player_store.play([audio]);
 };
 
-const toggleFavorite = async (search_item: SearchResult) => {
+const toggleFavorite = async (search_item: YoutubeSearchItem) => {
   let favorite: boolean;
   if (favorites_store.isFavorite(search_item.id)) {
-    favorites_store.deleteFavorite(search_item.id);
+    favorites_store.remove(search_item.id);
     favorite = false;
   } else {
-    const audio_item: AudioItem =
-      await AudioItemBuilder.fromSearchResult(search_item);
-    await audio_service.createAudio(audio_item);
-    await favorites_store.addFavorite(audio_item.id);
+    if (!network_store.is_online) {
+      showToast(t("network.offline"), "warning");
+      return;
+    }
+
+    const item: AudioItem = await audio_item.build(search_item);
+    await audio_service.createAudio(item);
+    await favorites_store.add(item.id);
     favorite = true;
   }
 
@@ -167,15 +171,15 @@ const toggleFavorite = async (search_item: SearchResult) => {
     player_store.setFavorite(favorite);
 };
 
-const fetchImage = async (item: SearchResult, e: Event) => {
+const fetchImage = async (item: YoutubeSearchItem, e: Event) => {
   const img = e.target as HTMLImageElement;
   try {
     const options: HttpOptions = {
       url: item.thumbnail,
       responseType: "blob",
       headers: {
-        Origin: import.meta.env.VITE_YT_BASE_URL,
-        "User-Agent": import.meta.env.VITE_YT_USER_AGENT,
+        Origin: YT_BASE_URL,
+        "User-Agent": BROWSER_USER_AGENT,
       },
     };
     const response: HttpResponse = await CapacitorHttp.get(options);
@@ -226,22 +230,13 @@ const fetchImage = async (item: SearchResult, e: Event) => {
           <template #item="{ item }">
             <div class="flex center w-full h-full" @click="play(item)">
               <div class="audio-thumbnail">
-                <Transition name="fade" mode="out-in">
-                  <ion-spinner
-                    v-if="
-                      audio_id_to_play === item.id && fetching_audio === true
-                    "
-                    style="width: 45px; height: 45px"
-                    name="dots"
-                  ></ion-spinner>
-                  <ion-thumbnail v-else>
-                    <img
-                      :src="item.thumbnail"
-                      loading="lazy"
-                      @error="fetchImage(item, $event)"
-                    />
-                  </ion-thumbnail>
-                </Transition>
+                <ion-thumbnail>
+                  <img
+                    :src="item.thumbnail"
+                    loading="lazy"
+                    @error="fetchImage(item, $event)"
+                  />
+                </ion-thumbnail>
               </div>
               <div class="audio-info">
                 <div ref="titles" class="audio-title">

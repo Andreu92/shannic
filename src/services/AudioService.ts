@@ -2,10 +2,11 @@ import { useDatabase } from "@/database";
 import { youtube_plugin, YoutubeAudioItem } from "@/plugins/YoutubePlugin";
 import type { RxAudio } from "@/schemas/audio";
 import type { AudioItem, AudioCollection, AudioDocument } from "@/types";
-import { AudioItemBuilder } from "@/AudioItemBuilder";
+import { useAudioItem } from "@/composables/useAudioItem";
 
 const useAudioService = () => {
   const db = useDatabase();
+  const audio_item = useAudioItem();
   const audio_collection: AudioCollection = db.audios;
 
   const getAudioById = async (id: string): Promise<AudioDocument | null> => {
@@ -18,13 +19,14 @@ const useAudioService = () => {
 
   const fetchAudio = async (id: string): Promise<AudioItem> => {
     const yt_audio_item: YoutubeAudioItem = await youtube_plugin.get({ id });
-    return await AudioItemBuilder.build(yt_audio_item);
+    return await audio_item.build(yt_audio_item);
   };
 
   const getAudiosByIds = async (ids: string[]): Promise<AudioDocument[]> => {
     const audio_map: Map<string, AudioDocument> = await audio_collection
       .findByIds(ids)
       .exec();
+
     return Array.from(audio_map.values());
   };
 

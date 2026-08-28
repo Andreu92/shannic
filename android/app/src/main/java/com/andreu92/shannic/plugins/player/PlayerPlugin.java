@@ -80,8 +80,11 @@ public class PlayerPlugin extends Plugin {
                         @NonNull SessionCommand command,
                         @NonNull Bundle args
                     ){
-                        if (command.customAction.equals(PlayerActions.ACTION_TOGGLE_FAVORITE))
-                            notifyListeners("onToggleFavorite", null);
+                        if (command.customAction.equals(PlayerActions.ACTION_TOGGLE_FAVORITE)) {
+                            JSObject data = new JSObject();
+                            data.put("id", mediaController.getCurrentMediaItem().mediaId);
+                            notifyListeners("onToggleFavorite", data);
+                        }
 
                         if (command.customAction.equals(PlayerActions.ACTION_SRC_REFRESH))
                             onSrcRefresh(

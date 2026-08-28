@@ -2,7 +2,6 @@
 import {
   IonButtons,
   IonHeader,
-  IonImg,
   IonTitle,
   IonToolbar,
 } from "@ionic/vue";
@@ -23,7 +22,7 @@ const network_store = useNetworkStore();
   <ion-header>
     <ion-toolbar style="padding-top: 5px">
       <ion-title>
-        <ion-img
+        <img
           style="width: 90px"
           :src="layout.state.isDarkTheme ? logoDarkTheme : logoLightTheme"
         />

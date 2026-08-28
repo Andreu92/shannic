@@ -43,7 +43,6 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore from "@/stores/PlayerStore";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import useAudioService from "@/services/AudioService";
-import { youtube_plugin } from "@/plugins/YoutubePlugin";
 import { Capacitor } from "@capacitor/core";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import useNetworkStore from "@/stores/NetworkStore";
@@ -137,7 +136,7 @@ const showRemoveFromFavoritesAlert = (audio_id: string) => {
 
 const removeFromFavorites = async () => {
   if (!to_remove.value) return;
-  favorites_store.deleteFavorite(to_remove.value.id);
+  favorites_store.remove(to_remove.value.id);
 
   if (player_store.audio?.id === to_remove.value.id)
     player_store.setFavorite(false);
@@ -170,27 +169,18 @@ const download = (audio_id: string) => {
 };
 
 const deleteLocalAudio = async (audio_id: string) => {
-  const audio = await audio_service.getCreateOrUpdateAudio(audio_id);
+  const audio = await audio_service.getAudioById(audio_id);
   if (!audio) return;
 
   Filesystem.deleteFile({
     directory: Directory.Data,
     path: audio_id,
   }).then(async () => {
-    if (network_store.is_online) {
-      const new_audio = await youtube_plugin.get({ id: audio_id });
-      audio.incrementalPatch({
-        src: new_audio.src,
-        expires_at: new_audio.expires_at,
-        updated_at: Date.now(),
-      });
-    } else {
       audio.incrementalPatch({
         src: FAKE_SRC + audio_id,
         expires_at: 0,
         updated_at: Date.now(),
       });
-    }
   });
 };
 </script>

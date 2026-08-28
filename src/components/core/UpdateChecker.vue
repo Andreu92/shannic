@@ -4,13 +4,16 @@ import { onMounted, reactive } from "vue";
 import pack from "../../../package.json";
 import { useI18n } from "vue-i18n";
 import { InAppBrowser } from "@capgo/inappbrowser";
+import { GITHUB_API_URL, GITHUB_BASE_URL } from "@/constants";
 
 const { t } = useI18n();
+
+const REPO_PATH = "/Andreu92/shannic"
 
 const update: { available: boolean; version: string; url: string } = reactive({
   available: false,
   version: `v${pack.version}`,
-  url: import.meta.env.VITE_GITHUB_REPO_URL,
+  url: GITHUB_BASE_URL + REPO_PATH,
 });
 
 const checkForUpdate = () => {
@@ -19,7 +22,7 @@ const checkForUpdate = () => {
     !last_update_check_date ||
     Date.now() - parseInt(last_update_check_date) > 24 * 60 * 60 * 1000
   ) {
-    fetch(`${import.meta.env.VITE_GITHUB_API_REPO_URL}/releases/latest`, {
+    fetch(`${GITHUB_API_URL + REPO_PATH}/releases/latest`, {
       headers: {
         "X-GitHub-Api-Version": "2022-11-28",
       },

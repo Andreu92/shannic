@@ -3,6 +3,7 @@ import { Directory, Filesystem } from "@capacitor/filesystem";
 import { defineStore } from "pinia";
 import { reactive } from "vue";
 import useAudioService from "@/services/AudioService";
+import { BROWSER_USER_AGENT } from "@/constants";
 
 export const useDownloadStore = defineStore("downloads", () => {
   const audio_service = useAudioService();
@@ -56,7 +57,7 @@ export const useDownloadStore = defineStore("downloads", () => {
       path: fileInfo.uri,
       progress: true,
       headers: {
-        "User-Agent": import.meta.env.VITE_YT_USER_AGENT,
+        "User-Agent": BROWSER_USER_AGENT,
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Encoding": "identity",

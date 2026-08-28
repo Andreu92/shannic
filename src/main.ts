@@ -8,10 +8,8 @@ import { createDatabase } from "@/database";
 import { ar, ca, zh_CN, nl, en, es, fr, de, it, ja, pl, ru, pt_PT } from "@/lang";
 import router from "@/router";
 
-/* Core CSS required for Ionic components to work properly */
-import "@ionic/vue/css/core.css";
 
-/* Basic CSS for apps built with Ionic */
+import "@ionic/vue/css/core.css";
 import "@ionic/vue/css/normalize.css";
 import "@ionic/vue/css/structure.css";
 import "@ionic/vue/css/typography.css";

@@ -14,19 +14,20 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import useAudioService from "@/services/AudioService";
 import { KeepAwake } from "@capgo/capacitor-keep-awake";
 import { youtube_plugin } from "@/plugins/YoutubePlugin";
-import { AudioItemBuilder } from "@/AudioItemBuilder";
+import { useAudioItem } from "@/composables/useAudioItem";
 
 const useSpotifyService = () => {
   const { t, locale } = useI18n();
 
   const SPOTIFY_DEVELOPER_URL = "https://developer.spotify.com";
-  const SPOTIFY_TOKEN_URL: string = "https://accounts.spotify.com/api/token";
-  const SPOTIFY_AUTH_URL: string = `https://accounts.spotify.com/${locale.value.replace("_", "-")}/login`;
-  const SPOTIFY_CLIENT_ID: string = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+  const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
+  const SPOTIFY_AUTH_URL = `https://accounts.spotify.com/${locale.value.replace("_", "-")}/login`;
+  const SPOTIFY_CLIENT_ID = "cfe923b2d660439caf2b557b21f31221";
 
   const db = useDatabase();
   const spotify_db = db.spotify;
 
+  const audio_item = useAudioItem();
   const audio_service = useAudioService();
 
   const favorites_store = useFavoritesStore();
@@ -151,7 +152,7 @@ const useSpotifyService = () => {
 
     getSavedTracks(async (track: SavedTrack) => {
       try {
-        const audio = await AudioItemBuilder.build(
+        const audio = await audio_item.build(
           await youtube_plugin.getByQuery({
             artist: track.track.artists[0].name,
             title: track.track.name,
@@ -161,20 +162,22 @@ const useSpotifyService = () => {
         if (!favorites_store.isFavorite(audio.id)) {
           audio_service
             .createAudio(audio)
-            .then((a: AudioDocument) => favorites_store.addFavorite(a.id));
+            .then((a: AudioDocument) => favorites_store.add(a.id));
         }
       } catch {
         // TO DO: Show error to user
       } finally {
         spotify_sync_store.incrementCounter();
       }
-    }).catch((error) => {
-      console.error("Error importing Spotify saved tracks:", error);
-      // TO DO: Show error to user
-    }).finally(() => {
-      spotify_sync_store.finishSync();
-      KeepAwake.allowSleep();
-    });
+    })
+      .catch((error) => {
+        console.error("Error importing Spotify saved tracks:", error);
+        // TO DO: Show error to user
+      })
+      .finally(() => {
+        spotify_sync_store.finishSync();
+        KeepAwake.allowSleep();
+      });
   };
 
   const linkAccount = async (): Promise<void> => {

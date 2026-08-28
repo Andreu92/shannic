@@ -20,15 +20,12 @@ export interface RxShannicCollections {
 
 export type RxShannicDatabase = RxDatabase<RxShannicCollections>;
 
-export interface SearchResult {
+export interface AudioItem {
   id: string;
   title: string;
   author: string;
   thumbnail: string;
   duration: number;
-}
-
-export interface AudioItem extends SearchResult {
   src: string;
   expires_at: number;
   colors: Palette;

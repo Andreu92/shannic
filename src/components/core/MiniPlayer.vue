@@ -111,8 +111,8 @@ const onDragEnd = () => {
   if (player_store.state === states.playing) player_store.startProgressTimer();
 };
 
-const toggleFavorite = async (audio_id: string) => {
-  const is_fav = await favorites_store.toggleFavorite(audio_id);
+const toggleFavorite = (audio_id: string) => {
+  const is_fav = favorites_store.toggle(audio_id);
   player_store.setFavorite(is_fav);
 };
 </script>

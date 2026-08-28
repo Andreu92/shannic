@@ -9,7 +9,7 @@ const usePlaylistService = () => {
   const db = useDatabase();
   const playlist_collection: PlaylistCollection = db.playlists;
 
-  const getPlaylist = async (id: string): Promise<PlaylistDocument> => {
+  const get = async (id: string): Promise<PlaylistDocument> => {
     const playlist: PlaylistDocument | null = await playlist_collection
       .findOne(id)
       .exec();
@@ -19,39 +19,27 @@ const usePlaylistService = () => {
     return playlist;
   };
 
-  const updatePlaylistAudios = async (
+  const updateAudios = async (
     playlist_id: string,
     playlist_audios: PlaylistAudio[],
   ) => {
-    const playlist = await getPlaylist(playlist_id);
+    const playlist = await get(playlist_id);
 
     await playlist.incrementalPatch({
       audios: playlist_audios,
     });
   };
 
-  const isAudioInPlaylist = async (
+  const isAudioIn = async (
     playlist_id: string,
     audio_id: string,
   ): Promise<boolean> => {
-    const playlist: PlaylistDocument | null = await getPlaylist(playlist_id);
+    const playlist: PlaylistDocument | null = await get(playlist_id);
     return playlist?.audios?.some((o) => o.audio_id === audio_id) ?? false;
   };
 
-  const toggleAudioToPlaylist = async (
-    playlist_id: string,
-    audio_id: string,
-  ) => {
-    const is_in = await isAudioInPlaylist(playlist_id, audio_id);
-    if (is_in) removeAudioFromPlaylist(playlist_id, audio_id);
-    else addAudioToPlaylist(playlist_id, audio_id);
-  };
-
-  const addAudioToPlaylist = async (
-    playlist_id: string,
-    audio_id: string,
-  ): Promise<PlaylistAudio> => {
-    const playlist = await getPlaylist(playlist_id);
+  const addAudio = async (playlist_id: string, audio_id: string) => {
+    const playlist = await get(playlist_id);
 
     const playlist_audios: PlaylistAudio[] = playlist.audios ?? [];
     const position = playlist_audios.length
@@ -68,15 +56,10 @@ const usePlaylistService = () => {
     playlist.incrementalPatch({
       audios: playlist_audios,
     });
-
-    return new_playlist_audio;
   };
 
-  const removeAudioFromPlaylist = async (
-    playlist_id: string,
-    audio_id: string,
-  ) => {
-    const playlist = await getPlaylist(playlist_id);
+  const removeAudio = async (playlist_id: string, audio_id: string) => {
+    const playlist = await get(playlist_id);
 
     let playlist_audios = playlist.audios ?? [];
 
@@ -93,12 +76,11 @@ const usePlaylistService = () => {
   };
 
   return {
-    getPlaylist,
-    updatePlaylistAudios,
-    isAudioInPlaylist,
-    addAudioToPlaylist,
-    removeAudioFromPlaylist,
-    toggleAudioToPlaylist,
+    get,
+    updateAudios,
+    isAudioIn,
+    addAudio,
+    removeAudio,
   };
 };
 

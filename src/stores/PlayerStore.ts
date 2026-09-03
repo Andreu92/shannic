@@ -75,8 +75,8 @@ const usePlayerStore = defineStore("player", () => {
 
     player_plugin.addListener("onMediaItemChanged", async (data) => {
       const { id } = data as { id: string; index: number };
-      
-      current_audio.value = (await audio_service.getAudioById(id));
+
+      current_audio.value = await audio_service.get(id);
 
       const response = await player_plugin.hasNext();
       has_next.value = response.has_next;
@@ -105,7 +105,7 @@ const usePlayerStore = defineStore("player", () => {
     });
 
     player_plugin.addListener("onSetNextItem", async (data) => {
-      audio_service.createOrUpdateAudio(
+      audio_service.createOrUpdate(
         await audio_item.build(data as YoutubeAudioItem),
       );
 
@@ -158,7 +158,7 @@ const usePlayerStore = defineStore("player", () => {
 
   const seekTo = (position: number) => {
     current_position.value = position;
-    player_plugin.seekTo({ position: position });
+    player_plugin.seekTo({ position });
   };
 
   const stop = () => {
@@ -184,24 +184,23 @@ const usePlayerStore = defineStore("player", () => {
   };
 
   return {
-    audio: current_audio,
+    current_audio,
     state,
     repeat,
     current_position,
     has_next,
     initListeners,
+    startProgressTimer,
+    stopProgressTimer,
     play,
     resume,
     pause,
-    seekTo,
     stop,
-    reset,
+    seekTo,
     skipNext,
     skipPrevious,
     toggleRepeat,
-    setFavorite,
-    stopProgressTimer,
-    startProgressTimer,
+    setFavorite
   };
 });
 

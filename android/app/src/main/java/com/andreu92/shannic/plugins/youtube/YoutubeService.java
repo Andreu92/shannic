@@ -1,40 +1,39 @@
 package com.andreu92.shannic.plugins.youtube;
 
 import static com.andreu92.shannic.plugins.Constants.FAKE_SRC;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
+import static org.schabi.newpipe.extractor.ServiceList.YouTube;
 import static java.util.Collections.singletonList;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import android.util.Log;
+
+import com.andreu92.shannic.models.AudioItem;
+import com.andreu92.shannic.models.SearchItem;
+import com.andreu92.shannic.models.SearchResponse;
+import com.andreu92.shannic.plugins.youtube.utils.HttpClient;
+import com.andreu92.shannic.plugins.youtube.utils.ShannicDownloader;
 
 import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.InfoItem;
+import org.schabi.newpipe.extractor.ListExtractor.InfoItemsPage;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
-import org.schabi.newpipe.extractor.ListExtractor.InfoItemsPage;
+import org.schabi.newpipe.extractor.playlist.PlaylistExtractor;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.Stream;
 import org.schabi.newpipe.extractor.stream.StreamExtractor;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
-import org.schabi.newpipe.extractor.playlist.PlaylistExtractor;
 
-import static org.schabi.newpipe.extractor.ServiceList.YouTube;
-
-import android.util.Log;
-
-import com.andreu92.shannic.models.*;
-import com.andreu92.shannic.plugins.Constants;
-import com.andreu92.shannic.plugins.youtube.utils.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -48,14 +47,14 @@ public class YoutubeService {
     private PlaylistExtractor playlistExtractor;
     private Page autoPlayNextPage;
     private String currentItemId;
-    private File appFolder;
 
     private YoutubeService() {
         NewPipe.init(ShannicDownloader.getInstance());
 
         try {
             youtube = NewPipe.getService(YouTube.getServiceId());
-        } catch (ExtractionException ignored) {}
+        } catch (ExtractionException ignored) {
+        }
     }
 
     public static YoutubeService getInstance() {
@@ -67,10 +66,6 @@ public class YoutubeService {
 
     public void setCurrentItemId(String id) {
         this.currentItemId = id;
-    }
-
-    public void setAppFolder(File appFolder) {
-        this.appFolder = appFolder;
     }
 
     public void clearCurrentPlaylistExtractor() {
@@ -146,66 +141,28 @@ public class YoutubeService {
 
             List<Image> thumbnails = streamExtractor.getThumbnails();
             Image thumbnail = thumbnails.get(thumbnails.size() - 1);
-            String thumbnailPath = storeThumbnail(id, thumbnail.getUrl());
 
-            String streamUrl = bestAudioStream.getContent();
-            long expiresAt = Long.parseLong(streamUrl
-                            .split(YoutubeConstants.EXPIRE_QUERY_PARAM + "=")[1]
-                            .split("&")[0]);
+            if (bestAudioStream != null) {
+                String streamUrl = bestAudioStream.getContent();
+                long expiresAt = Long.parseLong(streamUrl
+                        .split(YoutubeConstants.EXPIRE_QUERY_PARAM + "=")[1]
+                        .split("&")[0]);
 
-            return new AudioItem(
-                    id,
-                    streamExtractor.getName(),
-                    streamExtractor.getUploaderName().replace(" - Topic", ""),
-                    streamExtractor.getLength(),
-                    thumbnailPath,
-                    streamUrl,
-                    expiresAt
-            );
+                return new AudioItem(
+                        id,
+                        streamExtractor.getName(),
+                        streamExtractor.getUploaderName().replace(" - Topic", ""),
+                        streamExtractor.getLength(),
+                        thumbnail.getUrl(),
+                        streamUrl,
+                        expiresAt
+                );
+            }
         } catch (ExtractionException | IOException e) {
             Log.e("YoutubeService", e.toString());
             return null;
         }
-    }
-
-    private String storeThumbnail(String id, String url) {
-        OkHttpClient httpClient = HttpClient.getInstance();
-
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Unexpected code " + response);
-            }
-            if (response.body() == null) {
-                throw new IOException("Response body is null");
-            }
-
-            File imgFolder = new File(appFolder, "img");
-            if (!imgFolder.exists()) imgFolder.mkdirs();
-
-            File targetFile = new File(imgFolder, id);
-
-            try (InputStream inputStream = response.body().byteStream();
-                 FileOutputStream outputStream = new FileOutputStream(targetFile)) {
-
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-
-                outputStream.flush();
-                return targetFile.getAbsolutePath();
-            } catch (IOException e) {
-                return null;
-            }
-        } catch (IOException e) {
-            return null;
-        }
+        return null;
     }
 
     public List<AudioItem> getNextItems() {
@@ -220,7 +177,9 @@ public class YoutubeService {
                             + YoutubeConstants.LIST_QUERY_PARAM_FULL + currentItemId);
             playlistExtractor.fetchPage();
 
-            List<AudioItem> nextItemsIdsList = buildNextItemsList(playlistExtractor.getInitialPage());
+            List<AudioItem> nextItemsIdsList =
+                    buildNextItemsList(playlistExtractor.getInitialPage());
+
             if (nextItemsIdsList.isEmpty()) return null;
             return nextItemsIdsList.subList(1, nextItemsIdsList.size());
         } catch (Exception e) {
@@ -232,20 +191,24 @@ public class YoutubeService {
     private List<AudioItem> buildNextItemsList(InfoItemsPage<StreamInfoItem> page) {
         if (page.hasNextPage()) autoPlayNextPage = page.getNextPage();
         else autoPlayNextPage = null;
+
         List<AudioItem> nextItems = new ArrayList<>();
         for (StreamInfoItem item : page.getItems()) {
+
             String id = extractYoutubeId(item.getUrl());
             List<Image> thumbnails = item.getThumbnails();
 
-            nextItems.add(new AudioItem(
+            nextItems.add(
+                new AudioItem(
                     id,
                     item.getName(),
                     item.getUploaderName(),
                     item.getDuration(),
-                    thumbnails.get(thumbnails.size()-1).getUrl(),
+                    thumbnails.get(thumbnails.size() - 1).getUrl(),
                     FAKE_SRC + id,
                     0
-            ));
+                )
+            );
         }
 
         return nextItems;
@@ -258,13 +221,13 @@ public class YoutubeService {
 
         if (!items.isEmpty()) {
             SearchItem item = items.get(0);
-            String thumbnailPath = storeThumbnail(item.id(), item.thumbnail());
+
             return new AudioItem(
                     item.id(),
                     item.title(),
                     item.author().replace(" - Topic", ""),
                     item.duration(),
-                    thumbnailPath,
+                    item.thumbnail(),
                     FAKE_SRC + item.id(),
                     0
             );

@@ -18,9 +18,6 @@ import com.andreu92.shannic.plugins.player.PlayerPlugin;
 public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        YoutubeService youtubeService = YoutubeService.getInstance();
-        youtubeService.setAppFolder(getFilesDir());
-
         registerPlugin(PlayerPlugin.class);
         registerPlugin(YoutubePlugin.class);
 

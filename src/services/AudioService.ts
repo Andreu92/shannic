@@ -9,7 +9,7 @@ const useAudioService = () => {
   const audio_item = useAudioItem();
   const audio_collection: AudioCollection = db.audios;
 
-  const getAudioById = async (id: string): Promise<AudioDocument | null> => {
+  const get = async (id: string): Promise<AudioDocument | null> => {
     const audio_doc: AudioDocument | null = await audio_collection
       .findOne(id)
       .exec();
@@ -17,12 +17,12 @@ const useAudioService = () => {
     return audio_doc;
   };
 
-  const fetchAudio = async (id: string): Promise<AudioItem> => {
+  const fetch = async (id: string): Promise<AudioItem> => {
     const yt_audio_item: YoutubeAudioItem = await youtube_plugin.get({ id });
     return await audio_item.build(yt_audio_item);
   };
 
-  const getAudiosByIds = async (ids: string[]): Promise<AudioDocument[]> => {
+  const getList = async (ids: string[]): Promise<AudioDocument[]> => {
     const audio_map: Map<string, AudioDocument> = await audio_collection
       .findByIds(ids)
       .exec();
@@ -30,17 +30,17 @@ const useAudioService = () => {
     return Array.from(audio_map.values());
   };
 
-  const createAudio = async (audio: AudioItem): Promise<AudioDocument> => {
+  const create = async (audio: AudioItem): Promise<AudioDocument> => {
     return await audio_collection.insertIfNotExists({
       ...audio,
       created_at: Date.now(),
     });
   };
 
-  const updateAudio = async (
+  const update = async (
     updated_audio: AudioItem,
   ): Promise<AudioDocument> => {
-    const audio: AudioDocument | null = await getAudioById(updated_audio.id);
+    const audio: AudioDocument | null = await get(updated_audio.id);
 
     if (!audio) throw new Error("Audio not found");
 
@@ -49,7 +49,8 @@ const useAudioService = () => {
       audioDoc.title = updated_audio.title;
       audioDoc.author = updated_audio.author;
       audioDoc.duration = updated_audio.duration;
-      audioDoc.thumbnail = updated_audio.thumbnail;
+      if (!audioDoc.thumbnail.startsWith("file"))
+        audioDoc.thumbnail = updated_audio.thumbnail;
       audioDoc.colors = updated_audio.colors;
       audioDoc.expires_at = updated_audio.expires_at;
       audioDoc.updated_at = Date.now();
@@ -57,30 +58,35 @@ const useAudioService = () => {
     });
   };
 
-  const getCreateOrUpdateAudio = async (id: string): Promise<AudioDocument> => {
-    const audio_doc: AudioDocument | null = await getAudioById(id);
+  const remove = async (id: string) : Promise<void> => {
+    const audio: AudioDocument | null = await get(id);
+    if (audio) audio.remove();
+  };
+
+  const getCreateOrUpdate = async (id: string): Promise<AudioDocument> => {
+    const audio_doc: AudioDocument | null = await get(id);
 
     if (!audio_doc) {
-      const audio_item: AudioItem = await fetchAudio(id);
-      return await createAudio(audio_item);
+      const audio_item: AudioItem = await fetch(id);
+      return await create(audio_item);
     }
 
     if (audio_doc.expires_at && audio_doc.expires_at - 10 < Date.now() / 1000) {
-      const audio_item: AudioItem = await fetchAudio(id);
-      return await updateAudio(audio_item);
+      const audio_item: AudioItem = await fetch(id);
+      return await update(audio_item);
     }
 
     return audio_doc;
   };
 
-  const createOrUpdateAudio = async (
+  const createOrUpdate = async (
     audio_item: AudioItem,
   ): Promise<AudioDocument> => {
-    const audio_doc: AudioDocument | null = await getAudioById(audio_item.id);
+    const audio_doc: AudioDocument | null = await get(audio_item.id);
 
-    if (!audio_doc) return await createAudio(audio_item);
+    if (!audio_doc) return await create(audio_item);
 
-    return await updateAudio(audio_item);
+    return await update(audio_item);
   };
 
   const refreshSrc = async (
@@ -88,7 +94,7 @@ const useAudioService = () => {
     src: string,
     expires_at: number,
   ): Promise<void> => {
-    const audio: AudioDocument | null = await getAudioById(id);
+    const audio: AudioDocument | null = await get(id);
 
     if (!audio) throw new Error("Audio not found");
 
@@ -100,13 +106,14 @@ const useAudioService = () => {
   };
 
   return {
-    getAudioById,
-    getAudiosByIds,
-    createAudio,
-    updateAudio,
+    get,
+    getList,
+    create,
+    update,
+    remove,
     refreshSrc,
-    getCreateOrUpdateAudio,
-    createOrUpdateAudio,
+    getCreateOrUpdate,
+    createOrUpdate,
   };
 };
 

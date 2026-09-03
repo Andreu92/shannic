@@ -48,6 +48,10 @@ ion-toast::part(wrapper) {
   display: flex;
 }
 
+.overhidden {
+  overflow: hidden;
+}
+
 .center {
   align-items: center;
   justify-content: center;
@@ -59,7 +63,10 @@ ion-toast::part(wrapper) {
 
 .between {
   justify-content: space-between;
-  align-items: center;
+}
+
+.evenly {
+  justify-content: space-evenly;
 }
 
 .col {

@@ -36,12 +36,15 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import java.io.EOFException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.andreu92.shannic.models.AudioItem;
@@ -195,7 +198,8 @@ public class PlayerPlugin extends Plugin {
                         }
 
                         // Dirty cache error
-                        if (error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED) {
+                        if (error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
+                                && error.getCause() instanceof EOFException) {
                             removeMediaItemFromCache(item);
                             refreshAudioSrc(item, index);
                             mediaController.prepare();
@@ -282,11 +286,14 @@ public class PlayerPlugin extends Plugin {
     }
 
     @OptIn(markerClass = UnstableApi.class)
-    private void pushAutoPlayItems(int sessionId) throws JSONException, JsonProcessingException {
+    private void pushAutoPlayItems(int sessionId)
+            throws JSONException, JsonProcessingException, ExecutionException, InterruptedException {
         List<AudioItem> nextItems = youtubeService.getNextItems();
         if (nextItems == null || nextItems.isEmpty()) return;
 
         for (AudioItem item : nextItems) {
+            if (isInQueue(item.id()).get()) continue;
+
             MediaItem nextMediaItem =
                     new MediaItem.Builder()
                             .setMediaId(item.id())
@@ -448,22 +455,29 @@ public class PlayerPlugin extends Plugin {
         });
     }
 
-    @PluginMethod
-    public void isInQueue(PluginCall call) {
-        String id = call.getString("id");
-        JSObject data = new JSObject();
+    private CompletableFuture<Boolean> isInQueue(String id) {
+        CompletableFuture<Boolean> isInQueue = new CompletableFuture<>();
+
         getActivity().runOnUiThread(() -> {
             for (int i = 0; i < mediaController.getMediaItemCount(); i++) {
                 MediaItem item = mediaController.getMediaItemAt(i);
                 if (id.equals(item.mediaId)) {
-                    data.put("is_in_queue", true);
-                    call.resolve(data);
-                    return;
+                    isInQueue.complete(true);
                 }
             }
-            data.put("is_in_queue", false);
-            call.resolve(data);
+            isInQueue.complete(false);
         });
+
+        return isInQueue;
+    }
+
+    @PluginMethod
+    public void isInQueue(PluginCall call) throws ExecutionException, InterruptedException {
+        String id = call.getString("id");
+        JSObject data = new JSObject();
+        boolean isIn = isInQueue(id).get();
+        data.put("is_in_queue", isIn);
+        call.resolve(data);
     }
 
     @PluginMethod
@@ -485,12 +499,9 @@ public class PlayerPlugin extends Plugin {
     @PluginMethod()
     public void stop(PluginCall call) {
         getActivity().runOnUiThread(() -> {
-            if (mediaController != null) {
-                mediaController.stop();
-                mediaController.release();
-                mediaController = null;
-                call.resolve();
-            }
+            mediaController.stop();
+            mediaController.clearMediaItems();
+            call.resolve();
         });
     }
 }

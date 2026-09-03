@@ -45,16 +45,16 @@ export const useDownloadStore = defineStore("downloads", () => {
     status.is_downloading = true;
     status.current = audio_id;
 
-    const audio = await audio_service.getCreateOrUpdateAudio(audio_id);
+    const audio = await audio_service.getCreateOrUpdate(audio_id);
 
-    const fileInfo = await Filesystem.getUri({
+    const file_info = await Filesystem.getUri({
       directory: Directory.Data,
       path: audio_id,
     });
 
     FileTransfer.downloadFile({
       url: audio.src,
-      path: fileInfo.uri,
+      path: file_info.uri,
       progress: true,
       headers: {
         "User-Agent": BROWSER_USER_AGENT,

@@ -18,6 +18,7 @@ import {
   playSkipBack,
   playSkipForward,
   repeat,
+  close,
 } from "ionicons/icons";
 import { computed, reactive, useTemplateRef, watch } from "vue";
 import { useLayout } from "@/composables/useLayout";
@@ -25,7 +26,7 @@ import { DEFAULT_COLOR_THEME } from "@/constants";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore, { states } from "@/stores/PlayerStore";
 import type { ColorTheme } from "@/types";
-import { formatDuration } from "@/utils";
+import { formatDuration, onImgError } from "@/utils";
 import { Capacitor } from "@capacitor/core";
 
 const layout = useLayout();
@@ -38,14 +39,15 @@ const offsets: { top: number; left: number } = { top: 0, left: 0 };
 
 const color_theme = computed<ColorTheme>(() => {
   const color_theme: ColorTheme | undefined = layout.state.isDarkTheme
-    ? player_store.audio?.colors.muted || player_store.audio?.colors.vibrant
-    : player_store.audio?.colors.dark_vibrant ||
-      player_store.audio?.colors.dark_muted;
+    ? player_store.current_audio?.colors.muted ||
+      player_store.current_audio?.colors.vibrant
+    : player_store.current_audio?.colors.dark_vibrant ||
+      player_store.current_audio?.colors.dark_muted;
 
   return (
     color_theme ??
-    (player_store.audio?.colors.muted ||
-      player_store.audio?.colors.vibrant ||
+    (player_store.current_audio?.colors.muted ||
+      player_store.current_audio?.colors.vibrant ||
       DEFAULT_COLOR_THEME)
   );
 });
@@ -119,7 +121,7 @@ const toggleFavorite = (audio_id: string) => {
 
 <template>
   <div
-    v-if="player_store.audio"
+    v-if="player_store.current_audio"
     ref="player"
     class="mini-player"
     :style="{
@@ -128,15 +130,32 @@ const toggleFavorite = (audio_id: string) => {
       transform: `translate3d(${player_coords.x}px, ${player_coords.y}px, 0)`,
     }"
   >
-    <div style="display: flex; gap: 12px">
-      <div style="min-width: 45px">
-        <ion-thumbnail>
-          <img :src="Capacitor.convertFileSrc(player_store.audio!.thumbnail)" />
-        </ion-thumbnail>
+    <div class="flex between">
+      <div class="flex grow" style="gap: 12px; min-width: 0;">
+        <div style="min-width: 45px">
+          <ion-thumbnail>
+            <img
+              :src="
+                player_store.current_audio!.thumbnail.startsWith('file')
+                  ? Capacitor.convertFileSrc(
+                      player_store.current_audio!.thumbnail,
+                    )
+                  : player_store.current_audio!.thumbnail
+              "
+              loading="lazy"
+              @error="onImgError(player_store.current_audio!.thumbnail, $event)"
+            />
+          </ion-thumbnail>
+        </div>
+        <div class="flex col evenly overhidden">
+          <div class="audio-title">{{ player_store.current_audio!.title }}</div>
+          <div class="audio-artist">
+            {{ player_store.current_audio!.author }}
+          </div>
+        </div>
       </div>
-      <div class="mini-player-audio-info">
-        <div class="audio-title">{{ player_store.audio!.title }}</div>
-        <div class="audio-artist">{{ player_store.audio!.author }}</div>
+      <div style="font-size: 1.2rem">
+        <ion-icon :src="close" @click="player_store.stop()"></ion-icon>
       </div>
     </div>
     <div class="mini-player-actions">
@@ -176,11 +195,11 @@ const toggleFavorite = (audio_id: string) => {
       <div>
         <ion-icon
           :src="
-            favorites_store.isFavorite(player_store.audio!.id)
+            favorites_store.isFavorite(player_store.current_audio!.id)
               ? heart
               : heartOutline
           "
-          @click="toggleFavorite(player_store.audio!.id)"
+          @click="toggleFavorite(player_store.current_audio!.id)"
         ></ion-icon>
       </div>
     </div>
@@ -191,12 +210,12 @@ const toggleFavorite = (audio_id: string) => {
       <ion-range
         :value="Math.floor(player_store.current_position / 1000)"
         :min="0"
-        :max="player_store.audio!.duration"
+        :max="player_store.current_audio!.duration"
         @ion-knob-move-start="onDragStart"
         @ion-knob-move-end="onDragEnd"
         @ion-change="handleSeek"
       ></ion-range>
-      <div>{{ formatDuration(player_store.audio!.duration) }}</div>
+      <div>{{ formatDuration(player_store.current_audio!.duration) }}</div>
     </div>
   </div>
 </template>
@@ -228,13 +247,6 @@ ion-range {
   padding: 10px;
   border-radius: 10px;
   box-shadow: rgba(99, 99, 99, 0.2) 0 2px 8px;
-}
-
-.mini-player-audio-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  overflow: hidden;
 }
 
 .mini-player-actions {

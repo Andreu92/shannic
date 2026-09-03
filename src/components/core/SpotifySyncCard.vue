@@ -16,7 +16,7 @@ const spotify_sync_store = useSpotifySyncStore();
     class="spotify-sync-card"
   >
     <ion-card-content>
-      <div class="flex-between">
+      <div class="flex between center-y">
         <div
           v-if="!spotify_sync_store.total_saved_tracks"
           class="flex-center-vertical"
@@ -64,11 +64,5 @@ const spotify_sync_store = useSpotifySyncStore();
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 </style>

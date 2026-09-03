@@ -48,11 +48,14 @@ import VirtualList from "@/components/ui/VirtualList.vue";
 import useNetworkStore from "@/stores/NetworkStore";
 import { showToast } from "@/utils";
 import { FAKE_SRC } from "@/constants";
+import { useAudioItem } from "@/composables/useAudioItem";
 
 const router = useRouter();
 const { t } = useI18n();
 
 const layout = useLayout();
+const audio_item = useAudioItem();
+
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
 const download_store = useDownloadStore();
@@ -138,7 +141,7 @@ const removeFromFavorites = async () => {
   if (!to_remove.value) return;
   favorites_store.remove(to_remove.value.id);
 
-  if (player_store.audio?.id === to_remove.value.id)
+  if (player_store.current_audio?.id === to_remove.value.id)
     player_store.setFavorite(false);
 
   to_remove.value = null;
@@ -168,20 +171,10 @@ const download = (audio_id: string) => {
   else showToast(t("network.offline"), "warning");
 };
 
-const deleteLocalAudio = async (audio_id: string) => {
-  const audio = await audio_service.getAudioById(audio_id);
+const deleteFile = async (audio_id: string) => {
+  const audio = await audio_service.get(audio_id);
   if (!audio) return;
-
-  Filesystem.deleteFile({
-    directory: Directory.Data,
-    path: audio_id,
-  }).then(async () => {
-      audio.incrementalPatch({
-        src: FAKE_SRC + audio_id,
-        expires_at: 0,
-        updated_at: Date.now(),
-      });
-  });
+  audio_item.deleteFile(audio);
 };
 </script>
 
@@ -310,7 +303,7 @@ const deleteLocalAudio = async (audio_id: string) => {
                       <ion-icon
                         v-else
                         :icon="trashOutline"
-                        @click.stop="deleteLocalAudio(item.id)"
+                        @click.stop="deleteFile(item.id)"
                       ></ion-icon>
                     </Transition>
 

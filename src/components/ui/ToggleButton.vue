@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IonIcon } from "@ionic/vue";
-import { Component } from "vue";
+import { type Component } from "vue";
 
 interface Props {
   enabled: boolean;

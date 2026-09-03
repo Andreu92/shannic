@@ -49,7 +49,6 @@ export const audioSchemaLiteral = {
     "duration",
     "thumbnail",
     "src",
-    "expires_at",
     "colors",
     "created_at",
   ],

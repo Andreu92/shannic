@@ -1,5 +1,9 @@
+import { CapacitorHttp, HttpOptions, HttpResponse } from "@capacitor/core";
 import { toastController } from "@ionic/vue";
 import { alertOutline } from "ionicons/icons";
+import { BROWSER_USER_AGENT, YT_BASE_URL } from "@/constants";
+import iconLight from "@/assets/img/icon-light.png";
+import { YoutubeSearchItem } from "./plugins/YoutubePlugin";
 
 export const formatDuration = (sec: number) => {
   const h = Math.floor(sec / 3600);
@@ -36,4 +40,34 @@ export const showToast = async (
   });
 
   await toast.present();
+};
+
+export const fetchImage = async (url: string) => {
+  try {
+    const options: HttpOptions = {
+      url,
+      responseType: "blob",
+      headers: {
+        Origin: YT_BASE_URL,
+        "User-Agent": BROWSER_USER_AGENT,
+      },
+    };
+
+    const response: HttpResponse = await CapacitorHttp.get(options);
+    if (response.status === 200 && response.data) return response;
+  } catch {
+    throw new Error("Failed to fetch image");
+  }
+  return null;
+};
+
+export const onImgError = async (url: string, e: Event) => {
+  const img = e.target as HTMLImageElement;
+
+  try {
+    const response = await fetchImage(url);
+    img.src = `data:${response!.headers["Content-Type"]};base64,${response!.data}`;
+  } catch {
+    if (img.src !== iconLight) img.src = iconLight;
+  }
 };

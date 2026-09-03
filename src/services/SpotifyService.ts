@@ -161,7 +161,7 @@ const useSpotifyService = () => {
 
         if (!favorites_store.isFavorite(audio.id)) {
           audio_service
-            .createAudio(audio)
+            .create(audio)
             .then((a: AudioDocument) => favorites_store.add(a.id));
         }
       } catch {

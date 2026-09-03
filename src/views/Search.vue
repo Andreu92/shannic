@@ -29,16 +29,12 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import useNetworkStore from "@/stores/NetworkStore";
 import usePlayerStore from "@/stores/PlayerStore";
 import type { AudioItem } from "@/types";
-import { formatDuration, showToast } from "@/utils";
+import { formatDuration, onImgError, showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import {
   CapacitorException,
-  CapacitorHttp,
-  HttpOptions,
-  HttpResponse,
 } from "@capacitor/core";
 import { useAudioItem } from "@/composables/useAudioItem";
-import { BROWSER_USER_AGENT, YT_BASE_URL } from "@/constants";
 
 const { t } = useI18n();
 
@@ -143,7 +139,7 @@ const play = async (item: YoutubeSearchItem) => {
     return;
   }
 
-  const audio = await audio_service.createOrUpdateAudio(
+  const audio = await audio_service.createOrUpdate(
     await audio_item.build(item),
   );
 
@@ -162,34 +158,13 @@ const toggleFavorite = async (search_item: YoutubeSearchItem) => {
     }
 
     const item: AudioItem = await audio_item.build(search_item);
-    await audio_service.createAudio(item);
-    await favorites_store.add(item.id);
+    await audio_service.create(item);
+    favorites_store.add(item.id);
     favorite = true;
   }
 
-  if (player_store.audio?.id === search_item.id)
+  if (player_store.current_audio?.id === search_item.id)
     player_store.setFavorite(favorite);
-};
-
-const fetchImage = async (item: YoutubeSearchItem, e: Event) => {
-  const img = e.target as HTMLImageElement;
-  try {
-    const options: HttpOptions = {
-      url: item.thumbnail,
-      responseType: "blob",
-      headers: {
-        Origin: YT_BASE_URL,
-        "User-Agent": BROWSER_USER_AGENT,
-      },
-    };
-    const response: HttpResponse = await CapacitorHttp.get(options);
-
-    if (response.status === 200 && response.data)
-      img.src = `data:${response.headers["Content-Type"]};base64,${response.data}`;
-    else if (img.src !== iconLight) img.src = iconLight;
-  } catch (error) {
-    if (img.src !== iconLight) img.src = iconLight;
-  }
 };
 </script>
 
@@ -234,7 +209,7 @@ const fetchImage = async (item: YoutubeSearchItem, e: Event) => {
                   <img
                     :src="item.thumbnail"
                     loading="lazy"
-                    @error="fetchImage(item, $event)"
+                    @error="onImgError(item.thumbnail, $event)"
                   />
                 </ion-thumbnail>
               </div>

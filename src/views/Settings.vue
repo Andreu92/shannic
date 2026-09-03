@@ -30,7 +30,7 @@ import {
   IonToggle,
 } from "@ionic/vue";
 import { closeOutline, moonOutline, sunnyOutline, trashOutline } from "ionicons/icons";
-import { Component, type Ref, ref } from "vue";
+import { type Component, type Ref, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";

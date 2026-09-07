@@ -64,9 +64,18 @@ export async function createDatabase(): Promise<Plugin> {
       migrationStrategies: {
         1: (oldDoc) => {
           delete oldDoc.duration_text;
+          
+          oldDoc.duration = Math.floor(oldDoc.duration / 1000);
+          
+          if (oldDoc.url && oldDoc.url.startsWith("file")) {
+            oldDoc.src = oldDoc.url;
+            oldDoc.expires_at = undefined;
+          } else {
+            oldDoc.src = FAKE_SRC;
+            oldDoc.expires_at = 0;
+          }
+
           delete oldDoc.url;
-          oldDoc.src = FAKE_SRC;
-          oldDoc.expires_at = 0;
           return oldDoc;
         },
       },

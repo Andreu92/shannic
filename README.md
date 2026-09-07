@@ -1,6 +1,6 @@
 # Shannic
 
-Shannic is an android hybrid app to listen to your favorite music / audios for free without ads.
+Shannic is an android app to listen audios / music for free without ads. Shannic is not responsible of the content of the audios / music you listen.
 
 ## Features
 
@@ -44,11 +44,11 @@ Get the apk from <a href="https://github.com/Andreu92/shannic/releases">relases<
 
 Join the shannic discord:
 
-https://discord.gg/KD6XG8Gzd
+https://discord.gg/eZVz5vuMH
 
 ## Donations
 
-If you want to help me to keep improving shannic you can contribute here:
+Donations are welcome, thank you for your support!! <3
 
 - <a href="https://www.buymeacoffee.com/andreu92">Buy me a coffee</a>
 

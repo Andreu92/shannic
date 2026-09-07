@@ -2,8 +2,9 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 const useSpotifySyncStore = defineStore("spotify_sync", () => {
-  const is_syncing = ref<boolean>(false);
-  const counter = ref<number>(0);
+  const is_syncing = ref(false);
+  const cancel_sync = ref(false);
+  const counter = ref(0);
   const total_saved_tracks = ref<number | null>(null);
 
   const incrementCounter = () => {
@@ -18,6 +19,7 @@ const useSpotifySyncStore = defineStore("spotify_sync", () => {
 
   return {
     is_syncing,
+    cancel_sync,
     counter,
     total_saved_tracks,
     incrementCounter,

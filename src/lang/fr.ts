@@ -56,6 +56,13 @@ const fr = {
     language: "Langue",
     theme: "Thème",
     cache: "Vider le cache",
+    cache_cleared: "Audios en cache effacés.",
+    erase_all: "Effacer tout",
+    erase: {
+      header: "Effacer toutes les données",
+      message:
+        "Êtes-vous sûr de vouloir tout effacer et revenir à l'état initial ? Cette action ne peut pas être annulée !",
+    },
   },
   errors: {
     audio_unplayable: "Cet audio ne peut pas être lu.",
@@ -64,9 +71,11 @@ const fr = {
   spotify: {
     link: "Lier Spotify",
     unlink: "Dissocier Spotify",
-    starting_import: "Démarrage de l'importation Spotify...",
+    unlinked: "Compte Spotify dissocié.",
+    not_linked: "Aucun compte Spotify n'est lié.",
+    starting_import: "Démarrage de l'importation...",
     favorites: {
-      importing: "Importation des favoris Spotify ({0} sur {1})",
+      importing: "Importation des favoris... ({0} sur {1})",
     },
   },
   update: {

@@ -57,6 +57,13 @@ const nl = {
     language: "Taal",
     theme: "Thema",
     cache: "Cache wissen",
+    cache_cleared: "Audios cache leeg gemaakt.",
+    erase_all: "Alles wissen",
+    erase: {
+      header: "Alle gegevens wissen",
+      message:
+        "Ben je zeker dat je alles wilt wissen en teruggaan naar de initiële staat? Dit kan niet ongedaan gemaakt worden.",
+    },
   },
   errors: {
     audio_unplayable: "Deze audio kan niet worden afgespeeld.",
@@ -65,9 +72,11 @@ const nl = {
   spotify: {
     link: "Spotify koppelen",
     unlink: "Spotify ontkoppelen",
-    starting_import: "Spotify-import starten...",
+    unlinked: "Spotify-account is gedetacheerd.",
+    not_linked: "Er is geen Spotify-account gekoppeld.",
+    starting_import: "Import starten...",
     favorites: {
-      importing: "Spotify-favorieten importeren ({0} van {1})",
+      importing: "Favorieten importeren... ({0} van {1})",
     },
   },
   update: {

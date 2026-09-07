@@ -37,9 +37,7 @@ const useAudioService = () => {
     });
   };
 
-  const update = async (
-    updated_audio: AudioItem,
-  ): Promise<AudioDocument> => {
+  const update = async (updated_audio: AudioItem): Promise<AudioDocument> => {
     const audio: AudioDocument | null = await get(updated_audio.id);
 
     if (!audio) throw new Error("Audio not found");
@@ -58,9 +56,12 @@ const useAudioService = () => {
     });
   };
 
-  const remove = async (id: string) : Promise<void> => {
+  const remove = async (id: string): Promise<void> => {
     const audio: AudioDocument | null = await get(id);
-    if (audio) audio.remove();
+    if (audio) {
+      audio.remove();
+      db.audios.cleanup(0);
+    }
   };
 
   const getCreateOrUpdate = async (id: string): Promise<AudioDocument> => {

@@ -56,6 +56,13 @@ const ca = {
     language: "Idioma",
     theme: "Tema",
     cache: "Netejar memòria cau",
+    cache_cleared: "Audios en caché borrats.",
+    erase_all: "Borrar tot",
+    erase: {
+      header: "Borrar tots les dades",
+      message:
+        "Segur que vols borrar tot i tornar a l'estat inicial? No es pot desfer!",
+    },
   },
   errors: {
     audio_unplayable: "Aquest àudio no es pot reproduir.",
@@ -64,9 +71,11 @@ const ca = {
   spotify: {
     link: "Vincular Spotify",
     unlink: "Desvincular Spotify",
-    starting_import: "Iniciant importació de Spotify...",
+    unlinked: "Compte de Spotify desvinculat.",
+    not_linked: "No hi ha cap compte de Spotify enllaçat.",
+    starting_import: "Iniciant importació...",
     favorites: {
-      importing: "Important favorits de Spotify ({0} de {1})",
+      importing: "Important favorits... ({0} de {1})",
     },
   },
   update: {

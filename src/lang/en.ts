@@ -56,6 +56,13 @@ const en = {
     language: "Language",
     theme: "Theme",
     cache: "Clear cache",
+    cache_cleared: "Cached audios cleared.",
+    erase_all: "Delete all",
+    erase: {
+      header: "Delete all data",
+      message:
+        "Are you sure you want to delete everything and return to the initial state? This cannot be undone!",
+    }
   },
   errors: {
     audio_unplayable: "This audio cannot be played.",
@@ -64,9 +71,11 @@ const en = {
   spotify: {
     link: "Link Spotify",
     unlink: "Unlink Spotify",
-    starting_import: "Starting Spotify import...",
+    unlinked: "Spotify account unlinked.",
+    not_linked: "No Spotify account is linked.",
+    starting_import: "Starting import...",
     favorites: {
-      importing: "Importing Spotify favorites ({0} of {1})",
+      importing: "Importing favorites... ({0} of {1})",
     },
   },
   update: {

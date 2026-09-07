@@ -56,6 +56,13 @@ const ja = {
     language: "言語",
     theme: "テーマ",
     cache: "キャッシュをクリア",
+    cache_cleared: "キャッシュ内のオーディオを削除しました。",
+    erase_all: "すべて削除",
+    erase: {
+      header: "すべてのデータを削除",
+      message:
+        "本当にすべてを削除して初期状態に戻してもよろしいですか？ この操作は取り消せません。",
+    },
   },
   errors: {
     audio_unplayable: "このオーディオは再生できません。",
@@ -64,9 +71,11 @@ const ja = {
   spotify: {
     link: "Spotifyをリンク",
     unlink: "Spotifyのリンクを解除",
-    starting_import: "Spotifyのインポートを開始しています...",
+    unlinked: "Spotify アカウントのリンクが解除されました。",
+    not_linked: "リンクされた Spotify アカウントはありません。",
+    starting_import: "インポートを開始しています...",
     favorites: {
-      importing: "Spotifyのお気に入りをインポート中 ({0}/{1})",
+      importing: "お気に入りをインポート中... ({0}/{1})",
     },
   },
   update: {

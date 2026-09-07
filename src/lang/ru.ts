@@ -56,6 +56,13 @@ const ru = {
     language: "Язык",
     theme: "Тема",
     cache: "Очистить кэш",
+    cache_cleared: "Аудио из кэша удалено.",
+    erase_all: "Удалить всё",
+    erase: {
+      header: "Удалить все данные",
+      message:
+        "Вы уверены, что хотите удалить всё и вернуться к начальному状態? Это нельзя отменить.",
+    },
   },
   errors: {
     audio_unplayable: "Это аудио не может быть воспроизведено.",
@@ -64,9 +71,11 @@ const ru = {
   spotify: {
     link: "Подключить Spotify",
     unlink: "Отключить Spotify",
-    starting_import: "Запуск импорта из Spotify...",
+    unlinked: "Аккаунт Spotify отсоединён.",
+    not_linked: "Нет привязанного аккаунта Spotify.",
+    starting_import: "Запуск импорта...",
     favorites: {
-      importing: "Импорт избранного из Spotify ({0} из {1})",
+      importing: "Импорт избранного... ({0} из {1})",
     },
   },
   update: {

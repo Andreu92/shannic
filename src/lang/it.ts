@@ -56,6 +56,13 @@ const it = {
     language: "Lingua",
     theme: "Tema",
     cache: "Svuota cache",
+    cache_cleared: "Audità in cache cancellati.",
+    erase_all: "Cancella tutto",
+    erase: {
+      header: "Cancella tutti i dati",
+      message:
+        "Sei sicuro di voler cancellare tutto e tornare allo stato iniziale? Questa azione non può essere annullata.",
+    },
   },
   errors: {
     audio_unplayable: "Impossibile riprodurre questo audio.",
@@ -64,9 +71,11 @@ const it = {
   spotify: {
     link: "Collega Spotify",
     unlink: "Scollega Spotify",
-    starting_import: "Avvio importazione da Spotify...",
+    unlinked: "Account Spotify scollegato.",
+    not_linked: "Nessun account Spotify collegato.",
+    starting_import: "Avvio importazione...",
     favorites: {
-      importing: "Importazione preferiti da Spotify ({0} di {1})",
+      importing: "Importazione preferiti... ({0} di {1})",
     },
   },
   update: {

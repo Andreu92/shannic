@@ -7,18 +7,20 @@ import {
   type RxStorage,
 } from "rxdb";
 import { RxDBMigrationSchemaPlugin } from "rxdb/plugins/migration-schema";
+import { RxDBCleanupPlugin } from "rxdb/plugins/cleanup";
 import {
   getRxStorageDexie,
   type RxStorageDexie,
 } from "rxdb/plugins/storage-dexie";
 import { type App, inject, type Plugin } from "vue";
-import { FAVORITES_PLAYLIST_ID, SPOTIFY_CONFIG_ID } from "@/constants";
+import { FAKE_SRC, FAVORITES_PLAYLIST_ID } from "@/constants";
 import { audioSchema } from "@/schemas/audio";
 import { playlistMethods, playlistSchema } from "@/schemas/playlist";
 import { spotifySchema } from "@/schemas/spotify";
 import type { RxShannicCollections, RxShannicDatabase } from "@/types";
 
 addRxPlugin(RxDBMigrationSchemaPlugin);
+addRxPlugin(RxDBCleanupPlugin);
 
 let storage: RxStorageDexie | RxStorage<DexieStorageInternals, DexieSettings>;
 if (import.meta.env.DEV) {
@@ -30,6 +32,8 @@ if (import.meta.env.DEV) {
   storage = wrappedValidateAjvStorage({
     storage: getRxStorageDexie(),
   });
+
+  //await removeRxDatabase("shannic", storage);
 } else {
   storage = getRxStorageDexie();
 }
@@ -41,15 +45,31 @@ export function useDatabase(): RxShannicDatabase {
 }
 
 export async function createDatabase(): Promise<Plugin> {
-  await removeRxDatabase("shannic", storage);
   const db: RxShannicDatabase = await createRxDatabase<RxShannicCollections>({
     name: "shannic",
     storage: storage,
+    multiInstance: false,
+    cleanupPolicy: {
+      minimumDeletedTime: 1000 * 60 * 60 * 24 * 31, // one month
+      minimumCollectionAge: 1000 * 60, // 60 seconds
+      runEach: 1000 * 60 * 5, // 5 minutes
+      awaitReplicationsInSync: false,
+      waitForLeadership: false,
+    },
   });
 
   await db.addCollections({
     audios: {
       schema: audioSchema,
+      migrationStrategies: {
+        1: (oldDoc) => {
+          delete oldDoc.duration_text;
+          delete oldDoc.url;
+          oldDoc.src = FAKE_SRC;
+          oldDoc.expires_at = 0;
+          return oldDoc;
+        },
+      },
     },
     playlists: {
       schema: playlistSchema,
@@ -64,10 +84,6 @@ export async function createDatabase(): Promise<Plugin> {
     id: FAVORITES_PLAYLIST_ID,
     title: "favorites",
     created_at: Date.now(),
-  });
-
-  db.spotify.insertIfNotExists({
-    id: SPOTIFY_CONFIG_ID,
   });
 
   return {

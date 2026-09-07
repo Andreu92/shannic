@@ -3,7 +3,6 @@ import { toastController } from "@ionic/vue";
 import { alertOutline } from "ionicons/icons";
 import { BROWSER_USER_AGENT, YT_BASE_URL } from "@/constants";
 import iconLight from "@/assets/img/icon-light.png";
-import { YoutubeSearchItem } from "./plugins/YoutubePlugin";
 
 export const formatDuration = (sec: number) => {
   const h = Math.floor(sec / 3600);

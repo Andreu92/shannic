@@ -14,6 +14,7 @@ import NlFlagIcon from "@iconify-vue/circle-flags/nl";
 import JaFlagIcon from "@iconify-vue/circle-flags/jp";
 import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
 import { InAppBrowser } from "@capgo/inappbrowser";
+import { Directory, Filesystem } from "@capacitor/filesystem";
 import type {
   IonSelectCustomEvent,
   IonToggleCustomEvent,
@@ -29,7 +30,13 @@ import {
   IonSelectOption,
   IonToggle,
 } from "@ionic/vue";
-import { closeOutline, moonOutline, sunnyOutline, trashOutline } from "ionicons/icons";
+import {
+  closeOutline,
+  moonOutline,
+  sunnyOutline,
+  trashOutline,
+  checkmark,
+} from "ionicons/icons";
 import { type Component, type Ref, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AppHeader from "@/components/layout/AppHeader.vue";
@@ -37,12 +44,17 @@ import { useLayout } from "@/composables/useLayout";
 import type { LanguageMessages } from "@/types";
 import useSpotifyService from "@/services/SpotifyService";
 import { player_plugin } from "@/plugins/PlayerPlugin";
+import { showToast } from "@/utils";
+import { useDatabase } from "@/database";
+
+const db = useDatabase();
+const layout = useLayout();
 
 const spotify_service = useSpotifyService();
 
 const { t, getLocaleMessage, locale } = useI18n();
 
-const layout = useLayout();
+const show_erase_alert = ref(false);
 const messages: Ref<LanguageMessages> = ref(getLocaleMessage(locale.value));
 const icons: Record<string, Component> = {
   es: EsFlagIcon,
@@ -76,9 +88,49 @@ const changeLanguage = (
 };
 
 const unlinkSpotify = () => {
-  spotify_service.deleteToken();
-  InAppBrowser.clearAllCookies();
-  InAppBrowser.clearCache();
+  if (spotify_service.isLinked()) {
+    spotify_service.deleteToken();
+    InAppBrowser.clearAllCookies();
+    InAppBrowser.clearCache();
+    showToast(t("spotify.unlinked"), "success", checkmark);
+  } else {
+    showToast(t("spotify.not_linked"), "warning");
+  }
+};
+
+const clearCache = () => {
+  player_plugin.clearCache();
+  showToast(t("settings.cache_cleared"), "success", checkmark);
+};
+
+const erase = async () => {
+  await InAppBrowser.clearAllCookies();
+  await InAppBrowser.clearCache();
+
+  await player_plugin.clearCache();
+
+  const { files } = await Filesystem.readdir({
+    path: "",
+    directory: Directory.Data,
+  });
+
+  for (const entry of files) {
+    if (entry.type === "directory") {
+      await Filesystem.rmdir({
+        path: entry.name,
+        directory: Directory.Data,
+        recursive: true,
+      });
+    } else {
+      await Filesystem.deleteFile({
+        path: entry.name,
+        directory: Directory.Data,
+      });
+    }
+  }
+
+  await db.remove();
+  window.location.reload();
 };
 </script>
 
@@ -87,7 +139,6 @@ const unlinkSpotify = () => {
     <AppHeader />
     <ion-content fullscreen class="ion-padding">
       <div class="settings-container">
-
         <div>
           <div class="flex center-y" style="gap: 5px">
             <div>{{ t("settings.language") }}</div>
@@ -140,12 +191,47 @@ const unlinkSpotify = () => {
         <div>
           <div>{{ t("settings.cache") }}</div>
           <div>
-            <ion-button color="primary" shape="round" @click="player_plugin.clearCache()">
+            <ion-button color="primary" shape="round" @click="clearCache">
+              <ion-icon slot="icon-only" :icon="trashOutline" />
+            </ion-button>
+          </div>
+        </div>
+
+        <div>
+          <div>{{ t("settings.erase_all") }}</div>
+          <div>
+            <ion-button
+              color="danger"
+              shape="round"
+              @click="show_erase_alert = true"
+            >
               <ion-icon slot="icon-only" :icon="trashOutline" />
             </ion-button>
           </div>
         </div>
       </div>
+
+      <ion-alert
+        :is-open="show_erase_alert"
+        :header="t('settings.erase.header')"
+        :message="t('settings.erase.message')"
+        :buttons="[
+          {
+            text: t('generic.no'),
+            role: 'cancel',
+            handler: () => {
+              show_erase_alert = false;
+            },
+          },
+          {
+            text: t('generic.yes'),
+            role: 'confirm',
+            handler: () => {
+              erase();
+            },
+          },
+        ]"
+      ></ion-alert>
     </ion-content>
   </ion-page>
 </template>

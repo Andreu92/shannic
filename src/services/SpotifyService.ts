@@ -16,6 +16,9 @@ import { KeepAwake } from "@capgo/capacitor-keep-awake";
 import { youtube_plugin } from "@/plugins/YoutubePlugin";
 import { useAudioItem } from "@/composables/useAudioItem";
 
+let spotify_token: AccessToken | null = null;
+let spotify_api: SpotifyApi | null = null;
+
 const useSpotifyService = () => {
   const { t, locale } = useI18n();
 
@@ -25,7 +28,6 @@ const useSpotifyService = () => {
   const SPOTIFY_CLIENT_ID = "cfe923b2d660439caf2b557b21f31221";
 
   const db = useDatabase();
-  const spotify_db = db.spotify;
 
   const audio_item = useAudioItem();
   const audio_service = useAudioService();
@@ -33,14 +35,11 @@ const useSpotifyService = () => {
   const favorites_store = useFavoritesStore();
   const spotify_sync_store = useSpotifySyncStore();
 
-  let spotify_token: AccessToken | null = null;
-  let spotify_api: SpotifyApi | null = null;
-
-  spotify_db
+  db.spotify
     .findOne(SPOTIFY_CONFIG_ID)
     .exec()
     .then((spotify_doc: SpotifyDocument | null) => {
-      if (spotify_doc?.token) {
+      if (spotify_doc && spotify_doc.token) {
         spotify_token = spotify_doc.token;
         spotify_api = SpotifyApi.withAccessToken(
           SPOTIFY_CLIENT_ID,
@@ -50,21 +49,34 @@ const useSpotifyService = () => {
     });
 
   const storeToken = async (token: AccessToken): Promise<void> => {
-    const spotify_config: SpotifyDocument | null = await spotify_db
+    const spotify_config: SpotifyDocument | null = await db.spotify
       .findOne(SPOTIFY_CONFIG_ID)
       .exec();
 
-    spotify_config?.incrementalPatch({
-      token: token,
-    });
+    if (!spotify_config) {
+      await db.spotify.insertIfNotExists({
+        id: SPOTIFY_CONFIG_ID,
+        token: token,
+      });
+    } else {
+      spotify_config.incrementalPatch({
+        token: token,
+      });
+    }
   };
 
   const deleteToken = async (): Promise<void> => {
-    const spotify_config: SpotifyDocument | null = await spotify_db
+    const spotify_config: SpotifyDocument | null = await db.spotify
       .findOne(SPOTIFY_CONFIG_ID)
       .exec();
 
-    spotify_config?.remove();
+    if (!spotify_config) return;
+
+    spotify_config.remove();
+    db.spotify.cleanup(0);
+    
+    spotify_token = null;
+    spotify_api = null;
   };
 
   const isTokenExpired = (): boolean => {
@@ -72,7 +84,7 @@ const useSpotifyService = () => {
     return Date.now() >= spotify_token.expires;
   };
 
-  const accountAlreadyLinked = (): boolean => {
+  const isLinked = (): boolean => {
     return !!spotify_token;
   };
 
@@ -107,7 +119,7 @@ const useSpotifyService = () => {
         expires: Date.now() + data.expires_in * 1000,
       };
 
-      await storeToken(spotify_token);
+      storeToken(spotify_token);
 
       spotify_api = SpotifyApi.withAccessToken(
         SPOTIFY_CLIENT_ID,
@@ -133,10 +145,13 @@ const useSpotifyService = () => {
       if (!spotify_sync_store.total_saved_tracks)
         spotify_sync_store.total_saved_tracks = tracks?.total ?? null;
 
-      for (const track of tracks?.items ?? []) await callback(track);
+      for (const track of tracks?.items ?? []) {
+        if (spotify_sync_store.cancel_sync) break;
+        await callback(track);
+      }
 
       offset += limit;
-    } while (tracks?.next);
+    } while (tracks?.next && !spotify_sync_store.cancel_sync);
   };
 
   const importSavedTracks = async () => {
@@ -181,7 +196,7 @@ const useSpotifyService = () => {
   };
 
   const linkAccount = async (): Promise<void> => {
-    if (accountAlreadyLinked()) return;
+    if (isLinked()) return;
 
     InAppBrowser.openWebView({
       title: t("spotify.link"),
@@ -208,16 +223,17 @@ const useSpotifyService = () => {
                 expires: Date.now() + token.expires_in * 1000,
               };
 
-              storeToken(spotify_token);
-
               spotify_api = SpotifyApi.withAccessToken(
                 SPOTIFY_CLIENT_ID,
                 spotify_token,
               );
 
-              InAppBrowser.removeAllListeners();
-              InAppBrowser.close();
-              resolve();
+              storeToken(spotify_token).then(() => {
+                InAppBrowser.removeAllListeners();
+                InAppBrowser.close();
+              
+                resolve();
+              });
             }
           });
 
@@ -270,7 +286,7 @@ const useSpotifyService = () => {
     linkAccount,
     getSavedTracks,
     importSavedTracks,
-    accountAlreadyLinked,
+    isLinked,
     refreshToken,
     deleteToken,
   };

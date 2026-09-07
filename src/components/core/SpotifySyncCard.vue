@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
-import { IonCard, IonCardContent, IonSpinner } from "@ionic/vue";
+import { IonCard, IonCardContent, IonButton, IonIcon } from "@ionic/vue";
+import { stop } from "ionicons/icons";
 import { useI18n } from "vue-i18n";
 import useSpotifySyncStore from "@/stores/SpotifySyncStore";
 
@@ -45,7 +46,14 @@ const spotify_sync_store = useSpotifySyncStore();
             }}
           </div>
         </div>
-        <ion-spinner name="dots"></ion-spinner>
+        <ion-button
+          color="danger"
+          size="small"
+          shape="round"
+          @click="spotify_sync_store.cancel_sync = true"
+        >
+          <ion-icon slot="icon-only" :icon="stop"></ion-icon>
+        </ion-button>
       </div>
     </ion-card-content>
   </ion-card>

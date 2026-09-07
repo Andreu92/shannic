@@ -56,6 +56,13 @@ const pl = {
     language: "Język",
     theme: "Motyw",
     cache: "Wyczyść pamięć podręczną",
+    cache_cleared: "Audios w pamięci podręcznej usunięte.",
+    erase_all: "Usuń wszystko",
+    erase: {
+      header: "Usuń wszystkie dane",
+      message:
+        "Czy na pewno chcesz usunąć wszystko i wrócić do stanu początkowego? To nie można cofnąć.",
+    },
   },
   errors: {
     audio_unplayable: "Nie można odtworzyć tego dźwięku.",
@@ -64,9 +71,11 @@ const pl = {
   spotify: {
     link: "Połącz Spotify",
     unlink: "Rozłącz Spotify",
-    starting_import: "Rozpoczynanie importu ze Spotify...",
+    unlinked: "Konto Spotify zostało odłączone.",
+    not_linked: "Nie ma połączonego konta Spotify.",
+    starting_import: "Rozpoczynanie importu...",
     favorites: {
-      importing: "Importowanie ulubionych ze Spotify ({0} z {1})",
+      importing: "Importowanie ulubionych... ({0} z {1})",
     },
   },
   update: {

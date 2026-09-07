@@ -5,9 +5,22 @@ import { createI18n } from "vue-i18n";
 
 import App from "@/App.vue";
 import { createDatabase } from "@/database";
-import { ar, ca, zh_CN, nl, en, es, fr, de, it, ja, pl, ru, pt_PT } from "@/lang";
+import {
+  ar,
+  ca,
+  zh_CN,
+  nl,
+  en,
+  es,
+  fr,
+  de,
+  it,
+  ja,
+  pl,
+  ru,
+  pt_PT,
+} from "@/lang";
 import router from "@/router";
-
 
 import "@ionic/vue/css/core.css";
 import "@ionic/vue/css/normalize.css";

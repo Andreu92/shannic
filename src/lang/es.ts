@@ -56,6 +56,12 @@ const es = {
     language: "Idioma",
     theme: "Tema",
     cache: "Limpiar caché",
+    cache_cleared: "Audios en caché borrados.",
+    erase_all: "Borrar todo",
+    erase: {
+      header: "Borrar todos los datos",
+      message: "¿Seguro que quieres borrar todo y volver al estado inicial? ¡Esto no se puede deshacer!",
+    }
   },
   errors: {
     audio_unplayable: "Este audio no se puede reproducir.",
@@ -64,9 +70,11 @@ const es = {
   spotify: {
     link: "Vincular Spotify",
     unlink: "Desvincular Spotify",
-    starting_import: "Iniciando importación de Spotify...",
+    unlinked: "Cuenta de Spotify desvinculada.",
+    not_linked: "No hay ninguna cuenta de Spotify vinculada.",
+    starting_import: "Iniciando importación...",
     favorites: {
-      importing: "Importando favoritos de Spotify ({0} de {1})",
+      importing: "Importando favoritos... ({0} de {1})",
     },
   },
   update: {

@@ -1,3 +1,4 @@
+import { FAKE_SRC } from "@/constants";
 import {
   type ExtractDocumentTypeFromTypedRxJsonSchema,
   type RxJsonSchema,
@@ -17,7 +18,7 @@ const colorThemeSchema = {
 export const audioSchemaLiteral = {
   title: "Audio schema",
   description: "Shannic audio model abstraction",
-  version: 0,
+  version: 1,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -26,7 +27,7 @@ export const audioSchemaLiteral = {
     author: { type: "string", maxLength: 255 },
     duration: { type: "integer", minimum: 0 },
     thumbnail: { type: "string", format: "uri" },
-    src: { type: "string", format: "uri" },
+    src: { type: "string", format: "uri", default: FAKE_SRC },
     expires_at: { type: "integer", minimum: 0 },
     colors: {
       type: "object",

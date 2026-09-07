@@ -8,8 +8,8 @@ android {
         applicationId "com.andreu92.shannic"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.0.2"
+        versionCode 3
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -47,8 +47,8 @@ dependencies {
 
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs_nio:2.1.5'
     implementation "com.github.teamnewpipe:NewPipeExtractor:$newPipeExtractorVersion"
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonAnnotationsVersion"
     implementation "androidx.media3:media3-exoplayer:$media3Version"
     implementation "androidx.media3:media3-session:$media3Version"
     implementation "androidx.media3:media3-datasource-okhttp:$media3Version"

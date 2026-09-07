@@ -55,6 +55,13 @@ const zh_CN = {
     language: "语言",
     theme: "主题",
     cache: "清除缓存",
+    cache_cleared: "缓存中的音频已清除。",
+    erase_all: "删除全部",
+    erase: {
+      header: "删除所有数据",
+      message:
+        "确定要删除全部并恢复到初始状态吗？ 这不能撤销。",
+    },
   },
   errors: {
     audio_unplayable: "无法播放此音频。",
@@ -63,9 +70,11 @@ const zh_CN = {
   spotify: {
     link: "关联 Spotify",
     unlink: "取消关联 Spotify",
-    starting_import: "正在开始导入 Spotify...",
+    unlinked: "Spotify 账户已取消关联。",
+    not_linked: "没有关联的 Spotify 账户。",
+    starting_import: "正在开始导入...",
     favorites: {
-      importing: "正在导入 Spotify 收藏 ({0}/{1})",
+      importing: "正在导入收藏... ({0}/{1})",
     },
   },
   update: {

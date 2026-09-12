@@ -14,9 +14,8 @@ import {
 } from "rxdb/plugins/storage-dexie";
 import { type App, inject, type Plugin } from "vue";
 import { FAKE_SRC, FAVORITES_PLAYLIST_ID } from "@/constants";
-import { audioSchema } from "@/schemas/audio";
+import { audioMethods, audioSchema } from "@/schemas/audio";
 import { playlistMethods, playlistSchema } from "@/schemas/playlist";
-import { spotifySchema } from "@/schemas/spotify";
 import type { RxShannicCollections, RxShannicDatabase } from "@/types";
 
 addRxPlugin(RxDBMigrationSchemaPlugin);
@@ -50,9 +49,7 @@ export async function createDatabase(): Promise<Plugin> {
     storage: storage,
     multiInstance: false,
     cleanupPolicy: {
-      minimumDeletedTime: 1000 * 60 * 60 * 24 * 31, // one month
-      minimumCollectionAge: 1000 * 60, // 60 seconds
-      runEach: 1000 * 60 * 5, // 5 minutes
+      minimumDeletedTime: 60 * 1000,
       awaitReplicationsInSync: false,
       waitForLeadership: false,
     },
@@ -61,12 +58,13 @@ export async function createDatabase(): Promise<Plugin> {
   await db.addCollections({
     audios: {
       schema: audioSchema,
+      methods: audioMethods,
       migrationStrategies: {
         1: (oldDoc) => {
           delete oldDoc.duration_text;
-          
+
           oldDoc.duration = Math.floor(oldDoc.duration / 1000);
-          
+
           if (oldDoc.url && oldDoc.url.startsWith("file")) {
             oldDoc.src = oldDoc.url;
             oldDoc.expires_at = undefined;
@@ -83,9 +81,6 @@ export async function createDatabase(): Promise<Plugin> {
     playlists: {
       schema: playlistSchema,
       methods: playlistMethods,
-    },
-    spotify: {
-      schema: spotifySchema,
     },
   });
 

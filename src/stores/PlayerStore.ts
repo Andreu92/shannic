@@ -7,7 +7,6 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import { showToast } from "@/utils";
 import { useI18n } from "vue-i18n";
 import { type YoutubeAudioItem } from "@/plugins/YoutubePlugin";
-import { useAudioItem } from "@/composables/useAudioItem";
 import { AudioDocument } from "@/types";
 
 export const states = {
@@ -19,9 +18,8 @@ export const states = {
 const usePlayerStore = defineStore("player", () => {
   const { t } = useI18n();
 
-  const favorites_store = useFavoritesStore();
-  const audio_item = useAudioItem();
   const audio_service = useAudioService();
+  const favorites_store = useFavoritesStore();
 
   const current_audio = ref<AudioDocument | null>(null);
   const state = ref<number>(states.paused);
@@ -94,20 +92,19 @@ const usePlayerStore = defineStore("player", () => {
       favorites_store.toggle(id);
     });
 
-    player_plugin.addListener("onSrcRefresh", (data) => {
+    player_plugin.addListener("onSrcRefresh", async (data) => {
       const { id, src, expires_at } = data as {
         id: string;
         src: string;
         expires_at: number;
       };
 
-      audio_service.refreshSrc(id, src, expires_at);
+      const audio = await audio_service.get(id);
+      if (audio && !audio.isDownloaded()) audio.refreshSrc(src, expires_at);
     });
 
     player_plugin.addListener("onSetNextItem", async (data) => {
-      audio_service.createOrUpdate(
-        await audio_item.build(data as YoutubeAudioItem),
-      );
+      audio_service.createOrUpdate(data as YoutubeAudioItem);
 
       const response = await player_plugin.hasNext();
       has_next.value = response.has_next;
@@ -200,7 +197,7 @@ const usePlayerStore = defineStore("player", () => {
     skipNext,
     skipPrevious,
     toggleRepeat,
-    setFavorite
+    setFavorite,
   };
 });
 

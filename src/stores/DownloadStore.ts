@@ -1,9 +1,7 @@
 import { FileTransfer } from "@capacitor/file-transfer";
-import { Directory, Filesystem } from "@capacitor/filesystem";
 import { defineStore } from "pinia";
 import { reactive } from "vue";
 import useAudioService from "@/services/AudioService";
-import { BROWSER_USER_AGENT } from "@/constants";
 
 export const useDownloadStore = defineStore("downloads", () => {
   const audio_service = useAudioService();
@@ -47,32 +45,7 @@ export const useDownloadStore = defineStore("downloads", () => {
 
     const audio = await audio_service.getCreateOrUpdate(audio_id);
 
-    const file_info = await Filesystem.getUri({
-      directory: Directory.Data,
-      path: audio_id,
-    });
-
-    FileTransfer.downloadFile({
-      url: audio.src,
-      path: file_info.uri,
-      progress: true,
-      headers: {
-        "User-Agent": BROWSER_USER_AGENT,
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Encoding": "identity",
-        Range: "bytes=0-",
-      },
-    })
-      .then((res) => {
-        if (res.path) {
-          audio.incrementalPatch({
-            src: res.path,
-            expires_at: undefined,
-            updated_at: Date.now(),
-          });
-        }
-      })
+    audio.downloadFile()
       .catch((error) => {
         // TODO: Show error toast
         console.error("Download failed", error);

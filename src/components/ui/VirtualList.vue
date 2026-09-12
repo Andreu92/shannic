@@ -25,6 +25,7 @@ const props = withDefaults(
   },
 );
 
+const scrolling = ref<boolean>(false);
 const is_scrollable = ref<boolean>(false);
 const vlist_ref = ref<HTMLDivElement | null>(null);
 const show_up = ref(false);
@@ -43,9 +44,10 @@ const row_virtualizer = useVirtualizer(row_virtualizer_options);
 
 const handleScroll = () => {
   if (!vlist_ref.value) return;
-
+  
   const { scrollTop, scrollHeight, clientHeight } = vlist_ref.value;
 
+  scrolling.value = true;
   show_up.value = scrollTop > 100;
   show_down.value =
     scrollHeight > clientHeight &&
@@ -118,6 +120,7 @@ watch(
       ref="vlist_ref"
       style="padding: 0px 5px; width: 100%; overflow-y: auto"
       @scroll="handleScroll"
+      @scrollend="scrolling = false"
     >
       <div
         style="width: 100%; position: relative"
@@ -157,7 +160,7 @@ watch(
 
   <!-- Scroll to top/bottom buttons -->
   <ion-fab
-    v-if="vlist_ref != null"
+    v-if="vlist_ref != null && scrolling"
     slot="fixed"
     horizontal="end"
     vertical="bottom"

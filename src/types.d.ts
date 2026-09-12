@@ -1,21 +1,16 @@
 import type { RxCollection, RxDatabase, RxDocument } from "rxdb";
-import type { RxAudio } from "@/schemas/audio";
+import type { RxAudio, RxAudioMethods } from "@/schemas/audio";
 import type { RxPlaylist, RxPlaylistMethods } from "@/schemas/playlist";
-import type { RxSpotify } from "@/schemas/spotify";
 
-export type AudioDocument = RxDocument<RxAudio>;
-export type AudioCollection = RxCollection<RxAudio>;
+export type AudioDocument = RxDocument<RxAudio, RxAudioMethods>;
+export type AudioCollection = RxCollection<RxAudio, RxAudioMethods>;
 
 export type PlaylistDocument = RxDocument<RxPlaylist, RxPlaylistMethods>;
 export type PlaylistCollection = RxCollection<RxPlaylist, RxPlaylistMethods>;
 
-export type SpotifyDocument = RxDocument<RxSpotify>;
-export type SpotifyCollection = RxCollection<RxSpotify>;
-
 export interface RxShannicCollections {
   audios: AudioCollection;
   playlists: PlaylistCollection;
-  spotify: SpotifyCollection;
 }
 
 export type RxShannicDatabase = RxDatabase<RxShannicCollections>;
@@ -60,4 +55,29 @@ export interface PlayerPlaylist {
 export interface LanguageMessages {
   lang: Record<string, string>;
   [key: string]: unknown;
+}
+
+export interface AccessToken {
+  client_id?: string;
+  access_token: string;
+  expires_at: number;
+}
+
+export interface SpotifyAccessToken {
+  clientId: string;
+  accessToken: string;
+  accessTokenExpirationTimestampMs: number;
+  isAnonymous: boolean;
+}
+
+export interface SpotifyClientToken {
+  response_type: string;
+  granted_token: {
+    token: string;
+    expires_after_seconds: number;
+    refresh_after_seconds: number;
+    domains: {
+      domain: string;
+    }[];
+  };
 }

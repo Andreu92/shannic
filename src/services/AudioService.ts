@@ -1,13 +1,64 @@
 import { useDatabase } from "@/database";
-import { youtube_plugin, YoutubeAudioItem } from "@/plugins/YoutubePlugin";
+import {
+  youtube_plugin,
+  YoutubeAudioItem,
+  YoutubeSearchItem,
+} from "@/plugins/YoutubePlugin";
 import type { RxAudio } from "@/schemas/audio";
-import type { AudioItem, AudioCollection, AudioDocument } from "@/types";
-import { useAudioItem } from "@/composables/useAudioItem";
+import type {
+  AudioItem,
+  AudioCollection,
+  AudioDocument,
+  Palette,
+} from "@/types";
+import { Vibrant } from "node-vibrant/browser";
+import { DEFAULT_COLOR_THEME, FAKE_SRC } from "@/constants";
+import { fetchImage } from "@/utils";
 
 const useAudioService = () => {
   const db = useDatabase();
-  const audio_item = useAudioItem();
   const audio_collection: AudioCollection = db.audios;
+
+  const build = async (
+    item: YoutubeAudioItem | YoutubeSearchItem,
+  ): Promise<AudioItem> => {
+    const formatPalette = (
+      palette: Awaited<ReturnType<typeof Vibrant.prototype.getPalette>>,
+    ): Palette => {
+      const colors: Palette = {};
+      for (const [key, item] of Object.entries(palette)) {
+        if (!item) continue;
+        const snakeKey = key
+          .replace(/([a-z])([A-Z])/g, "$1_$2")
+          .toLowerCase() as keyof Palette;
+        colors[snakeKey] = {
+          main_color: item.hex,
+          title_text_color: item.titleTextColor,
+          body_text_color: item.bodyTextColor,
+        };
+      }
+      return colors;
+    };
+
+    const buildWithPalette = async (
+      item: YoutubeAudioItem,
+    ): Promise<AudioItem> => {
+      try {
+        const response = await fetchImage(item.thumbnail);
+        const palette = await Vibrant.from(
+          `data:${response!.headers["Content-Type"]};base64,${response!.data}`,
+        ).getPalette();
+        const colors: Palette = formatPalette(palette);
+        return { ...item, colors };
+      } catch {
+        return { ...item, colors: { vibrant: DEFAULT_COLOR_THEME } };
+      }
+    };
+
+    if ("src" in item && "expires_at" in item)
+      return await buildWithPalette(item);
+    return await buildWithPalette({ ...item, src: FAKE_SRC + item.id, expires_at: 0 });
+  };
 
   const get = async (id: string): Promise<AudioDocument | null> => {
     const audio_doc: AudioDocument | null = await audio_collection
@@ -19,7 +70,7 @@ const useAudioService = () => {
 
   const fetch = async (id: string): Promise<AudioItem> => {
     const yt_audio_item: YoutubeAudioItem = await youtube_plugin.get({ id });
-    return await audio_item.build(yt_audio_item);
+    return await build(yt_audio_item);
   };
 
   const getList = async (ids: string[]): Promise<AudioDocument[]> => {
@@ -30,11 +81,17 @@ const useAudioService = () => {
     return Array.from(audio_map.values());
   };
 
-  const create = async (audio: AudioItem): Promise<AudioDocument> => {
-    return await audio_collection.insertIfNotExists({
-      ...audio,
-      created_at: Date.now(),
+  const create = async (
+    item: YoutubeAudioItem | YoutubeSearchItem,
+  ): Promise<AudioDocument> => {
+    const audio_item = await build(item);
+    
+    const created_audio = await audio_collection.upsert({
+      ...audio_item,
+      created_at: Date.now()
     });
+
+    return created_audio;
   };
 
   const update = async (updated_audio: AudioItem): Promise<AudioDocument> => {
@@ -58,10 +115,7 @@ const useAudioService = () => {
 
   const remove = async (id: string): Promise<void> => {
     const audio: AudioDocument | null = await get(id);
-    if (audio) {
-      audio.remove();
-      db.audios.cleanup(0);
-    }
+    if (audio) await audio.remove();
   };
 
   const getCreateOrUpdate = async (id: string): Promise<AudioDocument> => {
@@ -72,7 +126,7 @@ const useAudioService = () => {
       return await create(audio_item);
     }
 
-    if (audio_doc.expires_at && audio_doc.expires_at - 10 < Date.now() / 1000) {
+    if (audio_doc.isExpired()) {
       const audio_item: AudioItem = await fetch(id);
       return await update(audio_item);
     }
@@ -81,38 +135,23 @@ const useAudioService = () => {
   };
 
   const createOrUpdate = async (
-    audio_item: AudioItem,
+    item: YoutubeAudioItem | YoutubeSearchItem,
   ): Promise<AudioDocument> => {
-    const audio_doc: AudioDocument | null = await get(audio_item.id);
+    const audio_doc: AudioDocument | null = await get(item.id);
+    const audio_item: AudioItem = await build(item);
 
     if (!audio_doc) return await create(audio_item);
 
     return await update(audio_item);
   };
 
-  const refreshSrc = async (
-    id: string,
-    src: string,
-    expires_at: number,
-  ): Promise<void> => {
-    const audio: AudioDocument | null = await get(id);
-
-    if (!audio) throw new Error("Audio not found");
-
-    audio.incrementalPatch({
-      src,
-      expires_at,
-      updated_at: Date.now(),
-    });
-  };
-
   return {
+    build,
     get,
     getList,
     create,
     update,
     remove,
-    refreshSrc,
     getCreateOrUpdate,
     createOrUpdate,
   };

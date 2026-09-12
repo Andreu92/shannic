@@ -31,15 +31,11 @@ import usePlayerStore from "@/stores/PlayerStore";
 import type { AudioItem } from "@/types";
 import { formatDuration, onImgError, showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
-import {
-  CapacitorException,
-} from "@capacitor/core";
-import { useAudioItem } from "@/composables/useAudioItem";
+import { CapacitorException } from "@capacitor/core";
 
 const { t } = useI18n();
 
 const layout = useLayout();
-const audio_item = useAudioItem();
 
 const audio_service = useAudioService();
 
@@ -139,9 +135,7 @@ const play = async (item: YoutubeSearchItem) => {
     return;
   }
 
-  const audio = await audio_service.createOrUpdate(
-    await audio_item.build(item),
-  );
+  const audio = await audio_service.createOrUpdate(item);
 
   player_store.play([audio]);
 };
@@ -157,9 +151,8 @@ const toggleFavorite = async (search_item: YoutubeSearchItem) => {
       return;
     }
 
-    const item: AudioItem = await audio_item.build(search_item);
-    await audio_service.create(item);
-    favorites_store.add(item.id);
+    await audio_service.create(search_item);
+    favorites_store.add(search_item.id);
     favorite = true;
   }
 

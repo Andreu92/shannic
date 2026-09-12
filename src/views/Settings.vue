@@ -42,15 +42,12 @@ import { useI18n } from "vue-i18n";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";
 import type { LanguageMessages } from "@/types";
-import useSpotifyService from "@/services/SpotifyService";
 import { player_plugin } from "@/plugins/PlayerPlugin";
 import { showToast } from "@/utils";
 import { useDatabase } from "@/database";
 
 const db = useDatabase();
 const layout = useLayout();
-
-const spotify_service = useSpotifyService();
 
 const { t, getLocaleMessage, locale } = useI18n();
 
@@ -88,14 +85,9 @@ const changeLanguage = (
 };
 
 const unlinkSpotify = () => {
-  if (spotify_service.isLinked()) {
-    spotify_service.deleteToken();
-    InAppBrowser.clearAllCookies();
-    InAppBrowser.clearCache();
-    showToast(t("spotify.unlinked"), "success", checkmark);
-  } else {
-    showToast(t("spotify.not_linked"), "warning");
-  }
+  InAppBrowser.clearAllCookies();
+  InAppBrowser.clearCache();
+  showToast(t("spotify.unlinked"), "success", checkmark);
 };
 
 const clearCache = () => {

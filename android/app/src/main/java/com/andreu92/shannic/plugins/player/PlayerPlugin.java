@@ -498,6 +498,10 @@ public class PlayerPlugin extends Plugin {
 
     @PluginMethod()
     public void stop(PluginCall call) {
+        if (autoPlayTask != null && !autoPlayTask.isDone()) {
+            autoPlayTask.cancel(true);
+        }
+
         getActivity().runOnUiThread(() -> {
             mediaController.stop();
             mediaController.clearMediaItems();

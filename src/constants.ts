@@ -8,7 +8,6 @@ export const GITHUB_API_URL = "https://api.github.com/repos";
 export const GITHUB_BASE_URL = "https://www.github.com";
 
 export const FAVORITES_PLAYLIST_ID = "1";
-export const SPOTIFY_CONFIG_ID = "1";
 
 export const DEFAULT_COLOR_THEME: ColorTheme = {
   main_color: "#59a7f6",

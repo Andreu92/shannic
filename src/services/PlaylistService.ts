@@ -42,14 +42,12 @@ const usePlaylistService = () => {
     const playlist = await get(playlist_id);
 
     const playlist_audios: PlaylistAudio[] = playlist.audios ?? [];
+    
     const position = playlist_audios.length
       ? Math.max(...playlist_audios.map((t) => t.position)) + 1
       : 0;
-
-    const new_playlist_audio: PlaylistAudio = {
-      audio_id: audio_id,
-      position,
-    };
+  
+    const new_playlist_audio: PlaylistAudio = { audio_id, position };
 
     playlist_audios.push(new_playlist_audio);
 

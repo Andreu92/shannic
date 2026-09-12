@@ -21,7 +21,6 @@ import {
   downloadOutline as download_icon,
   ellipsisVertical,
   heart,
-  heartOutline,
   play as play_icon,
   search as search_icon,
   shuffle as shuffle_icon,
@@ -41,20 +40,16 @@ import useSpotifyService from "@/services/SpotifyService";
 import { useDownloadStore } from "@/stores/DownloadStore";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore from "@/stores/PlayerStore";
-import { Directory, Filesystem } from "@capacitor/filesystem";
 import useAudioService from "@/services/AudioService";
 import { Capacitor } from "@capacitor/core";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import useNetworkStore from "@/stores/NetworkStore";
 import { showToast } from "@/utils";
-import { FAKE_SRC } from "@/constants";
-import { useAudioItem } from "@/composables/useAudioItem";
 
 const router = useRouter();
 const { t } = useI18n();
 
 const layout = useLayout();
-const audio_item = useAudioItem();
 
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
@@ -174,7 +169,7 @@ const download = (audio_id: string) => {
 const deleteFile = async (audio_id: string) => {
   const audio = await audio_service.get(audio_id);
   if (!audio) return;
-  audio_item.deleteFile(audio);
+  audio.deleteFile();
 };
 </script>
 
@@ -257,14 +252,18 @@ const deleteFile = async (audio_id: string) => {
           </div>
 
           <!-- Virtual list -->
-          <VirtualList v-if="search_results.length" :items="search_results">
+          <VirtualList
+            v-if="search_results.length"
+            :items="search_results"
+            :estimate-size="70"
+          >
             <template #item="{ item }">
               <div
                 class="flex col grow"
-                style="min-width: 0"
-                @click="play([{ ...item }])"
+                style="min-width: 0; gap: 2.5px"
+                @click="play([item])"
               >
-                <div class="flex between">
+                <div class="flex center-y between">
                   <div class="audio-thumbnail">
                     <ion-thumbnail>
                       <img
@@ -308,25 +307,19 @@ const deleteFile = async (audio_id: string) => {
                     </Transition>
 
                     <ion-icon
-                      :icon="
-                        favorites_store.isFavorite(item.id)
-                          ? heart
-                          : heartOutline
-                      "
-                      :color="
-                        favorites_store.isFavorite(item.id) ? 'danger' : ''
-                      "
+                      :icon="heart"
+                      color="danger"
                       @click.stop="showRemoveFromFavoritesAlert(item.id)"
                     ></ion-icon>
                   </div>
                 </div>
 
-                <ion-progress-bar
+                <div
                   v-if="download_store.status.current === item.id"
-                  style="margin-bottom: 5px"
-                  :value="download_store.status.progress"
+                  style="padding-bottom: 2.5px"
                 >
-                </ion-progress-bar>
+                  <ion-progress-bar :value="download_store.status.progress" />
+                </div>
               </div>
             </template>
           </VirtualList>

@@ -1,6 +1,6 @@
 # Shannic
 
-Shannic is an android app to listen audios / music for free without ads. Shannic is not responsible of the content of the audios / music you listen.
+Shannic is an Android app that lets you listen to free audio and music without ads. Shannic is not responsible for the content of the audio or music you listen to.
 
 ## Features
 
@@ -34,7 +34,7 @@ Want some new features? Open an issue and i will try to work on it.
 - Dutch
 - Japanese
 
-Request for new languages and suggestions for translations are accepted, just open an issue.
+Requests for new languages ​​and translation suggestions are welcome. Just open an issue.
 
 ## Download
 

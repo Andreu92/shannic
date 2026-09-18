@@ -86,7 +86,7 @@ const useAudioService = () => {
   ): Promise<AudioDocument> => {
     const audio_item = await build(item);
     
-    const created_audio = await audio_collection.upsert({
+    const created_audio = await audio_collection.insertIfNotExists({
       ...audio_item,
       created_at: Date.now()
     });
@@ -134,17 +134,6 @@ const useAudioService = () => {
     return audio_doc;
   };
 
-  const createOrUpdate = async (
-    item: YoutubeAudioItem | YoutubeSearchItem,
-  ): Promise<AudioDocument> => {
-    const audio_doc: AudioDocument | null = await get(item.id);
-    const audio_item: AudioItem = await build(item);
-
-    if (!audio_doc) return await create(audio_item);
-
-    return await update(audio_item);
-  };
-
   return {
     build,
     get,
@@ -152,8 +141,7 @@ const useAudioService = () => {
     create,
     update,
     remove,
-    getCreateOrUpdate,
-    createOrUpdate,
+    getCreateOrUpdate
   };
 };
 

@@ -1,7 +1,7 @@
 {
   "name": "shannic",
   "description": "The music app you deserve",
-  "version": "1.1",
+  "version": "1.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -47,11 +47,11 @@
     "@vue/test-utils": "^2.5.1",
     "cypress": "^16.1.0",
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.10.0",
+    "eslint": "^10.11.0",
     "eslint-plugin-vue": "^10.11.0",
     "typescript-eslint": "^8.70.0",
     "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.9.7",
+    "prettier": "^3.9.8",
     "globals": "^17.12.0",
     "jsdom": "^30.1.0",
     "sass": "^1.104.1",

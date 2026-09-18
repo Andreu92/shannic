@@ -73,7 +73,9 @@ const ar = {
     unlink: "إلغاء ربط سبوتيفاي",
     unlinked: "تم فصل حساب سبوتيفاي.",
     not_linked: "لا يوجد أي حساب سبوتيفاي مرتبط.",
-    starting_import: "جاري بدء استيراد...",
+    link_process_failed: "تعذر ربط حساب سبوتيفاي.",
+    starting_import: "جاري بدء استيراف...",
+    import_error: "خطأ أثناء الاستيراف من سبوتيفاي.",
     favorites: {
       importing: "جاري استيراد المفضلات... ({0} من {1})",
     },

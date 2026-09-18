@@ -73,7 +73,9 @@ const pt_PT = {
     unlink: "Desvincular Spotify",
     unlinked: "Conta do Spotify desvinculada.",
     not_linked: "Nenhuma conta do Spotify está vinculada.",
+    link_process_failed: "Não foi possível vincular a conta do Spotify.",
     starting_import: "Iniciando importação...",
+    import_error: "Erro ao importar do Spotify.",
     favorites: {
       importing: "Importando favoritos... ({0} de {1})",
     },

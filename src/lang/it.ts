@@ -73,7 +73,9 @@ const it = {
     unlink: "Scollega Spotify",
     unlinked: "Account Spotify scollegato.",
     not_linked: "Nessun account Spotify collegato.",
+    link_process_failed: "Impossibile collegare l'account Spotify.",
     starting_import: "Avvio importazione...",
+    import_error: "Errore durante l'importazione da Spotify.",
     favorites: {
       importing: "Importazione preferiti... ({0} di {1})",
     },

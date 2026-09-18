@@ -28,7 +28,6 @@ import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import useNetworkStore from "@/stores/NetworkStore";
 import usePlayerStore from "@/stores/PlayerStore";
-import type { AudioItem } from "@/types";
 import { formatDuration, onImgError, showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import { CapacitorException } from "@capacitor/core";
@@ -135,7 +134,7 @@ const play = async (item: YoutubeSearchItem) => {
     return;
   }
 
-  const audio = await audio_service.createOrUpdate(item);
+  const audio = await audio_service.create(item);
 
   player_store.play([audio]);
 };

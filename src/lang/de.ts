@@ -74,7 +74,9 @@ const de = {
     unlink: "Spotify Verknüpfung aufheben",
     unlinked: "Spotify-Konto wurde getrennt.",
     not_linked: "Es ist kein Spotify-Konto mit diesem verknüpft.",
+    link_process_failed: "Verknüpfung des Spotify-Kontos fehlgeschlagen.",
     starting_import: "Import wird gestartet...",
+    import_error: "Fehler beim Importieren von Spotify.",
     favorites: {
       importing: "Favoriten werden importiert... ({0} von {1})",
     },

@@ -73,7 +73,9 @@ const ca = {
     unlink: "Desvincular Spotify",
     unlinked: "Compte de Spotify desvinculat.",
     not_linked: "No hi ha cap compte de Spotify enllaçat.",
+    link_process_failed: "No s'ha pogut enllaçar el compte de Spotify.",
     starting_import: "Iniciant importació...",
+    import_error: "Error en importar de Spotify.",
     favorites: {
       importing: "Important favorits... ({0} de {1})",
     },

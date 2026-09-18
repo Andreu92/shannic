@@ -1,6 +1,7 @@
 import { InAppBrowser, type UrlEvent } from "@capgo/inappbrowser";
 import { useI18n } from "vue-i18n";
 import { BROWSER_USER_AGENT } from "@/constants";
+import useNetworkStore from "@/stores/NetworkStore";
 import useSpotifySyncStore from "@/stores/SpotifySyncStore";
 import type { AccessToken } from "@/types";
 import type {
@@ -39,6 +40,7 @@ const useSpotifyService = () => {
 
   const audio_service = useAudioService();
 
+  const network_store = useNetworkStore();
   const favorites_store = useFavoritesStore();
   const spotify_sync_store = useSpotifySyncStore();
 
@@ -107,6 +109,11 @@ const useSpotifyService = () => {
   };
 
   const importSavedTracks = async () => {
+    if (!network_store.is_online) {
+      showToast(t("network.offline"), "warning");
+      return;
+    }
+
     if (spotify_sync_store.is_syncing) return;
     spotify_sync_store.is_syncing = true;
 

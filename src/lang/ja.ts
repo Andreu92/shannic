@@ -73,7 +73,9 @@ const ja = {
     unlink: "Spotifyのリンクを解除",
     unlinked: "Spotify アカウントのリンクが解除されました。",
     not_linked: "リンクされた Spotify アカウントはありません。",
+    link_process_failed: "Spotify アカウントのリンクに失敗しました。",
     starting_import: "インポートを開始しています...",
+    import_error: "Spotify からのインポート中にエラーが発生しました。",
     favorites: {
       importing: "お気に入りをインポート中... ({0}/{1})",
     },

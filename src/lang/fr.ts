@@ -73,7 +73,9 @@ const fr = {
     unlink: "Dissocier Spotify",
     unlinked: "Compte Spotify dissocié.",
     not_linked: "Aucun compte Spotify n'est lié.",
+    link_process_failed: "Impossible de lier le compte Spotify.",
     starting_import: "Démarrage de l'importation...",
+    import_error: "Erreur lors de l'importation depuis Spotify.",
     favorites: {
       importing: "Importation des favoris... ({0} sur {1})",
     },

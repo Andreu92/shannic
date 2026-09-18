@@ -72,7 +72,9 @@ const zh_CN = {
     unlink: "取消关联 Spotify",
     unlinked: "Spotify 账户已取消关联。",
     not_linked: "没有关联的 Spotify 账户。",
+    link_process_failed: "无法链接 Spotify 账户。",
     starting_import: "正在开始导入...",
+    import_error: "从 Spotify 导入时出错。",
     favorites: {
       importing: "正在导入收藏... ({0}/{1})",
     },

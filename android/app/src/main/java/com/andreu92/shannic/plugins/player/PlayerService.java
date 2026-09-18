@@ -17,6 +17,7 @@ import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DataSpec;
+import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.datasource.ResolvingDataSource;
 import androidx.media3.datasource.cache.CacheDataSink;
@@ -146,12 +147,15 @@ public class PlayerService extends MediaSessionService {
                 .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
                 .build();
 
-        DataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory()
+        DefaultHttpDataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory()
                 .setUserAgent(YoutubeConstants.BROWSER_USER_AGENT)
                 .setAllowCrossProtocolRedirects(true);
 
+        DefaultDataSource.Factory baseDataSourceFactory =
+                new DefaultDataSource.Factory(this, httpDataSourceFactory);
+
         ResolvingDataSource.Factory resolvingDataSourceFactory =
-                new ResolvingDataSource.Factory(httpDataSourceFactory, urlResolver);
+                new ResolvingDataSource.Factory(baseDataSourceFactory, urlResolver);
 
         SimpleCache simpleCache = PlayerCache.getInstance(this);
 

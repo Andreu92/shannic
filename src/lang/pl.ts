@@ -73,7 +73,9 @@ const pl = {
     unlink: "Rozłącz Spotify",
     unlinked: "Konto Spotify zostało odłączone.",
     not_linked: "Nie ma połączonego konta Spotify.",
+    link_process_failed: "Nie udało się połączyć konta Spotify.",
     starting_import: "Rozpoczynanie importu...",
+    import_error: "Błąd podczas importowania ze Spotify.",
     favorites: {
       importing: "Importowanie ulubionych... ({0} z {1})",
     },

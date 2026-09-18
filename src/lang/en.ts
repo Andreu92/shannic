@@ -73,7 +73,9 @@ const en = {
     unlink: "Unlink Spotify",
     unlinked: "Spotify account unlinked.",
     not_linked: "No Spotify account is linked.",
+    link_process_failed: "Could not link the Spotify account.",
     starting_import: "Starting import...",
+    import_error: "Error importing from Spotify.",
     favorites: {
       importing: "Importing favorites... ({0} of {1})",
     },

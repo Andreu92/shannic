@@ -50,7 +50,7 @@ const onScroll = () => {
   if (scroll_timeout.value) clearTimeout(scroll_timeout.value);
   scroll_timeout.value = setTimeout(() => {
     scrolling.value = false;
-  }, 200);
+  }, 3000);
   
   const { scrollTop, scrollHeight, clientHeight } = vlist_ref.value;
   show_up.value = scrollTop > 100;

@@ -104,7 +104,7 @@ const usePlayerStore = defineStore("player", () => {
     });
 
     player_plugin.addListener("onSetNextItem", async (data) => {
-      audio_service.createOrUpdate(data as YoutubeAudioItem);
+      audio_service.create(data as YoutubeAudioItem);
 
       const response = await player_plugin.hasNext();
       has_next.value = response.has_next;

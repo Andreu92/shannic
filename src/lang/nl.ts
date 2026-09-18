@@ -74,7 +74,9 @@ const nl = {
     unlink: "Spotify ontkoppelen",
     unlinked: "Spotify-account is gedetacheerd.",
     not_linked: "Er is geen Spotify-account gekoppeld.",
+    link_process_failed: "Kon Spotify-account niet koppelen.",
     starting_import: "Import starten...",
+    import_error: "Fout bij importeren van Spotify.",
     favorites: {
       importing: "Favorieten importeren... ({0} van {1})",
     },

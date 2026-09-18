@@ -73,7 +73,9 @@ const ru = {
     unlink: "Отключить Spotify",
     unlinked: "Аккаунт Spotify отсоединён.",
     not_linked: "Нет привязанного аккаунта Spotify.",
+    link_process_failed: "Не удалось связать аккаунт Spotify.",
     starting_import: "Запуск импорта...",
+    import_error: "Ошибка при импорте из Spotify.",
     favorites: {
       importing: "Импорт избранного... ({0} из {1})",
     },

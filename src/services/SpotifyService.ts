@@ -2,11 +2,13 @@ import { InAppBrowser, type UrlEvent } from "@capgo/inappbrowser";
 import { useI18n } from "vue-i18n";
 import { BROWSER_USER_AGENT } from "@/constants";
 import useSpotifySyncStore from "@/stores/SpotifySyncStore";
+import type { AccessToken } from "@/types";
 import type {
-  AccessToken,
   SpotifyAccessToken,
   SpotifyClientToken,
-} from "@/types";
+  Track,
+  UserLibraryTrackPage,
+} from "@/spotify-types";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import useAudioService from "@/services/AudioService";
 import { KeepAwake } from "@capgo/capacitor-keep-awake";
@@ -40,51 +42,29 @@ const useSpotifyService = () => {
   const favorites_store = useFavoritesStore();
   const spotify_sync_store = useSpotifySyncStore();
 
-  /*const isTokenExpired = (): boolean => {
-    if (!spotify_token || !spotify_token.expires) return true;
-    return Date.now() >= spotify_token.expires;
+  const isTokenExpired = (): boolean => {
+    const user_token_expired =
+      Date.now() >= (spotify_user_token?.expires_at ?? 0);
+    const client_token_expired =
+      Date.now() >= (spotify_client_token?.expires_at ?? 0);
+    return user_token_expired || client_token_expired;
   };
 
-  const isLinked = (): boolean => {
-    return !!spotify_token;
-  };*/
-
-  const getSavedTracks = async (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    callback: (track: any) => Promise<void>,
-  ): Promise<void> => {
-    const response = await CapacitorHttp.post({
-      url: SPOTIFY_GRAPHQL_URL,
-      headers: {
-        ...DEFAULT_HEADERS,
-        Authorization: `Bearer ${spotify_user_token!.access_token}`,
-        "Client-Token": spotify_client_token!.access_token,
-      },
-      data: {
-        variables: {
-          offset: 0,
-        },
-        operationName: "getLikedSongs",
-        extensions: {
-          persistedQuery: {
-            version: 1,
-            sha256Hash:
-              "c2c53c28f71da143c0753c22dc84d98b315cb4275472ea5a597c29338ae20b23",
-          },
-        },
-      },
+  const isLinked = async (): Promise<boolean> => {
+    const cookies = await InAppBrowser.getCookies({
+      url: SPOTIFY_APP_URL,
     });
 
-    console.log("response", response);
+    if (cookies && Object.hasOwn(cookies, "sp_dc")) return true;
+    return false;
+  };
 
-    if (response.status !== 200) {
-      throw new Error(`Failed to fetch saved tracks: ${response.status}`);
-    }
-
-    console.log(response.data);
-
-    /*do {
-      const response = await CapacitorHttp.post({
+  const getSavedTracks = async (
+    callback: (track: Track) => Promise<void>,
+  ): Promise<void> => {
+    let offset: number | null = 0;
+    do {
+      const { status, data } = await CapacitorHttp.post({
         url: SPOTIFY_GRAPHQL_URL,
         headers: {
           ...DEFAULT_HEADERS,
@@ -93,7 +73,7 @@ const useSpotifyService = () => {
         },
         data: {
           variables: {
-            offset: offset,
+            offset,
           },
           operationName: "getLikedSongs",
           extensions: {
@@ -106,46 +86,42 @@ const useSpotifyService = () => {
         },
       });
 
-      console.log("response", response);
-
-      if (response.status !== 200) {
-        throw new Error(`Failed to fetch saved tracks: ${response.status}`);
+      if (status !== 200) {
+        showToast(t("spotify.import_error"));
+        console.error(data);
+        return;
       }
 
-      tracks = response.data;
-
-      console.log("tracks", tracks);
+      const tracks: UserLibraryTrackPage = data.data.me.library.tracks;
 
       if (!spotify_sync_store.total_saved_tracks)
-        spotify_sync_store.total_saved_tracks = tracks?.total ?? null;
+        spotify_sync_store.total_saved_tracks = tracks.totalCount;
 
-      for (const track of tracks?.items ?? []) {
+      for (const item of tracks.items ?? []) {
         if (spotify_sync_store.cancel_sync) break;
-        await callback(track);
+        await callback(item.track.data);
       }
 
-      offset += limit;
-    } while (tracks?.next && !spotify_sync_store.cancel_sync);*/
+      offset = tracks.pagingInfo.nextOffset;
+    } while (offset != null && !spotify_sync_store.cancel_sync);
   };
 
   const importSavedTracks = async () => {
     if (spotify_sync_store.is_syncing) return;
-
-    await linkAccount();
-
-    console.log(spotify_user_token);
-    console.log(spotify_client_token);
-
     spotify_sync_store.is_syncing = true;
+
+    const is_linked = await isLinked();
+    if (!is_linked) await fetchTokens(false);
+    else if (isTokenExpired()) await fetchTokens(true);
+
     KeepAwake.keepAwake();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getSavedTracks(async (track: any) => {
+    getSavedTracks(async (track: Track) => {
       try {
         const yt_audio_item: YoutubeAudioItem = await youtube_plugin.getByQuery(
           {
-            artist: track.track.artists[0].name,
-            title: track.track.name,
+            artist: track.artists.items[0].profile.name,
+            title: track.name,
           },
         );
 
@@ -154,26 +130,18 @@ const useSpotifyService = () => {
           await favorites_store.add(created_audio.id);
         }
       } catch (error) {
+        //TO DO: Show songs that failed to import
         showToast(t("spotify.sync.error") + error);
       } finally {
         spotify_sync_store.incrementCounter();
       }
-    })
-      .catch((error) => {
-        console.error("Error importing Spotify saved tracks:", error);
-        // TO DO: Show error to user
-      })
-      .finally(() => {
-        spotify_sync_store.finishSync();
-        KeepAwake.allowSleep();
-      });
+    }).finally(() => {
+      spotify_sync_store.finishSync();
+      KeepAwake.allowSleep();
+    });
   };
 
-  const alreadyLinked = async (): Promise<boolean> => {
-    return !!spotify_user_token && !!spotify_client_token;
-  };
-
-  const linkAccount = async (): Promise<void> => {
+  const fetchTokens = async (hidden: boolean): Promise<void> => {
     const USER_TOKEN_TYPE = "USER_TOKEN";
     const CLIENT_TOKEN_TYPE = "CLIENT_TOKEN";
 
@@ -190,6 +158,8 @@ const useSpotifyService = () => {
     const guard = new Promise<never>((_, reject) => (rejectAll = reject));
 
     InAppBrowser.addListener("closeEvent", () => {
+      showToast(t("spotify.link_process_failed"), "warning");
+      spotify_sync_store.finishSync();
       rejectAll(new Error("Webview closed before tokens arrived"));
     });
 
@@ -238,6 +208,7 @@ const useSpotifyService = () => {
       toolbarTextColor: "#FFFFFF",
       url: SPOTIFY_AUTH_URL,
       enabledSafeBottomMargin: true,
+      hidden,
     });
 
     try {
@@ -264,7 +235,6 @@ const useSpotifyService = () => {
   };
 
   return {
-    linkAccount,
     getSavedTracks,
     importSavedTracks,
   };

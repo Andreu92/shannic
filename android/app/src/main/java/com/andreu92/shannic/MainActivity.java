@@ -9,7 +9,6 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
-import com.andreu92.shannic.plugins.youtube.YoutubeService;
 import com.getcapacitor.BridgeActivity;
 
 import com.andreu92.shannic.plugins.youtube.YoutubePlugin;

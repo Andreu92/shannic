@@ -44,7 +44,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.andreu92.shannic.models.AudioItem;
@@ -240,13 +239,13 @@ public class PlayerPlugin extends Plugin {
 
         String uriStr = localConfig.uri.toString();
         if (uriStr.isBlank() || uriStr.startsWith(Constants.FAKE_SRC)) {
-            refresh(itemToRefresh, index); return;
+            refresh(itemToRefresh, index);
+            return;
         }
 
         String expires_at_str = localConfig.uri
                 .getQueryParameter(YoutubeConstants.EXPIRE_QUERY_PARAM);
         if (expires_at_str == null) return;
-
         long expires_at = Long.parseLong(expires_at_str) * 1000;
         if ((expires_at - 10000) < System.currentTimeMillis())
             refresh(itemToRefresh, index);
@@ -260,9 +259,13 @@ public class PlayerPlugin extends Plugin {
                 onSrcRefresh(item.id(), item.src(), item.expiresAt());
 
                 getActivity().runOnUiThread(() -> {
-                    MediaItem oldItem = mediaController.getMediaItemAt(index);
-                    MediaItem newItem = oldItem.buildUpon().setUri(item.src()).build();
-                    mediaController.replaceMediaItem(index, newItem);
+                    if (index < mediaController.getMediaItemCount()) {
+                        MediaItem oldItem = mediaController.getMediaItemAt(index);
+                        if (oldItem.mediaId.equals(itemToRefresh.mediaId)) {
+                            MediaItem newItem = oldItem.buildUpon().setUri(item.src()).build();
+                            mediaController.replaceMediaItem(index, newItem);
+                        }
+                    }
                 });
             } catch (Exception e) {
                 Log.e("PlayerPlugin", "Error refreshing SRC:", e);

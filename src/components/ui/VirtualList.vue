@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import { IonSpinner } from "@ionic/vue";
 import { IonFab, IonFabButton } from "@ionic/vue";
@@ -26,7 +26,7 @@ const props = withDefaults(
 );
 
 const scrolling = ref<boolean>(false);
-const is_scrollable = ref<boolean>(false);
+const scroll_timeout = ref<number | null>(null);
 const vlist_ref = ref<HTMLDivElement | null>(null);
 const show_up = ref(false);
 const show_down = ref(false);
@@ -42,12 +42,17 @@ const row_virtualizer_options = computed(() => {
 
 const row_virtualizer = useVirtualizer(row_virtualizer_options);
 
-const handleScroll = () => {
+const onScroll = () => {
   if (!vlist_ref.value) return;
-  
-  const { scrollTop, scrollHeight, clientHeight } = vlist_ref.value;
 
   scrolling.value = true;
+  
+  if (scroll_timeout.value) clearTimeout(scroll_timeout.value);
+  scroll_timeout.value = setTimeout(() => {
+    scrolling.value = false;
+  }, 200);
+  
+  const { scrollTop, scrollHeight, clientHeight } = vlist_ref.value;
   show_up.value = scrollTop > 100;
   show_down.value =
     scrollHeight > clientHeight &&
@@ -73,7 +78,6 @@ watch(
     const lastItem = items[items.length - 1];
     if (
       lastItem.index >= props.items.length - 1 &&
-      is_scrollable.value &&
       props.hasMore &&
       !props.loadingNextPage
     ) {
@@ -87,20 +91,6 @@ watch(
   (el) => {
     if (el) el.scrollTop = 0;
   },
-);
-
-watch(
-  () => props.items,
-  async (items) => {
-    if (items.length) {
-      await nextTick();
-      if (!vlist_ref.value) return;
-      const { scrollHeight, clientHeight } = vlist_ref.value;
-      is_scrollable.value = scrollHeight > clientHeight;
-      handleScroll();
-    }
-  },
-  { deep: true, immediate: true },
 );
 </script>
 
@@ -119,8 +109,7 @@ watch(
       v-else
       ref="vlist_ref"
       style="padding: 0px 5px; width: 100%; overflow-y: auto"
-      @scroll="handleScroll"
-      @scrollend="scrolling = false"
+      @scroll="onScroll"
     >
       <div
         style="width: 100%; position: relative"
@@ -159,25 +148,22 @@ watch(
   </div>
 
   <!-- Scroll to top/bottom buttons -->
-  <ion-fab
-    v-if="vlist_ref != null && scrolling"
-    slot="fixed"
-    horizontal="end"
-    vertical="bottom"
-  >
-    <div class="flex center" style="width: 55px; height: 55px">
-      <Transition name="fade">
-        <ion-fab-button v-if="show_up" size="small" @click="scrollToTop">
-          <ion-icon :icon="arrowUp" color="dark"></ion-icon>
-        </ion-fab-button>
-      </Transition>
-    </div>
-    <div class="flex center" style="width: 55px; height: 55px">
-      <Transition name="fade">
-        <ion-fab-button v-if="show_down" size="small" @click="scrollToBottom">
-          <ion-icon :icon="arrowDown" color="dark"></ion-icon>
-        </ion-fab-button>
-      </Transition>
-    </div>
-  </ion-fab>
+  <Transition name="fade-slow">
+    <ion-fab v-if="scrolling" slot="fixed" horizontal="end" vertical="bottom">
+      <div class="flex center" style="width: 55px; height: 55px">
+        <Transition name="fade">
+          <ion-fab-button v-if="show_up" size="small" @click="scrollToTop">
+            <ion-icon :icon="arrowUp" color="dark"></ion-icon>
+          </ion-fab-button>
+        </Transition>
+      </div>
+      <div class="flex center" style="width: 55px; height: 55px">
+        <Transition name="fade">
+          <ion-fab-button v-if="show_down" size="small" @click="scrollToBottom">
+            <ion-icon :icon="arrowDown" color="dark"></ion-icon>
+          </ion-fab-button>
+        </Transition>
+      </div>
+    </ion-fab>
+  </Transition>
 </template>

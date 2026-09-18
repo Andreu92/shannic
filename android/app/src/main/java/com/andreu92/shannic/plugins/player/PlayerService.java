@@ -17,7 +17,6 @@ import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DataSpec;
-import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.datasource.ResolvingDataSource;
 import androidx.media3.datasource.cache.CacheDataSink;
@@ -190,7 +189,8 @@ public class PlayerService extends MediaSessionService {
 
     private void createMediaSession() {
         Intent intent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        if (intent != null)
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         PendingIntent sessionActivityPendingIntent = PendingIntent.getActivity(
                 this,

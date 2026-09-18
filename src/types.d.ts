@@ -62,22 +62,3 @@ export interface AccessToken {
   access_token: string;
   expires_at: number;
 }
-
-export interface SpotifyAccessToken {
-  clientId: string;
-  accessToken: string;
-  accessTokenExpirationTimestampMs: number;
-  isAnonymous: boolean;
-}
-
-export interface SpotifyClientToken {
-  response_type: string;
-  granted_token: {
-    token: string;
-    expires_after_seconds: number;
-    refresh_after_seconds: number;
-    domains: {
-      domain: string;
-    }[];
-  };
-}

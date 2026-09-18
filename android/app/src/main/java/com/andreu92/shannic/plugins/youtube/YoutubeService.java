@@ -9,7 +9,6 @@ import android.util.Log;
 import com.andreu92.shannic.models.AudioItem;
 import com.andreu92.shannic.models.SearchItem;
 import com.andreu92.shannic.models.SearchResponse;
-import com.andreu92.shannic.plugins.youtube.utils.HttpClient;
 import com.andreu92.shannic.plugins.youtube.utils.ShannicDownloader;
 
 import org.schabi.newpipe.extractor.Image;

@@ -10,10 +10,13 @@ import type {
   AudioCollection,
   AudioDocument,
   Palette,
+  PlaylistAudio,
 } from "@/types";
 import { Vibrant } from "node-vibrant/browser";
 import { DEFAULT_COLOR_THEME, FAKE_SRC } from "@/constants";
 import { fetchImage } from "@/utils";
+import { DeepReadonlyObject, RxChangeEvent } from "rxdb";
+import { Subscription } from "rxjs";
 
 const useAudioService = () => {
   const db = useDatabase();
@@ -57,7 +60,11 @@ const useAudioService = () => {
 
     if ("src" in item && "expires_at" in item)
       return await buildWithPalette(item);
-    return await buildWithPalette({ ...item, src: FAKE_SRC + item.id, expires_at: 0 });
+    return await buildWithPalette({
+      ...item,
+      src: FAKE_SRC + item.id,
+      expires_at: 0,
+    });
   };
 
   const get = async (id: string): Promise<AudioDocument | null> => {
@@ -85,10 +92,10 @@ const useAudioService = () => {
     item: YoutubeAudioItem | YoutubeSearchItem,
   ): Promise<AudioDocument> => {
     const audio_item = await build(item);
-    
+
     const created_audio = await audio_collection.insertIfNotExists({
       ...audio_item,
-      created_at: Date.now()
+      created_at: Date.now(),
     });
 
     return created_audio;
@@ -134,6 +141,34 @@ const useAudioService = () => {
     return audio_doc;
   };
 
+  const subscribe = (
+    callback: (audio: RxChangeEvent<RxAudio>) => void,
+  ): Subscription => {
+    return audio_collection.$.subscribe(callback);
+  };
+
+  const getSortedListAsJson = async (
+    playlist_audios: PlaylistAudio[],
+  ): Promise<DeepReadonlyObject<RxAudio>[]> => {
+    const audio_map = await getList(
+      playlist_audios.map((a) => a.audio_id) ?? [],
+    );
+
+    const audios_as_json = Array.from(audio_map.values()).map((a) =>
+      a.toJSON(),
+    );
+
+    const positions_map = new Map(
+      playlist_audios.map((f) => [f.audio_id, f.position]),
+    );
+
+    return audios_as_json.sort((a, b) => {
+      const p1 = positions_map.get(a.id) ?? 0;
+      const p2 = positions_map.get(b.id) ?? 0;
+      return p1 - p2;
+    });
+  };
+
   return {
     build,
     get,
@@ -141,7 +176,9 @@ const useAudioService = () => {
     create,
     update,
     remove,
-    getCreateOrUpdate
+    getCreateOrUpdate,
+    subscribe,
+    getSortedListAsJson,
   };
 };
 

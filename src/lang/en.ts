@@ -21,6 +21,7 @@ const en = {
     yes: "Yes",
     no: "No",
     cancel: "Cancel",
+    no_results: "Oops! It seems I can't find anything.",
   },
   pages: {
     home: "Home",
@@ -36,9 +37,7 @@ const en = {
     music: "Music",
   },
   favorites: {
-    no_results: "Oops! It seems I can't find anything.",
     start: "Don't you have any favorites yet? :O",
-    spotify: "Import from Spotify",
     delete: {
       header: "Delete favorite",
       message: "Are you sure you want to delete {title} from your favorites?",
@@ -47,6 +46,13 @@ const en = {
       header: "Download favorites",
       message:
         "Are you sure you want to download all your favorites? Make sure you have enough space on your device!",
+    },
+  },
+  playlists: {
+    start: "Create a playlist to start or...",
+    delete: {
+      header: "Delete playlist",
+      message: "Are you sure you want to delete {title} from your playlists?",
     },
   },
   playlist: {
@@ -71,6 +77,7 @@ const en = {
   spotify: {
     link: "Link Spotify",
     unlink: "Unlink Spotify",
+    import: "Import from Spotify",
     unlinked: "Spotify account unlinked.",
     not_linked: "No Spotify account is linked.",
     link_process_failed: "Could not link the Spotify account.",

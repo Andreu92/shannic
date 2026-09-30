@@ -1,12 +1,12 @@
 import type { RxCollection, RxDatabase, RxDocument } from "rxdb";
 import type { RxAudio, RxAudioMethods } from "@/schemas/audio";
-import type { RxPlaylist, RxPlaylistMethods } from "@/schemas/playlist";
+import type { RxPlaylist } from "@/schemas/playlist";
 
 export type AudioDocument = RxDocument<RxAudio, RxAudioMethods>;
 export type AudioCollection = RxCollection<RxAudio, RxAudioMethods>;
 
-export type PlaylistDocument = RxDocument<RxPlaylist, RxPlaylistMethods>;
-export type PlaylistCollection = RxCollection<RxPlaylist, RxPlaylistMethods>;
+export type PlaylistDocument = RxDocument<RxPlaylist>;
+export type PlaylistCollection = RxCollection<RxPlaylist>;
 
 export interface RxShannicCollections {
   audios: AudioCollection;

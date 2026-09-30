@@ -13,10 +13,11 @@ import {
   type RxStorageDexie,
 } from "rxdb/plugins/storage-dexie";
 import { type App, inject, type Plugin } from "vue";
-import { FAKE_SRC, FAVORITES_PLAYLIST_ID } from "@/constants";
+import { FAVORITES_PLAYLIST_ID } from "@/constants";
 import { audioMethods, audioSchema } from "@/schemas/audio";
-import { playlistMethods, playlistSchema } from "@/schemas/playlist";
+import { playlistSchema } from "@/schemas/playlist";
 import type { RxShannicCollections, RxShannicDatabase } from "@/types";
+import { audioMigrations } from "./migrations";
 
 addRxPlugin(RxDBMigrationSchemaPlugin);
 addRxPlugin(RxDBCleanupPlugin);
@@ -59,28 +60,10 @@ export async function createDatabase(): Promise<Plugin> {
     audios: {
       schema: audioSchema,
       methods: audioMethods,
-      migrationStrategies: {
-        1: (oldDoc) => {
-          delete oldDoc.duration_text;
-
-          oldDoc.duration = Math.floor(oldDoc.duration / 1000);
-
-          if (oldDoc.url && oldDoc.url.startsWith("file")) {
-            oldDoc.src = oldDoc.url;
-            oldDoc.expires_at = undefined;
-          } else {
-            oldDoc.src = FAKE_SRC;
-            oldDoc.expires_at = 0;
-          }
-
-          delete oldDoc.url;
-          return oldDoc;
-        },
-      },
+      migrationStrategies: audioMigrations,
     },
     playlists: {
       schema: playlistSchema,
-      methods: playlistMethods,
     },
   });
 

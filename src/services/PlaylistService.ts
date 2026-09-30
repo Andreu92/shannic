@@ -19,6 +19,14 @@ const usePlaylistService = () => {
     return playlist;
   };
 
+  const add = async (playlist: PlaylistDocument) => {
+    await playlist_collection.insert(playlist);
+  };
+
+  const remove = async (playlist_id: string) => {
+    await playlist_collection.findOne(playlist_id).remove();
+  };
+
   const updateAudios = async (
     playlist_id: string,
     playlist_audios: PlaylistAudio[],
@@ -42,11 +50,13 @@ const usePlaylistService = () => {
     const playlist = await get(playlist_id);
 
     const playlist_audios: PlaylistAudio[] = playlist.audios ?? [];
-    
+
+    if (playlist_audios.some((o) => o.audio_id === audio_id)) return;
+
     const position = playlist_audios.length
       ? Math.max(...playlist_audios.map((t) => t.position)) + 1
       : 0;
-  
+
     const new_playlist_audio: PlaylistAudio = { audio_id, position };
 
     playlist_audios.push(new_playlist_audio);
@@ -61,15 +71,36 @@ const usePlaylistService = () => {
 
     let playlist_audios = playlist.audios ?? [];
 
-    const toRemove = playlist_audios.find((o) => o.audio_id === audio_id);
-    if (toRemove) {
-      playlist_audios = playlist_audios
-        .filter((o) => o.audio_id !== audio_id)
-        .map((o, i) => ({ ...o, position: i }));
-    }
+    if (!playlist_audios.some((o) => o.audio_id === audio_id)) return;
+
+    playlist_audios = playlist_audios
+      .filter((o) => o.audio_id !== audio_id)
+      .map((o, i) => ({ ...o, position: i }));
 
     playlist.incrementalPatch({
       audios: playlist_audios,
+    });
+  };
+
+  const getSortedAudiosAsJson = async (playlist_id: string) => {
+    const playlist = await get(playlist_id);
+
+    const audio_map = await db.audios
+      .findByIds(playlist.audios?.map((a) => a.audio_id) ?? [])
+      .exec();
+
+    const audios_as_json = Array.from(audio_map.values()).map((a) =>
+      a.toJSON(),
+    );
+
+    const positions_map = new Map(
+      playlist.audios?.map((f) => [f.audio_id, f.position]),
+    );
+
+    return audios_as_json.sort((a, b) => {
+      const p1 = positions_map.get(a.id) ?? 0;
+      const p2 = positions_map.get(b.id) ?? 0;
+      return p1 - p2;
     });
   };
 
@@ -79,6 +110,7 @@ const usePlaylistService = () => {
     isAudioIn,
     addAudio,
     removeAudio,
+    getSortedAudiosAsJson,
   };
 };
 

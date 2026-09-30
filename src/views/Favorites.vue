@@ -15,6 +15,8 @@ import {
   IonSearchbar,
   IonSpinner,
   IonThumbnail,
+  onIonViewDidLeave,
+  onIonViewWillEnter,
   type SearchbarCustomEvent,
 } from "@ionic/vue";
 import {
@@ -26,7 +28,7 @@ import {
   shuffle as shuffle_icon,
   trashOutline,
 } from "ionicons/icons";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import iconDark from "@/assets/img/icon-dark.png";
@@ -45,6 +47,9 @@ import { Capacitor } from "@capacitor/core";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import useNetworkStore from "@/stores/NetworkStore";
 import { showToast } from "@/utils";
+import { DeepReadonlyObject, RxChangeEvent } from "rxdb";
+import { Subscription } from "rxjs";
+import { PlaylistAudio } from "@/types";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -59,16 +64,17 @@ const network_store = useNetworkStore();
 const audio_service = useAudioService();
 const spotify_service = useSpotifyService();
 
-const show_download_all_alert = ref(false);
-const show_remove_alert = ref(false);
-
+let audio_subscription: Subscription | null = null;
+const favorite_audios = ref<DeepReadonlyObject<RxAudio>[]>([]);
 const to_remove = ref<RxAudio | null>(null);
 const query = ref<string>("");
 const shuffle = ref(false);
 const show_only_downloaded = ref(false);
+const show_download_all_alert = ref(false);
+const show_remove_alert = ref(false);
 
 const search_results = computed(() => {
-  let results = favorites_store.audios;
+  let results = favorite_audios.value;
 
   if (show_only_downloaded.value) {
     results = results.filter((audio: RxAudio) => {
@@ -123,7 +129,7 @@ const playAll = async () => {
 };
 
 const showRemoveFromFavoritesAlert = (audio_id: string) => {
-  const audio = favorites_store.audios.find(
+  const audio = favorite_audios.value.find(
     (audio: RxAudio) => audio.id === audio_id,
   );
   if (audio) {
@@ -171,6 +177,30 @@ const deleteFile = async (audio_id: string) => {
   if (!audio) return;
   audio.deleteFile();
 };
+
+onIonViewWillEnter(() => {
+  audio_service
+    .getSortedListAsJson(favorites_store.favorite_audios)
+    .then((audios) => (favorite_audios.value = audios));
+
+  audio_subscription = audio_service.subscribe(
+    (audio: RxChangeEvent<RxAudio>) => {
+      const index = favorite_audios.value.findIndex(
+        (a: RxAudio) => a.id == audio.documentId,
+      );
+      if (index == -1) return;
+      favorite_audios.value[index] = audio.documentData;
+    },
+  );
+});
+
+onIonViewDidLeave(() => {
+  audio_subscription?.unsubscribe();
+});
+
+watch(favorites_store.favorite_audios, async (new_audios: PlaylistAudio[]) => {
+  favorite_audios.value = await audio_service.getSortedListAsJson(new_audios);
+});
 </script>
 
 <template>
@@ -178,7 +208,7 @@ const deleteFile = async (audio_id: string) => {
     <AppHeader />
     <ion-content class="ion-padding">
       <div class="flex col h-full">
-        <div v-if="favorites_store.audios.length" class="flex col grow h-full">
+        <div v-if="favorite_audios.length" class="flex col grow h-full">
           <!-- Search bar -->
           <div class="flex center-y">
             <ion-searchbar
@@ -218,7 +248,7 @@ const deleteFile = async (audio_id: string) => {
                   >
                     <SpotifyIcon />
                   </div>
-                  <div>{{ t("favorites.spotify") }}...</div>
+                  <div>{{ t("spotify.import") }}...</div>
                 </div>
               </ion-content>
             </ion-popover>
@@ -326,18 +356,18 @@ const deleteFile = async (audio_id: string) => {
           <!-- No results -->
           <div v-else class="flex col grow center h-full" style="gap: 5px">
             <img :src="no_search_results" />
-            <div>{{ t("favorites.no_results") }}</div>
+            <div>{{ t("generic.no_results") }}</div>
           </div>
         </div>
 
         <!-- No favorites -->
-        <div v-else class="flex col grow center h-full">
+        <div v-else class="flex col grow center h-full" style="gap: 10px">
           <img
             :src="layout.state.isDarkTheme ? iconLight : iconDark"
             style="width: 100px"
           />
-          <div style="margin-top: 3px">{{ t("favorites.start") }}</div>
-          <div class="flex center-y" style="margin-top: 15px">
+          <div>{{ t("favorites.start") }}</div>
+          <div class="flex center-y">
             <ion-chip @click="() => router.replace('/search')">
               <ion-icon :icon="search_icon" style="font-size: 20px"></ion-icon>
               <ion-label>{{ t("pages.search") }}</ion-label>
@@ -350,7 +380,7 @@ const deleteFile = async (audio_id: string) => {
                 <SpotifyIcon />
               </div>
               <ion-label style="margin-left: 5px">{{
-                t("favorites.spotify")
+                t("spotify.import")
               }}</ion-label>
             </ion-chip>
           </div>

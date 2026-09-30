@@ -8,7 +8,7 @@ import {
   IonTabButton,
   IonTabs,
 } from "@ionic/vue";
-import { heart, search } from "ionicons/icons";
+import { heart, search, list } from "ionicons/icons";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -34,10 +34,10 @@ const { t } = useI18n();
           <ion-label>{{ t("pages.favorites") }}</ion-label>
         </ion-tab-button>
 
-        <!-- <ion-tab-button tab="playlists" href="/playlists">
+        <ion-tab-button tab="playlists" href="/playlists">
           <ion-icon aria-hidden="true" :icon="list" />
           <ion-label>{{ t("pages.playlists") }}</ion-label>
-        </ion-tab-button> -->
+        </ion-tab-button>
       </ion-tab-bar>
     </ion-tabs>
   </ion-page>

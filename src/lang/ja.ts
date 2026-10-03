@@ -21,6 +21,7 @@ const ja = {
     yes: "はい",
     no: "いいえ",
     cancel: "キャンセル",
+    no_results: "おっと！何も見つからないようです。",
   },
   pages: {
     home: "ホーム",
@@ -31,14 +32,12 @@ const ja = {
   search: {
     start: "何を聞きたいですか？",
     error: "クラウド検索中にエラーが発生しました。",
-    noResults: "結果が見つかりませんでした。",
+    no_results: "結果が見つかりませんでした。",
     all: "すべて",
     music: "音楽",
   },
   favorites: {
-    no_results: "おっと！何も見つからないようです。",
     start: "まだお気に入りがありませんか？ :O",
-    spotify: "Spotifyからインポート",
     delete: {
       header: "お気に入りを削除",
       message: "{title} をお気に入りから削除してもよろしいですか？",
@@ -47,6 +46,13 @@ const ja = {
       header: "お気に入りをダウンロード",
       message:
         "すべてのお気に入りをダウンロードしてもよろしいですか？デバイスに十分な空き容量があることを確認してください！",
+    },
+  },
+  playlists: {
+    start: "プレイリストを作成して始めるか...",
+    delete: {
+      header: "プレイリストを削除",
+      message: "{title} をプレイリストから削除してもよろしいですか？",
     },
   },
   playlist: {
@@ -71,6 +77,7 @@ const ja = {
   spotify: {
     link: "Spotifyをリンク",
     unlink: "Spotifyのリンクを解除",
+    import: "Spotifyからインポート",
     unlinked: "Spotify アカウントのリンクが解除されました。",
     not_linked: "リンクされた Spotify アカウントはありません。",
     link_process_failed: "Spotify アカウントのリンクに失敗しました。",

@@ -21,6 +21,7 @@ const nl = {
     yes: "Ja",
     no: "Nee",
     cancel: "Annuleren",
+    no_results: "Oeps! Het lijkt erop dat ik niets kan vinden.",
   },
   pages: {
     home: "Startpagina",
@@ -31,14 +32,12 @@ const nl = {
   search: {
     start: "Waar wil je naar luisteren?",
     error: "Fout bij het zoeken in de cloud.",
-    noResults: "Geen resultaten gevonden.",
+    no_results: "Geen resultaten gevonden.",
     all: "Alles",
     music: "Muziek",
   },
   favorites: {
-    no_results: "Oeps! Het lijkt erop dat ik niets kan vinden.",
     start: "Heb je nog geen favorieten? :O",
-    spotify: "Importeren van Spotify",
     delete: {
       header: "Favoriet verwijderen",
       message:
@@ -48,6 +47,14 @@ const nl = {
       header: "Favorieten downloaden",
       message:
         "Weet je zeker dat je al je favorieten wilt downloaden? Zorg ervoor dat je genoeg ruimte op je apparaat hebt!",
+    },
+  },
+  playlists: {
+    start: "Maak een afspeellijst om te beginnen, of...",
+    delete: {
+      header: "Afspeellijst verwijderen",
+      message:
+        "Weet je zeker dat je {title} uit je afspeellijsten wilt verwijderen?",
     },
   },
   playlist: {
@@ -72,6 +79,7 @@ const nl = {
   spotify: {
     link: "Spotify koppelen",
     unlink: "Spotify ontkoppelen",
+    import: "Importeren van Spotify",
     unlinked: "Spotify-account is gedetacheerd.",
     not_linked: "Er is geen Spotify-account gekoppeld.",
     link_process_failed: "Kon Spotify-account niet koppelen.",

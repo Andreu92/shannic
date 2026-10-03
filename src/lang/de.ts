@@ -21,6 +21,7 @@ const de = {
     yes: "Ja",
     no: "Nein",
     cancel: "Abbrechen",
+    no_results: "Ups! Es sieht so aus, als ob ich nichts finden kann.",
   },
   pages: {
     home: "Startseite",
@@ -31,23 +32,29 @@ const de = {
   search: {
     start: "Was möchtest du hören?",
     error: "Fehler bei der Suche in der Cloud.",
-    noResults: "Keine Ergebnisse gefunden.",
+    no_results: "Keine Ergebnisse gefunden.",
     all: "Alle",
     music: "Musik",
   },
   favorites: {
-    no_results: "Ups! Es sieht so aus, als ob ich nichts finden kann.",
     start: "Hast du noch keine Favoriten? :O",
-    spotify: "Von Spotify importieren",
     delete: {
       header: "Favorit löschen",
       message:
-        "Mist du sicher, dass du {title} aus deinen Favoriten löschen möchtest?",
+        "Bist du sicher, dass du {title} aus deinen Favoriten löschen möchtest?",
     },
     download: {
       header: "Favoriten herunterladen",
       message:
         "Bist du sicher, dass du alle deine Favoriten herunterladen möchtest? Stelle sicher, dass du genügend Speicherplatz auf deinem Gerät hast!",
+    },
+  },
+  playlists: {
+    start: "Erstelle eine Playlist, um zu beginnen, oder...",
+    delete: {
+      header: "Playlist löschen",
+      message:
+        "Bist du sicher, dass du {title} aus deinen Playlists löschen möchtest?",
     },
   },
   playlist: {
@@ -72,6 +79,7 @@ const de = {
   spotify: {
     link: "Spotify verknüpfen",
     unlink: "Spotify Verknüpfung aufheben",
+    import: "Von Spotify importieren",
     unlinked: "Spotify-Konto wurde getrennt.",
     not_linked: "Es ist kein Spotify-Konto mit diesem verknüpft.",
     link_process_failed: "Verknüpfung des Spotify-Kontos fehlgeschlagen.",

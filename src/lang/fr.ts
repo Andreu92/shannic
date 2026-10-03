@@ -21,6 +21,7 @@ const fr = {
     yes: "Oui",
     no: "Non",
     cancel: "Annuler",
+    no_results: "Oups ! Il semble que je ne trouve rien.",
   },
   pages: {
     home: "Accueil",
@@ -31,14 +32,12 @@ const fr = {
   search: {
     start: "Qu'aimeriez-vous écouter ?",
     error: "Erreur lors de la recherche dans le cloud.",
-    noResults: "Aucun résultat trouvé.",
+    no_results: "Aucun résultat trouvé.",
     all: "Tout",
     music: "Musique",
   },
   favorites: {
-    no_results: "Oups ! Il semble que je ne trouve rien.",
     start: "Vous n'avez pas encore de favoris ? :O",
-    spotify: "Importer depuis Spotify",
     delete: {
       header: "Supprimer le favori",
       message: "Êtes-vous sûr de vouloir supprimer {title} de vos favoris ?",
@@ -47,6 +46,13 @@ const fr = {
       header: "Télécharger les favoris",
       message:
         "Êtes-vous sûr de vouloir télécharger tous vos favoris ? Assurez-vous d'avoir assez d'espace sur votre appareil !",
+    },
+  },
+  playlists: {
+    start: "Créez une liste pour commencer ou...",
+    delete: {
+      header: "Supprimer la liste",
+      message: "Êtes-vous sûr de vouloir supprimer {title} de vos listes ?",
     },
   },
   playlist: {
@@ -71,6 +77,7 @@ const fr = {
   spotify: {
     link: "Lier Spotify",
     unlink: "Dissocier Spotify",
+    import: "Importer depuis Spotify",
     unlinked: "Compte Spotify dissocié.",
     not_linked: "Aucun compte Spotify n'est lié.",
     link_process_failed: "Impossible de lier le compte Spotify.",

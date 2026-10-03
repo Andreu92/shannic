@@ -19,10 +19,6 @@ export const playlistSchemaLiteral = {
       type: "string",
       maxLength: 255,
     },
-    description: {
-      type: "string",
-      maxLength: 1000,
-    },
     created_at: {
       type: "integer",
       minimum: 0,
@@ -41,15 +37,6 @@ export const playlistSchemaLiteral = {
         },
         required: ["audio_id", "position"],
       },
-    },
-    thumbnail: {
-      type: "object",
-      properties: {
-        url: { type: "string", format: "uri" },
-        width: { type: "integer", minimum: 0 },
-        height: { type: "integer", minimum: 0 },
-      },
-      required: ["url", "width", "height"],
     },
   },
   required: ["id", "title", "created_at"],

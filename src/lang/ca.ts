@@ -21,6 +21,7 @@ const ca = {
     yes: "Sí",
     no: "No",
     cancel: "Cancel·lar",
+    no_results: "Vaja! Sembla que no trobo res.",
   },
   pages: {
     home: "Inici",
@@ -31,14 +32,12 @@ const ca = {
   search: {
     start: "Què t'agradaria escoltar?",
     error: "Error en realitzar la cerca al núvol.",
-    noResults: "No s'han trobat resultats.",
+    no_results: "No s'han trobat resultats.",
     all: "Tot",
     music: "Música",
   },
   favorites: {
-    no_results: "Vaja! Sembla que no trobo res.",
     start: "Encara no tens favorits? :O",
-    spotify: "Importar de Spotify",
     delete: {
       header: "Eliminar favorit",
       message: "Segur que vols eliminar {title} dels teus favorits?",
@@ -47,6 +46,13 @@ const ca = {
       header: "Descarregar favorits",
       message:
         "Segur que vols descarregar tots els teus favorits? Assegura't de tenir espai suficient al teu dispositiu!",
+    },
+  },
+  playlists: {
+    start: "Crea una llista per començar o...",
+    delete: {
+      header: "Eliminar llista",
+      message: "Segur que vols eliminar {title} de les teves llistes?",
     },
   },
   playlist: {
@@ -59,7 +65,7 @@ const ca = {
     cache_cleared: "Audios en caché borrats.",
     erase_all: "Borrar tot",
     erase: {
-      header: "Borrar tots les dades",
+      header: "Borrar totes les dades",
       message:
         "Segur que vols borrar tot i tornar a l'estat inicial? No es pot desfer!",
     },
@@ -71,6 +77,7 @@ const ca = {
   spotify: {
     link: "Vincular Spotify",
     unlink: "Desvincular Spotify",
+    import: "Importar de Spotify",
     unlinked: "Compte de Spotify desvinculat.",
     not_linked: "No hi ha cap compte de Spotify enllaçat.",
     link_process_failed: "No s'ha pogut enllaçar el compte de Spotify.",

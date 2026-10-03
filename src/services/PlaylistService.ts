@@ -1,4 +1,5 @@
 import { useDatabase } from "@/database";
+import { nanoid } from "nanoid";
 import type {
   PlaylistAudio,
   PlaylistCollection,
@@ -19,12 +20,16 @@ const usePlaylistService = () => {
     return playlist;
   };
 
-  const add = async (playlist: PlaylistDocument) => {
-    await playlist_collection.insert(playlist);
+  const add = (playlist_name: string) => {
+    playlist_collection.insert({
+      id: nanoid(),
+      title: playlist_name,
+      created_at: Date.now(),
+    });
   };
 
-  const remove = async (playlist_id: string) => {
-    await playlist_collection.findOne(playlist_id).remove();
+  const remove = (playlist_id: string) => {
+    playlist_collection.findOne(playlist_id).remove();
   };
 
   const updateAudios = async (
@@ -106,6 +111,8 @@ const usePlaylistService = () => {
 
   return {
     get,
+    add,
+    remove,
     updateAudios,
     isAudioIn,
     addAudio,

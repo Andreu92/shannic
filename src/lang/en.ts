@@ -22,6 +22,7 @@ const en = {
     no: "No",
     cancel: "Cancel",
     no_results: "Oops! It seems I can't find anything.",
+    create: "Create",
   },
   pages: {
     home: "Home",
@@ -32,7 +33,7 @@ const en = {
   search: {
     start: "What would you like to listen to?",
     error: "Error performing the search in the cloud.",
-    noResults: "No results found.",
+    no_results: "No results found.",
     all: "All",
     music: "Music",
   },
@@ -49,7 +50,11 @@ const en = {
     },
   },
   playlists: {
-    start: "Create a playlist to start or...",
+    start: "Don't you have any playlists yet? :O",
+    create: "Create playlist",
+    placeholders: {
+      name: "Playlist name",
+    },
     delete: {
       header: "Delete playlist",
       message: "Are you sure you want to delete {title} from your playlists?",
@@ -68,7 +73,7 @@ const en = {
       header: "Delete all data",
       message:
         "Are you sure you want to delete everything and return to the initial state? This cannot be undone!",
-    }
+    },
   },
   errors: {
     audio_unplayable: "This audio cannot be played.",

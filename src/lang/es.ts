@@ -21,6 +21,7 @@ const es = {
     yes: "Sí",
     no: "No",
     cancel: "Cancelar",
+    no_results: "Vaya! Parece que no encuentro nada.",
   },
   pages: {
     home: "Inicio",
@@ -31,14 +32,12 @@ const es = {
   search: {
     start: "Qué te apetece escuchar?",
     error: "Error al realizar la búsqueda en la nube.",
-    noResults: "No se han encontrado resultados.",
+    no_results: "No se han encontrado resultados.",
     all: "Todo",
     music: "Música",
   },
   favorites: {
-    no_results: "Vaya! Parece que no encuentro nada.",
     start: "Aún no tienes favoritos? :O",
-    spotify: "Importar de Spotify",
     delete: {
       header: "Eliminar favorito",
       message: "¿Seguro que quieres eliminar {title} de tus favoritos?",
@@ -47,6 +46,13 @@ const es = {
       header: "Descargar favoritos",
       message:
         "¿Seguro que quieres descargar todos tus favoritos? ¡Asegúrate de tener espacio suficiente en tu dispositivo!",
+    },
+  },
+  playlists: {
+    start: "Aún no tienes listas? :O",
+    delete: {
+      header: "Eliminar lista",
+      message: "¿Seguro que quieres eliminar {title} de tus listas?",
     },
   },
   playlist: {
@@ -60,16 +66,18 @@ const es = {
     erase_all: "Borrar todo",
     erase: {
       header: "Borrar todos los datos",
-      message: "¿Seguro que quieres borrar todo y volver al estado inicial? ¡Esto no se puede deshacer!",
-    }
+      message:
+        "¿Seguro que quieres borrar todo y volver al estado inicial? ¡Esto no se puede deshacer!",
+    },
   },
   errors: {
     audio_unplayable: "Este audio no se puede reproducir.",
-    src_error: "Error al reproducir el audio."
+    src_error: "Error al reproducir el audio.",
   },
   spotify: {
     link: "Vincular Spotify",
     unlink: "Desvincular Spotify",
+    import: "Importar de Spotify",
     unlinked: "Cuenta de Spotify desvinculada.",
     not_linked: "No hay ninguna cuenta de Spotify vinculada.",
     link_process_failed: "No se pudo vincular la cuenta de Spotify.",

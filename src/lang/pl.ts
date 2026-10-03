@@ -21,6 +21,7 @@ const pl = {
     yes: "Tak",
     no: "Nie",
     cancel: "Anuluj",
+    no_results: "Ups! Wygląda na to, że nic nie znalazłem.",
   },
   pages: {
     home: "Strona główna",
@@ -31,14 +32,12 @@ const pl = {
   search: {
     start: "Czego chcesz posłuchać?",
     error: "Błąd podczas wyszukiwania w chmurze.",
-    noResults: "Nie znaleziono wyników.",
+    no_results: "Nie znaleziono wyników.",
     all: "Wszystkie",
     music: "Muzyka",
   },
   favorites: {
-    no_results: "Ups! Wygląda na to, że nic nie znalazłem.",
     start: "Nie masz jeszcze żadnych ulubionych? :O",
-    spotify: "Importuj ze Spotify",
     delete: {
       header: "Usuń z ulubionych",
       message: "Czy na pewno chcesz usunąć {title} z ulubionych?",
@@ -47,6 +46,13 @@ const pl = {
       header: "Pobierz ulubione",
       message:
         "Czy na pewno chcesz pobrać wszystkie ulubione? Upewnij się, że masz wystarczająco dużo miejsca na urządzeniu!",
+    },
+  },
+  playlists: {
+    start: "Stwórz playlistę, aby zacząć, lub...",
+    delete: {
+      header: "Usuń playlistę",
+      message: "Czy na pewno chcesz usunąć {title} z playlist?",
     },
   },
   playlist: {
@@ -71,6 +77,7 @@ const pl = {
   spotify: {
     link: "Połącz Spotify",
     unlink: "Rozłącz Spotify",
+    import: "Importuj ze Spotify",
     unlinked: "Konto Spotify zostało odłączone.",
     not_linked: "Nie ma połączonego konta Spotify.",
     link_process_failed: "Nie udało się połączyć konta Spotify.",

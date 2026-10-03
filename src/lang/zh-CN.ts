@@ -21,6 +21,7 @@ const zh_CN = {
     yes: "是",
     no: "否",
     cancel: "取消",
+    no_results: "哎呀！好像找不到任何东西。",
   },
   pages: {
     home: "首页",
@@ -31,14 +32,12 @@ const zh_CN = {
   search: {
     start: "你想听点什么？",
     error: "云端搜索出错。",
-    noResults: "未找到结果。",
+    no_results: "未找到结果。",
     all: "全部",
     music: "音乐",
   },
   favorites: {
-    no_results: "哎呀！好像找不到任何东西。",
     start: "还没有收藏吗？ :O",
-    spotify: "从 Spotify 导入",
     delete: {
       header: "删除收藏",
       message: "确定要从收藏中删除 {title} 吗？",
@@ -46,6 +45,13 @@ const zh_CN = {
     download: {
       header: "下载收藏",
       message: "确定要下载所有收藏吗？请确保设备上有足够的空间！",
+    },
+  },
+  playlists: {
+    start: "创建播放列表以开始，或者...",
+    delete: {
+      header: "删除播放列表",
+      message: "确定要从播放列表中删除 {title} 吗？",
     },
   },
   playlist: {
@@ -59,8 +65,7 @@ const zh_CN = {
     erase_all: "删除全部",
     erase: {
       header: "删除所有数据",
-      message:
-        "确定要删除全部并恢复到初始状态吗？ 这不能撤销。",
+      message: "确定要删除全部并恢复到初始状态吗？ 这不能撤销。",
     },
   },
   errors: {
@@ -70,6 +75,7 @@ const zh_CN = {
   spotify: {
     link: "关联 Spotify",
     unlink: "取消关联 Spotify",
+    import: "从 Spotify 导入",
     unlinked: "Spotify 账户已取消关联。",
     not_linked: "没有关联的 Spotify 账户。",
     link_process_failed: "无法链接 Spotify 账户。",

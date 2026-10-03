@@ -21,6 +21,7 @@ const pt_PT = {
     yes: "Sim",
     no: "Não",
     cancel: "Cancelar",
+    no_results: "Ops! Parece que não consigo encontrar nada.",
   },
   pages: {
     home: "Início",
@@ -31,14 +32,12 @@ const pt_PT = {
   search: {
     start: "O que você gostaria de ouvir?",
     error: "Erro ao realizar a pesquisa na nuvem.",
-    noResults: "Nenhum resultado encontrado.",
+    no_results: "Nenhum resultado encontrado.",
     all: "Todos",
     music: "Música",
   },
   favorites: {
-    no_results: "Ops! Parece que não consigo encontrar nada.",
     start: "Você ainda não tem nenhum favorito? :O",
-    spotify: "Importar do Spotify",
     delete: {
       header: "Excluir favorito",
       message: "Tem certeza de que deseja excluir {title} dos seus favoritos?",
@@ -47,6 +46,13 @@ const pt_PT = {
       header: "Baixar favoritos",
       message:
         "Tem certeza de que deseja baixar todos os seus favoritos? Certifique-se de ter espaço suficiente no seu dispositivo!",
+    },
+  },
+  playlists: {
+    start: "Crie uma lista para começar ou...",
+    delete: {
+      header: "Excluir lista",
+      message: "Tem certeza de que deseja excluir {title} das suas listas?",
     },
   },
   playlist: {
@@ -71,6 +77,7 @@ const pt_PT = {
   spotify: {
     link: "Vincular Spotify",
     unlink: "Desvincular Spotify",
+    import: "Importar do Spotify",
     unlinked: "Conta do Spotify desvinculada.",
     not_linked: "Nenhuma conta do Spotify está vinculada.",
     link_process_failed: "Não foi possível vincular a conta do Spotify.",

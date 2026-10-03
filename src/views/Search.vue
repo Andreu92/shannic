@@ -80,7 +80,7 @@ const search = async (e?: SearchbarCustomEvent) => {
   } catch (error) {
     if (error instanceof CapacitorException) {
       if (error.message === "NO_RESULTS")
-        showToast(t("search.noResults"), "warning");
+        showToast(t("search.no_results"), "warning");
       else showToast(t("search.error"));
     }
 

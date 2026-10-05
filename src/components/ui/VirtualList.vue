@@ -1,8 +1,7 @@
 <script setup lang="ts" generic="T">
 import { computed, ref, watch } from "vue";
 import { useVirtualizer } from "@tanstack/vue-virtual";
-import { IonSpinner } from "@ionic/vue";
-import { IonFab, IonFabButton } from "@ionic/vue";
+import { IonSpinner, IonFab, IonFabButton, IonIcon } from "@ionic/vue";
 import { arrowDown, arrowUp } from "ionicons/icons";
 
 const emit = defineEmits(["loadNextPage"]);

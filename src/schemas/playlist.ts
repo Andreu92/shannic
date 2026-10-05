@@ -4,10 +4,10 @@ import {
   toTypedRxJsonSchema,
 } from "rxdb";
 
-export const playlistSchemaLiteral = {
+export const playlist_schema_literal = {
   title: "Playlist schema",
   description: "Shannic playlist model abstraction",
-  version: 0,
+  version: 1,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -15,7 +15,7 @@ export const playlistSchemaLiteral = {
       type: "string",
       maxLength: 100,
     },
-    title: {
+    name: {
       type: "string",
       maxLength: 255,
     },
@@ -39,14 +39,14 @@ export const playlistSchemaLiteral = {
       },
     },
   },
-  required: ["id", "title", "created_at"],
-  indexes: ["title"],
+  required: ["id", "name", "created_at"],
+  indexes: ["name"],
 } as const;
 
-const schemaTyped = toTypedRxJsonSchema(playlistSchemaLiteral);
+const schema_typed = toTypedRxJsonSchema(playlist_schema_literal);
 
 export type RxPlaylist = ExtractDocumentTypeFromTypedRxJsonSchema<
-  typeof schemaTyped
+  typeof schema_typed
 >;
 
-export const playlistSchema: RxJsonSchema<RxPlaylist> = playlistSchemaLiteral;
+export const playlist_schema: RxJsonSchema<RxPlaylist> = playlist_schema_literal;

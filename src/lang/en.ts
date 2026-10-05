@@ -74,6 +74,7 @@ const en = {
       message:
         "Are you sure you want to delete everything and return to the initial state? This cannot be undone!",
     },
+    update_error: "Error checking for updates."
   },
   errors: {
     audio_unplayable: "This audio cannot be played.",

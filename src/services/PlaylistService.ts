@@ -5,6 +5,8 @@ import type {
   PlaylistCollection,
   PlaylistDocument,
 } from "@/types";
+import { RxPlaylist } from "@/schemas/playlist";
+import { DeepReadonlyObject } from "rxdb";
 
 const usePlaylistService = () => {
   const db = useDatabase();
@@ -20,10 +22,20 @@ const usePlaylistService = () => {
     return playlist;
   };
 
+  const subscribe = (
+    callback: (playlists_as_json: DeepReadonlyObject<RxPlaylist>[]) => void,
+  ) => {
+    return playlist_collection
+      .find({ sort: [{ created_at: 'asc' }] })
+      .$.subscribe((playlists) => {
+        callback(playlists.map((p) => p.toJSON()));
+      });
+  };
+
   const add = (playlist_name: string) => {
     playlist_collection.insert({
       id: nanoid(),
-      title: playlist_name,
+      name: playlist_name,
       created_at: Date.now(),
     });
   };
@@ -111,6 +123,7 @@ const usePlaylistService = () => {
 
   return {
     get,
+    subscribe,
     add,
     remove,
     updateAudios,

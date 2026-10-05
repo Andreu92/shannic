@@ -14,10 +14,10 @@ import {
 } from "rxdb/plugins/storage-dexie";
 import { type App, inject, type Plugin } from "vue";
 import { FAVORITES_PLAYLIST_ID } from "@/constants";
-import { audioMethods, audioSchema } from "@/schemas/audio";
-import { playlistSchema } from "@/schemas/playlist";
+import { audio_methods, audio_schema } from "@/schemas/audio";
+import { playlist_schema } from "@/schemas/playlist";
 import type { RxShannicCollections, RxShannicDatabase } from "@/types";
-import { audioMigrations } from "./migrations";
+import { audio_migrations, playlist_migrations } from "./migrations";
 
 addRxPlugin(RxDBMigrationSchemaPlugin);
 addRxPlugin(RxDBCleanupPlugin);
@@ -58,18 +58,19 @@ export async function createDatabase(): Promise<Plugin> {
 
   await db.addCollections({
     audios: {
-      schema: audioSchema,
-      methods: audioMethods,
-      migrationStrategies: audioMigrations,
+      schema: audio_schema,
+      methods: audio_methods,
+      migrationStrategies: audio_migrations,
     },
     playlists: {
-      schema: playlistSchema,
+      schema: playlist_schema,
+      migrationStrategies: playlist_migrations,
     },
   });
 
   db.playlists.insertIfNotExists({
     id: FAVORITES_PLAYLIST_ID,
-    title: "favorites",
+    name: "favorites",
     created_at: Date.now(),
   });
 

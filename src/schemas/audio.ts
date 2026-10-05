@@ -9,7 +9,7 @@ import {
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { FileTransfer } from "@capacitor/file-transfer";
 
-const colorThemeSchema = {
+const color_theme_schema = {
   type: "object",
   properties: {
     main_color: { type: "string", maxLength: 10 },
@@ -19,7 +19,7 @@ const colorThemeSchema = {
   required: ["main_color", "title_text_color", "body_text_color"],
 } as const;
 
-export const audioSchemaLiteral = {
+export const audio_schema_literal = {
   title: "Audio schema",
   description: "Shannic audio model abstraction",
   version: 1,
@@ -36,12 +36,12 @@ export const audioSchemaLiteral = {
     colors: {
       type: "object",
       properties: {
-        dark_muted: colorThemeSchema,
-        dark_vibrant: colorThemeSchema,
-        light_muted: colorThemeSchema,
-        light_vibrant: colorThemeSchema,
-        muted: colorThemeSchema,
-        vibrant: colorThemeSchema,
+        dark_muted: color_theme_schema,
+        dark_vibrant: color_theme_schema,
+        light_muted: color_theme_schema,
+        light_vibrant: color_theme_schema,
+        muted: color_theme_schema,
+        vibrant: color_theme_schema,
       },
     },
     created_at: { type: "integer", minimum: 0 },
@@ -60,7 +60,7 @@ export const audioSchemaLiteral = {
   indexes: ["title", "author"],
 } as const;
 
-export const audioMethods: KeyFunctionMap = {
+export const audio_methods: KeyFunctionMap = {
   isUnresolved(this: AudioDocument): boolean {
     return this.src.startsWith(FAKE_SRC);
   },
@@ -144,10 +144,10 @@ export const audioMethods: KeyFunctionMap = {
   },
 };
 
-const schemaTyped = toTypedRxJsonSchema(audioSchemaLiteral);
+const schema_typed = toTypedRxJsonSchema(audio_schema_literal);
 
 export type RxAudio = ExtractDocumentTypeFromTypedRxJsonSchema<
-  typeof schemaTyped
+  typeof schema_typed
 >;
 
 export type RxAudioMethods = {
@@ -161,4 +161,4 @@ export type RxAudioMethods = {
   refreshSrc: (this: AudioDocument, src: string, expires_at?: number) => void;
 };
 
-export const audioSchema: RxJsonSchema<RxAudio> = audioSchemaLiteral;
+export const audio_schema: RxJsonSchema<RxAudio> = audio_schema_literal;

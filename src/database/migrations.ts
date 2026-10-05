@@ -1,6 +1,6 @@
 import { FAKE_SRC } from "@/constants";
 
-export const audioMigrations = {
+export const audio_migrations = {
   1: (oldDoc: {
     duration_text?: string;
     duration: number;
@@ -21,6 +21,15 @@ export const audioMigrations = {
     }
 
     delete oldDoc.url;
+    return oldDoc;
+  },
+};
+
+export const playlist_migrations = {
+  1: (oldDoc: { name: string; title?: string; description?: string }) => {
+    oldDoc.name = oldDoc.title!;
+    delete oldDoc.title;
+    delete oldDoc.description;
     return oldDoc;
   },
 };

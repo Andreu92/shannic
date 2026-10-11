@@ -37,3 +37,4 @@ android/.idea
 # Shannic
 shannic-key.jks
 .env
+.kilo/

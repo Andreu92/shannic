@@ -54,6 +54,13 @@ const checkForUpdate = () => {
   }
 };
 
+const onClickConfirmUpdate = () => {
+  InAppBrowser.open({
+    url: update.url,
+  });
+  update.available = false;
+};
+
 onMounted(() => {
   checkForUpdate();
 });
@@ -75,12 +82,7 @@ onMounted(() => {
       {
         text: t('generic.yes'),
         role: 'confirm',
-        handler: () => {
-          InAppBrowser.open({
-            url: update.url,
-          });
-          update.available = false;
-        },
+        handler: () => onClickConfirmUpdate,
       },
     ]"
   ></ion-alert>

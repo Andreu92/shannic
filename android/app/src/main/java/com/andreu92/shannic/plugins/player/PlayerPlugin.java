@@ -1,6 +1,7 @@
 package com.andreu92.shannic.plugins.player;
 
 import android.content.ComponentName;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.core.content.ContextCompat;
-import androidx.media3.common.C;
+import androidx.core.content.FileProvider;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.PlaybackException;
@@ -37,6 +38,10 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.EOFException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -131,17 +136,6 @@ public class PlayerPlugin extends Plugin {
                                 && nextMediaItemIndex >= mediaController.getMediaItemCount() - 2) {
                             runAutoPlay();
                         }
-
-                        if (nextMediaItemIndex != C.INDEX_UNSET) {
-                            MediaItem nextMediaItem = mediaController.getMediaItemAt(nextMediaItemIndex);
-                            refreshAudioSrc(nextMediaItem, nextMediaItemIndex);
-                        }
-
-                        int previousMediaItemIndex = mediaController.getPreviousMediaItemIndex();
-                        if (previousMediaItemIndex != C.INDEX_UNSET) {
-                            MediaItem previousMediaItem = mediaController.getMediaItemAt(previousMediaItemIndex);
-                            refreshAudioSrc(previousMediaItem, previousMediaItemIndex);
-                        }
                     }
 
                     @Override
@@ -189,21 +183,28 @@ public class PlayerPlugin extends Plugin {
                         }
 
                         // File not found (user manually or android deleted it?)
+                        Future<?> refreshTask;
                         if (error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND) {
-                            refreshAudioSrc(item, index);
-                            mediaController.prepare();
-                            mediaController.play();
+                            try {
+                                refreshTask = refreshAudioSrc(item, index);
+                                if (refreshTask != null) refreshTask.get();
+                                mediaController.prepare();
+                                mediaController.play();
+                            } catch (Exception ignored) {}
                             return;
                         }
 
                         // Dirty cache error
                         if (error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
                                 && error.getCause() instanceof EOFException) {
-                            removeMediaItemFromCache(item);
-                            refreshAudioSrc(item, index);
-                            mediaController.prepare();
-                            mediaController.seekTo(currentPos);
-                            mediaController.play();
+                            try {
+                                removeMediaItemFromCache(item);
+                                refreshTask = refreshAudioSrc(item, index);
+                                if (refreshTask != null) refreshTask.get();
+                                mediaController.prepare();
+                                mediaController.seekTo(currentPos);
+                                mediaController.play();
+                            } catch (Exception ignored) {}
                             return;
                         }
 
@@ -233,28 +234,29 @@ public class PlayerPlugin extends Plugin {
         else notifyListeners("onPause", data);
     }
 
-    private void refreshAudioSrc(MediaItem itemToRefresh, int index) {
+    private Future<?> refreshAudioSrc(MediaItem itemToRefresh, int index) {
         MediaItem.LocalConfiguration localConfig = itemToRefresh.localConfiguration;
-        if (localConfig == null) return;
+        if (localConfig == null) return null;
 
         String uriStr = localConfig.uri.toString();
         if (uriStr.isBlank() || uriStr.startsWith(Constants.FAKE_SRC)) {
-            refresh(itemToRefresh, index);
-            return;
+            return refresh(itemToRefresh, index);
         }
 
         String expires_at_str = localConfig.uri
                 .getQueryParameter(YoutubeConstants.EXPIRE_QUERY_PARAM);
-        if (expires_at_str == null) return;
+        if (expires_at_str == null) return null;
         long expires_at = Long.parseLong(expires_at_str) * 1000;
         if ((expires_at - 10000) < System.currentTimeMillis())
-            refresh(itemToRefresh, index);
+            return refresh(itemToRefresh, index);
+
+        return null;
     }
 
-    private void refresh(MediaItem itemToRefresh, int index) {
-        executorService.execute(() -> {
+    private Future<?> refresh(MediaItem itemToRefresh, int index) {
+        return executorService.submit(() -> {
             try {
-                AudioItem item = youtubeService.get(itemToRefresh.mediaId);
+                final AudioItem item = youtubeService.get(itemToRefresh.mediaId);
                 if (item == null) return;
                 onSrcRefresh(item.id(), item.src(), item.expiresAt());
 
@@ -297,18 +299,7 @@ public class PlayerPlugin extends Plugin {
         for (AudioItem item : nextItems) {
             if (isInQueue(item.id()).get()) continue;
 
-            MediaItem nextMediaItem =
-                    new MediaItem.Builder()
-                            .setMediaId(item.id())
-                            .setCustomCacheKey(item.id())
-                            .setUri(item.src())
-                            .setMediaMetadata(
-                                    new MediaMetadata.Builder()
-                                            .setArtist(item.author())
-                                            .setTitle(item.title())
-                                            .setArtworkUri(Uri.parse(item.thumbnail()))
-                                            .build())
-                            .build();
+            MediaItem nextMediaItem = createMediaItem(item);
 
             if (sessionId == autoPlaySession.get()) {
                 getActivity().runOnUiThread(() -> mediaController.addMediaItem(nextMediaItem));
@@ -345,7 +336,7 @@ public class PlayerPlugin extends Plugin {
         JSArray js_audio_items_array = call.getArray("audio_items");
         boolean shuffle = call.getBoolean("shuffle", false);
 
-        ArrayList<PlayerAudioItem> audioItems = Constants.mapper
+        ArrayList<AudioItem> audioItems = Constants.mapper
                 .readValue(js_audio_items_array.toString(), new TypeReference<>() {});
         ArrayList<MediaItem> mediaItems = new ArrayList<>();
 
@@ -357,20 +348,8 @@ public class PlayerPlugin extends Plugin {
         }
         else youtubeService.setCurrentItemId(null);
 
-        for (PlayerAudioItem item : audioItems) {
-            MediaItem mediaItem =
-                    new MediaItem.Builder()
-                            .setMediaId(item.id())
-                            .setCustomCacheKey(item.id())
-                            .setUri(item.src())
-                            .setMediaMetadata(
-                                    new MediaMetadata.Builder()
-                                            .setArtist(item.author())
-                                            .setTitle(item.title())
-                                            .setArtworkUri(Uri.parse(item.thumbnail()))
-                                            .build())
-                            .build();
-
+        for (AudioItem item : audioItems) {
+            MediaItem mediaItem = createMediaItem(item);
             mediaItems.add(mediaItem);
         }
 
@@ -382,6 +361,35 @@ public class PlayerPlugin extends Plugin {
             mediaController.play();
             call.resolve();
         });
+    }
+
+    @OptIn(markerClass = UnstableApi.class)
+    private MediaItem createMediaItem(AudioItem item) {
+        MediaMetadata.Builder metadataBuilder = new MediaMetadata.Builder()
+                .setArtist(item.author())
+                .setTitle(item.title());
+
+        if (item.thumbnail().startsWith("file")) {
+            Uri uri = FileProvider.getUriForFile(
+                    getContext(),
+                    getContext().getPackageName() + ".fileprovider",
+                    new File(Uri.parse(item.thumbnail()).getPath())
+            );
+            getContext().grantUriPermission("com.android.systemui", uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            try {
+                byte[] artworkData = Files.readAllBytes(Paths.get(item.thumbnail()));
+                metadataBuilder.setArtworkData(artworkData, MediaMetadata.PICTURE_TYPE_FRONT_COVER);
+            } catch (IOException ignored) {}
+        }
+        metadataBuilder.setArtworkUri(Uri.parse(item.thumbnail()));
+
+        return new MediaItem.Builder()
+                .setMediaId(item.id())
+                .setCustomCacheKey(item.id())
+                .setUri(item.src())
+                .setMediaMetadata(metadataBuilder.build())
+                .build();
     }
 
     @PluginMethod()

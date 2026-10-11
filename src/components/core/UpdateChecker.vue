@@ -51,10 +51,10 @@ const checkForUpdate = async () => {
 };
 
 const onClickConfirmUpdate = () => {
-  update.available = false;
   InAppBrowser.open({
     url: update.url,
   });
+  update.available = false;
 };
 
 onMounted(() => {

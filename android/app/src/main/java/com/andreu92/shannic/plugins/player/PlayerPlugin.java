@@ -381,8 +381,10 @@ public class PlayerPlugin extends Plugin {
                 byte[] artworkData = Files.readAllBytes(Paths.get(item.thumbnail()));
                 metadataBuilder.setArtworkData(artworkData, MediaMetadata.PICTURE_TYPE_FRONT_COVER);
             } catch (IOException ignored) {}
+            metadataBuilder.setArtworkUri(uri);
+        } else {
+            metadataBuilder.setArtworkUri(Uri.parse(item.thumbnail()));
         }
-        metadataBuilder.setArtworkUri(Uri.parse(item.thumbnail()));
 
         return new MediaItem.Builder()
                 .setMediaId(item.id())

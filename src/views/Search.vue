@@ -9,6 +9,7 @@ import {
   IonLabel,
   IonSearchbar,
   IonThumbnail,
+  IonButton,
   type SearchbarCustomEvent,
   type SegmentCustomEvent,
 } from "@ionic/vue";
@@ -140,10 +141,8 @@ const play = async (item: YoutubeSearchItem) => {
 };
 
 const toggleFavorite = async (search_item: YoutubeSearchItem) => {
-  let favorite: boolean;
   if (favorites_store.isFavorite(search_item.id)) {
     favorites_store.remove(search_item.id);
-    favorite = false;
   } else {
     if (!network_store.is_online) {
       showToast(t("network.offline"), "warning");
@@ -152,11 +151,7 @@ const toggleFavorite = async (search_item: YoutubeSearchItem) => {
 
     await audio_service.create(search_item);
     favorites_store.add(search_item.id);
-    favorite = true;
   }
-
-  if (player_store.current_audio?.id === search_item.id)
-    player_store.setFavorite(favorite);
 };
 </script>
 
@@ -216,14 +211,20 @@ const toggleFavorite = async (search_item: YoutubeSearchItem) => {
               <div class="audio-duration">
                 {{ formatDuration(item.duration) }}
               </div>
-              <div class="audio-actions">
-                <ion-icon
-                  :icon="
-                    favorites_store.isFavorite(item.id) ? heart : heartOutline
-                  "
-                  :color="favorites_store.isFavorite(item.id) ? 'danger' : ''"
+              <div class="flex center-y">
+                <ion-button
+                  shape="round"
+                  fill="clear"
                   @click.stop="toggleFavorite(item)"
-                ></ion-icon>
+                >
+                  <ion-icon
+                    slot="icon-only"
+                    :icon="
+                      favorites_store.isFavorite(item.id) ? heart : heartOutline
+                    "
+                    :color="favorites_store.isFavorite(item.id) ? 'danger' : 'dark'"
+                  ></ion-icon>
+                </ion-button>
               </div>
             </div>
           </template>

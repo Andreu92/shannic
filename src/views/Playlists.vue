@@ -53,7 +53,7 @@ const spotify_service = useSpotifyService();
 let playlist_subscription: Subscription | null = null;
 const playlists = ref<DeepReadonlyObject<RxPlaylist>[]>([]);
 const search_query = ref<string | null | undefined>(null);
-const showCreateModal = ref<boolean>(false);
+const show_create_modal = ref<boolean>(false);
 
 const search_results = computed(() => {
   let results = playlists.value;
@@ -102,7 +102,7 @@ const [playlist_name, playlist_name_attrs] = defineField("name");
 
 const onClickCreatePlaylist = handleSubmit((values) => {
   playlist_service.add(values.name);
-  showCreateModal.value = false;
+  show_create_modal.value = false;
 });
 
 const onClickRemovePlaylist = async (playlist_id: string) => {
@@ -127,27 +127,22 @@ onIonViewDidLeave(() => {
     <AppHeader />
     <ion-content class="ion-padding">
       <div class="flex col h-full">
-        <div
-          v-if="search_results.length"
-          class="flex col grow h-full"
-        >
+        <div v-if="search_results.length" class="flex col grow h-full">
           <div class="flex center-y">
             <ion-searchbar
               :placeholder="`${t('pages.search')}... :)`"
               @ion-change="search"
             />
             <ion-button
-              size="small"
-              color="primary"
+              fill="clear"
               shape="round"
-              @click="showCreateModal = true"
+              @click="show_create_modal = true"
             >
-              <ion-icon slot="icon-only" :icon="add_icon" />
+              <ion-icon slot="icon-only" :icon="add_icon" color="dark" />
             </ion-button>
             <ion-button
               id="open-actions-popover"
               shape="round"
-              size="small"
               fill="clear"
             >
               <ion-icon
@@ -158,20 +153,34 @@ onIonViewDidLeave(() => {
             </ion-button>
           </div>
 
-          <VirtualList :estimate-size="42" :items="search_results">
+          <VirtualList :estimate-size="49" :items="search_results">
             <template #item="{ item }">
               <div
-                class="flex between"
-                style="padding: 10px 0"
+                class="flex center-y between"
                 @click="() => {}"
               >
                 <div>{{ item.name }}</div>
-                <div
-                  class="audio-actions"
-                  @click="onClickRemovePlaylist(item.id)"
-                >
-                  <ion-icon :icon="play_icon"></ion-icon>
-                  <ion-icon :icon="trashOutline" />
+                <div class="flex center-y">
+                  <ion-button
+                    shape="round"
+                    fill="clear"
+                    :icon="play_icon"
+                    @click="() => {}"
+                  >
+                    <ion-icon slot="icon-only" color="dark" :icon="play_icon" />
+                  </ion-button>
+
+                  <ion-button
+                    shape="round"
+                    fill="clear"
+                    @click="onClickRemovePlaylist(item.id)"
+                  >
+                    <ion-icon
+                      slot="icon-only"
+                      color="dark"
+                      :icon="trashOutline"
+                    />
+                  </ion-button>
                 </div>
               </div>
             </template>
@@ -186,7 +195,7 @@ onIonViewDidLeave(() => {
           />
           <div>{{ t("playlists.start") }}</div>
           <div class="flex center-y">
-            <ion-chip @click="showCreateModal = true">
+            <ion-chip @click="show_create_modal = true">
               <ion-icon :icon="add_icon" style="font-size: 20px"></ion-icon>
               <ion-label>{{ t("generic.create") }}</ion-label>
             </ion-chip>
@@ -207,8 +216,8 @@ onIonViewDidLeave(() => {
 
       <!-- Create playlist -->
       <ion-modal
-        :is-open="showCreateModal"
-        @did-dismiss="showCreateModal = false"
+        :is-open="show_create_modal"
+        @did-dismiss="show_create_modal = false"
         @will-present="resetForm()"
       >
         <ion-content class="ion-padding">
@@ -227,7 +236,7 @@ onIonViewDidLeave(() => {
               <ion-button
                 color="medium"
                 shape="round"
-                @click="showCreateModal = false"
+                @click="show_create_modal = false"
               >
                 {{ t("generic.cancel") }}
               </ion-button>

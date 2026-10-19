@@ -78,8 +78,6 @@ const usePlayerStore = defineStore("player", () => {
 
       const response = await player_plugin.hasNext();
       has_next.value = response.has_next;
-
-      setFavorite(favorites_store.isFavorite(id));
     });
 
     player_plugin.addListener("onToggleRepeat", (data) => {
@@ -126,8 +124,7 @@ const usePlayerStore = defineStore("player", () => {
 
     player_plugin.addListener("onAudioUnplayable", async () => {
       showToast(t("errors.audio_unplayable"));
-      if (has_next.value) skipNext();
-      else reset();
+      if (!has_next.value) reset();
     });
   };
 
@@ -171,10 +168,6 @@ const usePlayerStore = defineStore("player", () => {
     player_plugin.skipPrevious();
   };
 
-  const setFavorite = (is_fav: boolean) => {
-    player_plugin.setFavorite({ favorite: is_fav });
-  };
-
   const toggleRepeat = () => {
     repeat.value = !repeat.value;
     player_plugin.setRepeat({ repeating: repeat.value });
@@ -196,8 +189,7 @@ const usePlayerStore = defineStore("player", () => {
     seekTo,
     skipNext,
     skipPrevious,
-    toggleRepeat,
-    setFavorite,
+    toggleRepeat
   };
 });
 

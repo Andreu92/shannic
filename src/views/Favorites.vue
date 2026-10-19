@@ -68,6 +68,7 @@ let audio_subscription: Subscription | null = null;
 const favorite_audios = ref<DeepReadonlyObject<RxAudio>[]>([]);
 const to_remove = ref<RxAudio | null>(null);
 const query = ref<string>("");
+const loading = ref(false);
 const shuffle = ref(false);
 const show_only_downloaded = ref(false);
 const show_download_all_alert = ref(false);
@@ -132,20 +133,11 @@ const showRemoveFromFavoritesAlert = (audio_id: string) => {
   const audio = favorite_audios.value.find(
     (audio: RxAudio) => audio.id === audio_id,
   );
+
   if (audio) {
     show_remove_alert.value = true;
     to_remove.value = { ...audio };
   }
-};
-
-const removeFromFavorites = async () => {
-  if (!to_remove.value) return;
-  favorites_store.remove(to_remove.value.id);
-
-  if (player_store.current_audio?.id === to_remove.value.id)
-    player_store.setFavorite(false);
-
-  to_remove.value = null;
 };
 
 const showDownloadAllAlert = () => {
@@ -179,36 +171,52 @@ const deleteFile = async (audio_id: string) => {
 };
 
 onIonViewWillEnter(() => {
+  loading.value = true;
   audio_service
     .getSortedListAsJson(favorites_store.favorite_audios)
-    .then((audios) => (favorite_audios.value = audios));
+    .then((audios) => {
+      favorite_audios.value = audios;
+      loading.value = false;
+    });
 
-  audio_subscription = audio_service.subscribe(
-    (audio: RxChangeEvent<RxAudio>) => {
-      const index = favorite_audios.value.findIndex(
-        (a: RxAudio) => a.id == audio.documentId,
-      );
-      if (index == -1) return;
-      favorite_audios.value[index] = audio.documentData;
-    },
-  );
+  if (audio_subscription == null) {
+    audio_subscription = audio_service.subscribe(
+      (audio: RxChangeEvent<RxAudio>) => {
+        const index = favorite_audios.value.findIndex(
+          (a: RxAudio) => a.id == audio.documentId,
+        );
+        if (index == -1) return;
+        favorite_audios.value[index] = audio.documentData;
+      },
+    );
+  }
 });
 
 onIonViewDidLeave(() => {
   audio_subscription?.unsubscribe();
 });
 
-watch(favorites_store.favorite_audios, async (new_audios: PlaylistAudio[]) => {
-  favorite_audios.value = await audio_service.getSortedListAsJson(new_audios);
-});
+watch(
+  () => favorites_store.favorite_audios,
+  async (new_audios: PlaylistAudio[]) => {
+    console.log("favorite_audios changed", new_audios);
+    favorite_audios.value = await audio_service.getSortedListAsJson(new_audios);
+  },
+);
 </script>
 
 <template>
   <ion-page>
     <AppHeader />
     <ion-content class="ion-padding">
-      <div class="flex col h-full">
-        <div v-if="favorite_audios.length" class="flex col grow h-full">
+      <div class="flex col h-full" :class="loading ? 'center' : ''">
+        <ion-spinner
+          v-if="loading"
+          style="width: 30px; height: 30px"
+          name="dots"
+        />
+
+        <div v-else-if="favorite_audios.length" class="flex col grow h-full">
           <!-- Search bar -->
           <div class="flex center-y">
             <ion-searchbar
@@ -225,12 +233,14 @@ watch(favorites_store.favorite_audios, async (new_audios: PlaylistAudio[]) => {
               @click="show_only_downloaded = !show_only_downloaded"
             />
 
-            <ion-icon
-              id="open-actions-popover"
-              color="dark"
-              :icon="ellipsisVertical"
-              style="font-size: 1.4rem"
-            ></ion-icon>
+            <ion-button id="open-actions-popover" fill="clear" shape="round">
+              <ion-icon
+                slot="icon-only"
+                color="dark"
+                :icon="ellipsisVertical"
+              ></ion-icon>
+            </ion-button>
+
             <ion-popover
               trigger="open-actions-popover"
               dismiss-on-select
@@ -315,7 +325,7 @@ watch(favorites_store.favorite_audios, async (new_audios: PlaylistAudio[]) => {
                     </div>
                   </div>
 
-                  <div class="audio-actions">
+                  <div class="flex center-y">
                     <Transition :key="item.id" name="fade" mode="out-in">
                       <ion-spinner
                         v-if="
@@ -324,23 +334,39 @@ watch(favorites_store.favorite_audios, async (new_audios: PlaylistAudio[]) => {
                         "
                         name="dots"
                       ></ion-spinner>
-                      <ion-icon
-                        v-else-if="!item.src.startsWith('file')"
-                        :icon="download_icon"
-                        @click.stop="download(item.id)"
-                      ></ion-icon>
-                      <ion-icon
+                      <ion-button
                         v-else
-                        :icon="trashOutline"
-                        @click.stop="deleteFile(item.id)"
-                      ></ion-icon>
+                        shape="round"
+                        fill="clear"
+                        @click.stop="
+                          item.src.startsWith('file')
+                            ? deleteFile(item.id)
+                            : download(item.id)
+                        "
+                      >
+                        <ion-icon
+                          slot="icon-only"
+                          color="dark"
+                          :icon="
+                            item.src.startsWith('file')
+                              ? trashOutline
+                              : download_icon
+                          "
+                        ></ion-icon>
+                      </ion-button>
                     </Transition>
 
-                    <ion-icon
-                      :icon="heart"
-                      color="danger"
+                    <ion-button
+                      shape="round"
+                      fill="clear"
                       @click.stop="showRemoveFromFavoritesAlert(item.id)"
-                    ></ion-icon>
+                    >
+                      <ion-icon
+                        slot="icon-only"
+                        :icon="heart"
+                        color="danger"
+                      ></ion-icon>
+                    </ion-button>
                   </div>
                 </div>
 
@@ -397,18 +423,19 @@ watch(favorites_store.favorite_audios, async (new_audios: PlaylistAudio[]) => {
             text: t('generic.no'),
             role: 'cancel',
             handler: () => {
-              to_remove = null;
+              show_remove_alert = false;
             },
           },
           {
             text: t('generic.yes'),
             role: 'confirm',
             handler: () => {
+              favorites_store.remove(to_remove!.id);
               show_remove_alert = false;
-              removeFromFavorites();
             },
           },
         ]"
+        @did-dismiss="to_remove = null"
       ></ion-alert>
 
       <ion-alert

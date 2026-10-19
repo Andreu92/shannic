@@ -87,28 +87,12 @@ public class PlayerPlugin extends Plugin {
                         @NonNull SessionCommand command,
                         @NonNull Bundle args
                     ){
-                        if (command.customAction.equals(PlayerActions.ACTION_TOGGLE_FAVORITE)) {
-                            JSObject data = new JSObject();
-                            data.put("id", mediaController.getCurrentMediaItem().mediaId);
-                            notifyListeners("onToggleFavorite", data);
-                        }
-
                         if (command.customAction.equals(PlayerActions.ACTION_SRC_REFRESH))
                             onSrcRefresh(
                                     args.getString("id"),
                                     args.getString("src"),
                                     args.getLong("expires_at")
                             );
-
-                        if (command.customAction.equals(PlayerActions.ACTION_AUDIO_UNPLAYABLE)) {
-                            if (mediaController.hasNextMediaItem()) {
-                                mediaController.seekToNext();
-                            } else {
-                                mediaController.stop();
-                                mediaController.clearMediaItems();
-                                notifyListeners("onAudioUnplayable", null);
-                            }
-                        }
 
                         return Futures.immediateFuture(
                                 new SessionResult(SessionResult.RESULT_SUCCESS)
@@ -161,18 +145,24 @@ public class PlayerPlugin extends Plugin {
                     }
 
                     @Override
-                    public void onRepeatModeChanged(int repeatMode) {
-                        JSObject data = new JSObject();
-                        data.put("repeating", repeatMode == Player.REPEAT_MODE_ONE);
-                        notifyListeners("onToggleRepeat", data);
-                    }
-
-                    @Override
                     public void onPlayerError(@NonNull PlaybackException error) {
                         MediaItem item = mediaController.getCurrentMediaItem();
                         if (item == null) return;
                         int index = mediaController.getCurrentMediaItemIndex();
                         long currentPos = mediaController.getCurrentPosition();
+
+                        // Audio unplayable (age restriction or something like that)
+                        if (error.errorCode == PlaybackException.ERROR_CODE_IO_NO_PERMISSION) {
+                            notifyListeners("onAudioUnplayable", null);
+                            if (mediaController.hasNextMediaItem()) {
+                                mediaController.seekToNext();
+                                mediaController.play();
+                            } else {
+                                mediaController.stop();
+                                mediaController.clearMediaItems();
+                            }
+                            return;
+                        }
 
                         // Decoder OPUS sometimes fails in older androids
                         if (error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED) {
@@ -440,21 +430,6 @@ public class PlayerPlugin extends Plugin {
     public void skipNext(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             mediaController.seekToNext();
-            call.resolve();
-        });
-    }
-
-    @PluginMethod()
-    public void setFavorite(PluginCall call) {
-        boolean favorite = call.getBoolean("favorite");
-        getActivity().runOnUiThread(() -> {
-            Bundle args = new Bundle();
-            args.putBoolean("favorite", favorite);
-
-            SessionCommand customCommand = new SessionCommand(
-                    PlayerActions.ACTION_TOGGLE_FAVORITE, Bundle.EMPTY);
-            mediaController.sendCustomCommand(customCommand, args);
-
             call.resolve();
         });
     }

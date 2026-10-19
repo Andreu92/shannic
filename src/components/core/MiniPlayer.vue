@@ -114,8 +114,7 @@ const onDragEnd = () => {
 };
 
 const toggleFavorite = (audio_id: string) => {
-  const is_fav = favorites_store.toggle(audio_id);
-  player_store.setFavorite(is_fav);
+  favorites_store.toggle(audio_id);
 };
 </script>
 

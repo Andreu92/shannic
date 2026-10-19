@@ -16,6 +16,6 @@ ext {
     cordovaAndroidVersion = '15.1.0'
     media3Version = "1.11.1"
     newPipeExtractorVersion = "v0.26.5"
-    jacksonVersion = "2.22.2"
+    jacksonVersion = "2.22.4"
     jacksonAnnotationsVersion = "2.22"
 }

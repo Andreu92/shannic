@@ -21,7 +21,6 @@ export interface PlayerPlugin {
   skipNext(): Promise<void>;
   skipPrevious(): Promise<void>;
   setRepeat(options: { repeating: boolean }): Promise<void>;
-  setFavorite(options: { favorite: boolean; }): Promise<void>;
   getCurrentPosition(): Promise<{ position: number }>;
   isInQueue(options: { id: string }): Promise<{ is_in_queue: boolean }>;
   hasNext(): Promise<{ has_next: boolean }>;

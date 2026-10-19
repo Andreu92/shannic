@@ -14,9 +14,18 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div class="flex center toggle-button" :class="{ 'is-active': props.enabled }">
-    <ion-icon v-if="typeof props.icon === 'string'" color="dark" :icon="props.icon" style="font-size: 1.4rem" />
-    <Component :is="props.icon" v-else :height="size-17" />
+  <div
+    style="margin: 4px 2px"
+    class="flex center toggle-button"
+    :class="{ 'is-active': props.enabled }"
+  >
+    <ion-icon
+      v-if="typeof props.icon === 'string'"
+      color="dark"
+      :icon="props.icon"
+      style="font-size: 1.4rem"
+    />
+    <Component :is="props.icon" v-else :height="size - 17" />
   </div>
 </template>
 

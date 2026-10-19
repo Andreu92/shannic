@@ -12,10 +12,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
-import androidx.media3.common.MediaItem;
-import androidx.media3.common.Player;
+import androidx.media3.common.PlaybackException;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DataSource;
+import androidx.media3.datasource.DataSourceException;
 import androidx.media3.datasource.DataSpec;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
@@ -26,19 +26,14 @@ import androidx.media3.datasource.cache.SimpleCache;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
-import androidx.media3.session.CommandButton;
 import androidx.media3.session.DefaultMediaNotificationProvider;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSessionService;
 import androidx.media3.session.SessionCommand;
 import androidx.media3.session.SessionCommands;
-import androidx.media3.session.SessionResult;
 
 import com.andreu92.shannic.plugins.Constants;
 import com.andreu92.shannic.plugins.youtube.YoutubeConstants;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import com.andreu92.shannic.R;
 import com.andreu92.shannic.plugins.youtube.YoutubeService;
@@ -49,39 +44,33 @@ public class PlayerService extends MediaSessionService {
     private ExoPlayer player;
     private MediaSession mediaSession;
     private YoutubeService youtubeService;
-    private SessionCommand favoriteCommand;
-    private boolean favorite;
-    private SessionCommand repeatCommand;
-    private MediaSession.ControllerInfo appControllerInfo;
     private final ResolvingDataSource.Resolver urlResolver = new ResolvingDataSource.Resolver() {
         @NonNull
         @Override
-        public DataSpec resolveDataSpec(DataSpec dataSpec) {
+        public DataSpec resolveDataSpec(DataSpec dataSpec) throws DataSourceException {
+            boolean refresh = false;
             Uri audioSrc = dataSpec.uri;
             String srcString = audioSrc.toString();
 
             // Empty or fake url means refresh
-            if (srcString.isBlank() || srcString.startsWith(Constants.FAKE_SRC)) {
-                String newSrc = refreshSrc(dataSpec.key);
-                if (newSrc != null && !newSrc.isBlank()) {
-                    return dataSpec.buildUpon()
-                            .setUri(Uri.parse(newSrc))
-                            .build();
-                } else return dataSpec;
+            if (srcString.isBlank() || srcString.startsWith(Constants.FAKE_SRC)) refresh = true;
+            else {
+                String expires_at_str = audioSrc
+                        .getQueryParameter(YoutubeConstants.EXPIRE_QUERY_PARAM);
+                if (expires_at_str == null) refresh = true;
+                else {
+                    long expires_at = Long.parseLong(expires_at_str) * 1000;
+                    if ((expires_at - 10000) < System.currentTimeMillis()) refresh = true;
+                }
+
             }
 
-            // If not empty check if it's expired
-            String expires_at_str = audioSrc.getQueryParameter(YoutubeConstants.EXPIRE_QUERY_PARAM);
-            if (expires_at_str == null) return dataSpec;
+            if (refresh) {
+                String newSrc = refreshSrc(dataSpec.key);
+                if (newSrc == null || newSrc.isBlank())
+                    throw new DataSourceException(PlaybackException.ERROR_CODE_IO_NO_PERMISSION);
 
-            long expires_at = Long.parseLong(expires_at_str) * 1000;
-            if ((expires_at - 10000) < System.currentTimeMillis()) {
-                    String newSrc = refreshSrc(dataSpec.key);
-                    if (newSrc != null && !newSrc.isBlank()) {
-                        return dataSpec.buildUpon()
-                                .setUri(Uri.parse(newSrc))
-                                .build();
-                    }
+                return dataSpec.buildUpon().setUri(Uri.parse(newSrc)).build();
             }
 
             return dataSpec;
@@ -177,18 +166,6 @@ public class PlayerService extends MediaSessionService {
                 .setAudioAttributes(audioAttributes, true)
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build();
-
-        player.addListener(new Player.Listener() {
-            @Override
-            public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
-                syncNotificationButtons();
-            }
-
-            @Override
-            public void onRepeatModeChanged(int repeatMode) {
-                syncNotificationButtons();
-            }
-        });
     }
 
     private void createMediaSession() {
@@ -203,9 +180,6 @@ public class PlayerService extends MediaSessionService {
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
 
-        favoriteCommand = new SessionCommand(PlayerActions.ACTION_TOGGLE_FAVORITE, Bundle.EMPTY);
-        repeatCommand = new SessionCommand(PlayerActions.ACTION_TOGGLE_REPEAT, Bundle.EMPTY);
-
         mediaSession = new MediaSession.Builder(this, player)
                 .setSessionActivity(sessionActivityPendingIntent)
                 .setCallback(new MediaSession.Callback() {
@@ -214,95 +188,34 @@ public class PlayerService extends MediaSessionService {
                     public MediaSession.ConnectionResult onConnect(
                             @NonNull MediaSession session,
                             @NonNull MediaSession.ControllerInfo controller) {
-                        if (controller.getPackageName().equals(getPackageName())
-                                && !mediaSession.isMediaNotificationController(controller)) {
-                            appControllerInfo = controller;
-                        }
 
-                        SessionCommands sessionCommands = MediaSession.
-                                ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
-                                .add(repeatCommand).add(favoriteCommand)
+                        SessionCommands sessionCommands = MediaSession
+                                .ConnectionResult
+                                .DEFAULT_SESSION_COMMANDS
+                                .buildUpon()
                                 .build();
 
-                        return new MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
+                        return new MediaSession.ConnectionResult
+                                .AcceptedResultBuilder(session, controller)
                                 .setAvailableSessionCommands(sessionCommands)
                                 .build();
                     }
-
-                    @NonNull
-                    @Override
-                    public ListenableFuture<SessionResult> onCustomCommand(
-                            @NonNull MediaSession session,
-                            @NonNull MediaSession.ControllerInfo controller,
-                            @NonNull SessionCommand customCommand,
-                            @NonNull Bundle args
-                    ) {
-                        switch (customCommand.customAction) {
-                            case PlayerActions.ACTION_TOGGLE_REPEAT:
-                                int repeatMode = player.getRepeatMode();
-                                player.setRepeatMode(repeatMode == Player.REPEAT_MODE_ONE
-                                        ? Player.REPEAT_MODE_OFF : Player.REPEAT_MODE_ONE);
-                                break;
-                            case PlayerActions.ACTION_TOGGLE_FAVORITE:
-                                if (!args.isEmpty()) favorite = args.getBoolean("favorite");
-                                else favorite = !favorite;
-
-                                if (!controller.equals(appControllerInfo))
-                                    mediaSession.sendCustomCommand(
-                                            appControllerInfo, favoriteCommand, Bundle.EMPTY
-                                    );
-
-                                syncNotificationButtons();
-                        }
-
-                        return Futures.immediateFuture(
-                                new SessionResult(SessionResult.RESULT_SUCCESS)
-                        );
-                    }
                 })
                 .build();
-    }
-
-    private void syncNotificationButtons() {
-        CommandButton favoriteBtn = new CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-                .setCustomIconResId(favorite
-                        ? R.drawable.heart : R.drawable.heart_outline)
-                .setSessionCommand(favoriteCommand)
-                .setDisplayName("Favorite")
-                .setSlots(CommandButton.SLOT_FORWARD_SECONDARY, CommandButton.SLOT_OVERFLOW)
-                .build();
-
-        int repeatMode = player.getRepeatMode();
-
-        CommandButton repeatBtn = new CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-                .setCustomIconResId(repeatMode == Player.REPEAT_MODE_ONE
-                        ? R.drawable.infinite : R.drawable.repeat)
-                .setSessionCommand(repeatCommand)
-                .setDisplayName("Repeat")
-                .setSlots(CommandButton.SLOT_BACK_SECONDARY, CommandButton.SLOT_OVERFLOW)
-                .build();
-
-        mediaSession.setMediaButtonPreferences(ImmutableList.of(repeatBtn, favoriteBtn));
     }
 
     private String refreshSrc(String id) {
         try {
             AudioItem item = youtubeService.get(id);
 
-            if (item.src() == null || item.src().isBlank()) {
-                mediaSession.sendCustomCommand(appControllerInfo,
-                        new SessionCommand(PlayerActions.ACTION_AUDIO_UNPLAYABLE, Bundle.EMPTY),
-                        Bundle.EMPTY
-                );
-                return null;
-            }
+            if (item == null || item.src() == null || item.src().isBlank()) return null;
 
             Bundle extras = new Bundle();
             extras.putString("id", item.id());
             extras.putString("src", item.src());
             extras.putLong("expires_at", item.expiresAt());
 
-            mediaSession.sendCustomCommand(appControllerInfo,
+            mediaSession.broadcastCustomCommand(
                     new SessionCommand(PlayerActions.ACTION_SRC_REFRESH, Bundle.EMPTY),
                     extras
             );

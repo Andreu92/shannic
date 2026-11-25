@@ -1,4 +1,4 @@
-import { InAppBrowser, type UrlEvent } from "@capgo/inappbrowser";
+import { InAppBrowser, type UrlEvent } from "@/platform";
 import { useI18n } from "vue-i18n";
 import { BROWSER_USER_AGENT } from "@/constants";
 import useNetworkStore from "@/stores/NetworkStore";
@@ -12,10 +12,9 @@ import type {
 } from "@/spotify-types";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import useAudioService from "@/services/AudioService";
-import { KeepAwake } from "@capgo/capacitor-keep-awake";
-import { youtube_plugin, YoutubeAudioItem } from "@/plugins/YoutubePlugin";
+import { KeepAwake } from "@/platform";
+import { youtube_plugin, YoutubeAudioItem } from "@/platform/youtube";
 import { showToast } from "@/utils";
-import { CapacitorHttp } from "@capacitor/core";
 
 let spotify_user_token: AccessToken | null = null;
 let spotify_client_token: AccessToken | null = null;
@@ -66,14 +65,14 @@ const useSpotifyService = () => {
   ): Promise<void> => {
     let offset: number | null = 0;
     do {
-      const { status, data } = await CapacitorHttp.post({
-        url: SPOTIFY_GRAPHQL_URL,
+      const response = await fetch(SPOTIFY_GRAPHQL_URL, {
+        method: "POST",
         headers: {
           ...DEFAULT_HEADERS,
           Authorization: `Bearer ${spotify_user_token!.access_token}`,
           "Client-Token": spotify_client_token!.access_token,
         },
-        data: {
+        body: JSON.stringify({
           variables: {
             offset,
           },
@@ -85,8 +84,11 @@ const useSpotifyService = () => {
                 "c2c53c28f71da143c0753c22dc84d98b315cb4275472ea5a597c29338ae20b23",
             },
           },
-        },
+        }),
       });
+
+      const status = response.status;
+      const data = await response.json();
 
       if (status !== 200) {
         showToast(t("spotify.import_error"));
@@ -118,8 +120,15 @@ const useSpotifyService = () => {
     spotify_sync_store.is_syncing = true;
 
     const is_linked = await isLinked();
-    if (!is_linked) await fetchTokens(false);
-    else if (isTokenExpired()) await fetchTokens(true);
+    try {
+      if (!is_linked) await fetchTokens(false);
+      else if (isTokenExpired()) await fetchTokens(true);
+    } catch (error) {
+      spotify_sync_store.finishSync();
+      showToast(t("spotify.link_process_failed"), "warning");
+      console.error(error);
+      return;
+    }
 
     KeepAwake.keepAwake();
 

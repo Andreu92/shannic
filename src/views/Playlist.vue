@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Keyboard } from "@capacitor/keyboard";
+import { Keyboard } from "@/platform";
 import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
 import SyncSavedLocallyRoundedIcon from "@iconify-vue/material-symbols/sync-saved-locally-rounded";
 import {
@@ -43,7 +43,7 @@ import { useDownloadStore } from "@/stores/DownloadStore";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore from "@/stores/PlayerStore";
 import useAudioService from "@/services/AudioService";
-import { Capacitor } from "@capacitor/core";
+import { convertFileSrc } from "@/platform";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import useNetworkStore from "@/stores/NetworkStore";
 import { showToast } from "@/utils";
@@ -310,7 +310,7 @@ watch(
                         :src="
                           item.thumbnail.startsWith('http')
                             ? item.thumbnail
-                            : Capacitor.convertFileSrc(item.thumbnail)
+                            : convertFileSrc(item.thumbnail)
                         "
                       />
                     </ion-thumbnail>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Keyboard } from "@capacitor/keyboard";
+import { Keyboard } from "@/platform";
 import {
   IonIcon,
   IonSegment,
@@ -19,14 +19,13 @@ import {
   type YoutubeSearch,
   YoutubeSearchItem,
   youtube_plugin,
-} from "@/plugins/YoutubePlugin";
+} from "@/platform/youtube";
 import { useLayout } from "@/composables/useLayout";
 import useAudioService from "@/services/AudioService";
 import useNetworkStore from "@/stores/NetworkStore";
 import usePlayerStore from "@/stores/PlayerStore";
 import { formatDuration, onImgError, showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
-import { CapacitorException } from "@capacitor/core";
 
 const { t } = useI18n();
 
@@ -73,10 +72,10 @@ const search = async (e?: SearchbarCustomEvent) => {
     has_next_page.value = search_data.has_next_page;
     search_results.value = search_data.items;
   } catch (error) {
-    if (error instanceof CapacitorException) {
-      if (error.message === "NO_RESULTS")
-        showToast(t("search.no_results"), "warning");
-      else showToast(t("search.error"));
+    if (error instanceof Error && error.message === "NO_RESULTS") {
+      showToast(t("search.no_results"), "warning");
+    } else {
+      showToast(t("search.error"));
     }
 
     has_next_page.value = false;

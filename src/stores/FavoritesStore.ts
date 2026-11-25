@@ -3,7 +3,7 @@ import { FAVORITES_PLAYLIST_ID } from "@/constants";
 import useAudioService from "@/services/AudioService";
 import usePlaylistService from "@/services/PlaylistService";
 import { computed, ref } from "vue";
-import { player_plugin } from "@/plugins/PlayerPlugin";
+import { player_plugin } from "@/platform/player";
 import { PlaylistAudio } from "@/types";
 
 const useFavoritesStore = defineStore("favorites", () => {

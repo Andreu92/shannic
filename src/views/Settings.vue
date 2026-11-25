@@ -13,8 +13,7 @@ import PlFlagIcon from "@iconify-vue/circle-flags/pl";
 import NlFlagIcon from "@iconify-vue/circle-flags/nl";
 import JaFlagIcon from "@iconify-vue/circle-flags/jp";
 import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
-import { InAppBrowser } from "@capgo/inappbrowser";
-import { Directory, Filesystem } from "@capacitor/filesystem";
+import { Directory, Filesystem, InAppBrowser } from "@/platform";
 import type {
   IonSelectCustomEvent,
   IonToggleCustomEvent,
@@ -43,7 +42,7 @@ import { useI18n } from "vue-i18n";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";
 import type { LanguageMessages } from "@/types";
-import { player_plugin } from "@/plugins/PlayerPlugin";
+import { player_plugin } from "@/platform/player";
 import { showToast } from "@/utils";
 import { useDatabase } from "@/database";
 

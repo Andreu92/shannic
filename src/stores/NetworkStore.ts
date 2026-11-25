@@ -1,4 +1,4 @@
-import { Network } from "@capacitor/network";
+import { Network } from "@/platform";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 

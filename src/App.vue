@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { App } from "@capacitor/app";
-import type { PluginListenerHandle } from "@capacitor/core";
+import { App, type ListenerHandle } from "@/platform";
 import { IonApp, IonRouterOutlet } from "@ionic/vue";
 import { onBeforeMount, onMounted, onUnmounted } from "vue";
 import MiniPlayer from "@/components/core/MiniPlayer.vue";
@@ -14,7 +13,7 @@ const layout = useLayout();
 const favorites_store = useFavoritesStore();
 const player_store = usePlayerStore();
 
-let stateChangeListener: PluginListenerHandle;
+let stateChangeListener: ListenerHandle;
 
 onBeforeMount(async () => {
   layout.applyStoredTheme();

@@ -1,4 +1,4 @@
-import { FileTransfer } from "@capacitor/file-transfer";
+import { FileTransfer } from "@/platform";
 import { defineStore } from "pinia";
 import { reactive } from "vue";
 import useAudioService from "@/services/AudioService";

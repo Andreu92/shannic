@@ -3,7 +3,7 @@ import { IonAlert } from "@ionic/vue";
 import { onMounted, reactive } from "vue";
 import pack from "../../../package.json";
 import { useI18n } from "vue-i18n";
-import { InAppBrowser } from "@capgo/inappbrowser";
+import { InAppBrowser } from "@/platform";
 import { GITHUB_API_URL, GITHUB_BASE_URL } from "@/constants";
 import { showToast } from "@/utils";
 

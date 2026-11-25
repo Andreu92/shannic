@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Haptics, ImpactStyle } from "@capacitor/haptics";
+import { Haptics, ImpactStyle } from "@/platform";
 import {
   createGesture,
   type Gesture,
@@ -27,7 +27,7 @@ import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore, { states } from "@/stores/PlayerStore";
 import type { ColorTheme } from "@/types";
 import { formatDuration, onImgError } from "@/utils";
-import { Capacitor } from "@capacitor/core";
+import { convertFileSrc } from "@/platform";
 
 const layout = useLayout();
 const player_store = usePlayerStore();
@@ -136,7 +136,7 @@ const toggleFavorite = (audio_id: string) => {
             <img
               :src="
                 player_store.current_audio!.thumbnail.startsWith('file')
-                  ? Capacitor.convertFileSrc(
+                  ? convertFileSrc(
                       player_store.current_audio!.thumbnail,
                     )
                   : player_store.current_audio!.thumbnail

@@ -1,12 +1,12 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { type PlayerAudio, player_plugin } from "@/plugins/PlayerPlugin";
+import { type PlayerAudio, player_plugin } from "@/platform/player";
 import type { RxAudio } from "@/schemas/audio";
 import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import { showToast } from "@/utils";
 import { useI18n } from "vue-i18n";
-import { type YoutubeAudioItem } from "@/plugins/YoutubePlugin";
+import { type YoutubeAudioItem } from "@/platform/youtube";
 import { AudioDocument } from "@/types";
 
 export const states = {

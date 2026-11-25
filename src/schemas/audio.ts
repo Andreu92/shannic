@@ -6,8 +6,7 @@ import {
   type RxJsonSchema,
   toTypedRxJsonSchema,
 } from "rxdb";
-import { Directory, Filesystem } from "@capacitor/filesystem";
-import { FileTransfer } from "@capacitor/file-transfer";
+import { Directory, Filesystem, FileTransfer } from "@/platform";
 
 const color_theme_schema = {
   type: "object",

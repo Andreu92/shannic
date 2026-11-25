@@ -3,7 +3,7 @@ import {
   youtube_plugin,
   YoutubeAudioItem,
   YoutubeSearchItem,
-} from "@/plugins/YoutubePlugin";
+} from "@/platform/youtube";
 import type { RxAudio } from "@/schemas/audio";
 import type {
   AudioItem,
@@ -49,7 +49,7 @@ const useAudioService = () => {
       try {
         const response = await fetchImage(item.thumbnail);
         const palette = await Vibrant.from(
-          `data:${response!.headers["Content-Type"]};base64,${response!.data}`,
+          URL.createObjectURL(response!.blob),
         ).getPalette();
         const colors: Palette = formatPalette(palette);
         return { ...item, colors };

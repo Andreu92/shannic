@@ -9,7 +9,7 @@ import { heart, heartOutline } from "ionicons/icons";
 import { useI18n } from "vue-i18n";
 import {
   YoutubeSearchItem,
-} from "@/plugins/YoutubePlugin";
+} from "@/platform/youtube";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";

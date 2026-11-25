@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Keyboard } from "@capacitor/keyboard";
+import { Keyboard } from "@/platform";
 import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
 import {
   IonLabel,

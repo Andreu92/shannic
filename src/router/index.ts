@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import Tabs from "@/components/layout/Tabs.vue";
-import Favorites from "@/views/Favorites.vue";
 import Home from "@/views/Home.vue";
+import Playlist from "@/views/Playlist.vue";
+import Favorites from "@/views/Favorites.vue";
 import Playlists from "@/views/Playlists.vue";
 import Search from "@/views/Search.vue";
 import Settings from "@/views/Settings.vue";
@@ -35,6 +36,11 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: "playlists",
         component: Playlists,
+      },
+      {
+        path: "playlists/:id",
+        component: Playlist,
+        props: true,
       },
       {
         path: "settings",

@@ -130,7 +130,7 @@ const toggleFavorite = (audio_id: string) => {
     }"
   >
     <div class="flex between">
-      <div class="flex grow" style="gap: 12px; min-width: 0;">
+      <div class="flex grow" style="gap: 12px; min-width: 0">
         <div style="min-width: 45px">
           <ion-thumbnail>
             <img
@@ -147,7 +147,9 @@ const toggleFavorite = (audio_id: string) => {
           </ion-thumbnail>
         </div>
         <div class="flex col evenly overhidden">
-          <div class="audio-title">{{ player_store.current_audio!.title }}</div>
+          <div class="audio-title">
+            {{ player_store.current_audio!.title }}
+          </div>
           <div class="audio-artist">
             {{ player_store.current_audio!.author }}
           </div>
@@ -238,7 +240,7 @@ ion-range {
 }
 
 .mini-player {
-  position: fixed;
+  position: absolute;
   bottom: 180px;
   left: 10px;
   right: 10px;

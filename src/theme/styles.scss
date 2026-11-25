@@ -18,8 +18,8 @@
 
 :root {
   --ion-font-family: "NotoSans", sans-serif;
-  --ion-safe-area-top: safe-area-inset-top;
-  --ion-safe-area-bottom: safe-area-inset-bottom;
+  --ion-safe-area-top: env(safe-area-inset-top);
+  --ion-safe-area-bottom: env(safe-area-inset-bottom);
 }
 
 .ion-palette-dark.ios,

@@ -19,10 +19,6 @@ const { t } = useI18n();
     <ion-tabs>
       <ion-router-outlet />
       <ion-tab-bar id="footer" slot="bottom">
-        <!-- <ion-tab-button tab="home" href="/home">
-          <ion-icon aria-hidden="true" :icon="home" />
-          <ion-label>{{ t("pages.home") }}</ion-label>
-        </ion-tab-button> -->
 
         <ion-tab-button tab="search" href="/search">
           <ion-icon aria-hidden="true" :icon="search"></ion-icon>

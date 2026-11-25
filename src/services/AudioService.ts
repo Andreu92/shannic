@@ -14,7 +14,7 @@ import type {
 } from "@/types";
 import { Vibrant } from "node-vibrant/browser";
 import { DEFAULT_COLOR_THEME, FAKE_SRC } from "@/constants";
-import { fetchImage } from "@/utils";
+import { fetchImage, isLocalPath } from "@/utils";
 import { DeepReadonlyObject, RxChangeEvent } from "rxdb";
 import { Subscription } from "rxjs";
 
@@ -111,7 +111,7 @@ const useAudioService = () => {
       audioDoc.title = updated_audio.title;
       audioDoc.author = updated_audio.author;
       audioDoc.duration = updated_audio.duration;
-      if (!audioDoc.thumbnail.startsWith("file"))
+      if (!isLocalPath(audioDoc.thumbnail))
         audioDoc.thumbnail = updated_audio.thumbnail;
       audioDoc.colors = updated_audio.colors;
       audioDoc.expires_at = updated_audio.expires_at;

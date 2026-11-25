@@ -65,7 +65,9 @@ export const audio_methods: KeyFunctionMap = {
   },
 
   isDownloaded(this: AudioDocument): boolean {
-    return this.src.startsWith("file");
+    // Downloaded files are stored as local paths ("file://" URIs under
+    // Capacitor, absolute paths under Tauri); remote URLs are not local.
+    return !this.isUnresolved() && !this.src.startsWith("http");
   },
 
   isExpired(this: AudioDocument): boolean {

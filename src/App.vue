@@ -18,7 +18,7 @@ let stateChangeListener: ListenerHandle;
 onBeforeMount(async () => {
   layout.applyStoredTheme();
 
-  stateChangeListener = await App.addListener("appStateChange", (state) => {
+  stateChangeListener = App.addListener("appStateChange", (state) => {
     if (state.isActive) {
       if (player_store.state === states.playing) {
         player_store.startProgressTimer();
@@ -45,5 +45,3 @@ onUnmounted(() => {
     <UpdateChecker />
   </ion-app>
 </template>
-
-<style scoped></style>

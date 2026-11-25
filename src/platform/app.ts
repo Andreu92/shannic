@@ -4,10 +4,6 @@ export interface AppState {
   isActive: boolean;
 }
 
-/**
- * Web fallback for `@capacitor/app` (only the APIs the app uses).
- * App state maps to document visibility.
- */
 export const App = {
   addListener(
     _event: "appStateChange",

@@ -1,7 +1,8 @@
-/**
- * Web fallback for `@capacitor/haptics` using the Vibration API.
- * No-op where vibration is not available (desktop).
- */
+import {
+  impactFeedback as pluginImpact,
+  vibrate,
+} from "@tauri-apps/plugin-haptics";
+import { isTauri } from "@tauri-apps/api/core";
 
 export enum ImpactStyle {
   Heavy = 1,
@@ -9,9 +10,24 @@ export enum ImpactStyle {
   Light = 3,
 }
 
+const impactStyleName = (style: ImpactStyle): string => {
+  if (style === ImpactStyle.Heavy) return "heavy";
+  if (style === ImpactStyle.Medium) return "medium";
+  return "light";
+};
+
 export const Haptics = {
-  impact(options: { style: ImpactStyle }): void {
-    const duration = options.style === ImpactStyle.Heavy ? 30 : 10;
-    navigator.vibrate?.(duration);
+  async impact(options: { style: ImpactStyle }): Promise<void> {
+    if (isTauri()) {
+      try {
+        await pluginImpact(impactStyleName(options.style) as never);
+      } catch {
+        // Haptics unavailable; ignore.
+      }
+      return;
+    }
+    navigator.vibrate?.(options.style === ImpactStyle.Heavy ? 30 : 10);
   },
 };
+
+export { vibrate };

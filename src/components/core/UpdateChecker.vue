@@ -6,6 +6,7 @@ import { useI18n } from "vue-i18n";
 import { InAppBrowser } from "@/platform";
 import { GITHUB_API_URL, GITHUB_BASE_URL } from "@/constants";
 import { showToast } from "@/utils";
+import { httpFetch } from "@/platform";
 
 const { t } = useI18n();
 
@@ -24,7 +25,7 @@ const checkForUpdate = async () => {
     Date.now() - parseInt(last_update_check_date) > 24 * 60 * 60 * 1000
   ) {
     try {
-      const response: Response = await fetch(
+      const response: Response = await httpFetch(
         `${GITHUB_API_URL + REPO_PATH}/releases/latest`,
         {
           headers: {

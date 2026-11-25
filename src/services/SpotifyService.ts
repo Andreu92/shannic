@@ -15,6 +15,7 @@ import useAudioService from "@/services/AudioService";
 import { KeepAwake } from "@/platform";
 import { youtube_plugin, YoutubeAudioItem } from "@/platform/youtube";
 import { showToast } from "@/utils";
+import { httpFetch } from "@/platform";
 
 let spotify_user_token: AccessToken | null = null;
 let spotify_client_token: AccessToken | null = null;
@@ -65,7 +66,7 @@ const useSpotifyService = () => {
   ): Promise<void> => {
     let offset: number | null = 0;
     do {
-      const response = await fetch(SPOTIFY_GRAPHQL_URL, {
+      const response = await httpFetch(SPOTIFY_GRAPHQL_URL, {
         method: "POST",
         headers: {
           ...DEFAULT_HEADERS,

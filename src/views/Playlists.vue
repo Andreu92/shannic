@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Keyboard } from "@/platform";
 import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
 import {
   IonLabel,
@@ -68,7 +67,6 @@ const search_results = computed(() => {
 });
 
 const search = async (e?: SearchbarCustomEvent) => {
-  Keyboard.hide();
   search_query.value = e?.detail?.value?.trim().toLowerCase();
 };
 

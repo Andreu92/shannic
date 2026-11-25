@@ -12,6 +12,11 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
+  server: {
+    host: process.env.TAURI_DEV_HOST || false,
+    port: 5173,
+    strictPort: true,
+  },
   test: {
     globals: true,
     environment: "jsdom",

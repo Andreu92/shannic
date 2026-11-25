@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Keyboard } from "@/platform";
 import {
   IonIcon,
   IonSegment,
@@ -47,8 +46,6 @@ const has_next_page = ref<boolean>(false);
 const search = async (e?: SearchbarCustomEvent) => {
   search_results.value = [];
   has_next_page.value = false;
-
-  Keyboard.hide();
 
   if (!network_store.is_online) {
     showToast(t("network.offline"), "warning");

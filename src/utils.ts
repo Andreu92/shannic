@@ -1,6 +1,7 @@
 import { toastController } from "@ionic/vue";
 import { alertOutline } from "ionicons/icons";
-import { BROWSER_USER_AGENT, YT_BASE_URL } from "@/constants";
+import { BROWSER_USER_AGENT, FAKE_SRC, YT_BASE_URL } from "@/constants";
+import { httpFetch } from "@/platform";
 import iconLight from "@/assets/img/icon-light.png";
 
 export const formatDuration = (sec: number) => {
@@ -14,6 +15,9 @@ export const formatDuration = (sec: number) => {
     return [m, s].map((v) => String(v).padStart(2, "0")).join(":");
   }
 };
+
+export const isLocalPath = (path: string): boolean =>
+  !path.startsWith("http") && !path.startsWith(FAKE_SRC);
 
 export const showToast = async (
   message: string,
@@ -34,7 +38,7 @@ export const showToast = async (
 
 export const fetchImage = async (url: string) => {
   try {
-    const response = await fetch(url, {
+    const response = await httpFetch(url, {
       headers: {
         Origin: YT_BASE_URL,
         "User-Agent": BROWSER_USER_AGENT,

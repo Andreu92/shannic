@@ -6,8 +6,7 @@
  */
 
 export type { ListenerCallback, ListenerHandle } from "./types";
-export { App, type AppState } from "./app";
-export {
+export { App, type AppState } from "./app";export {
   Directory,
   Filesystem,
   FileTransfer,
@@ -15,8 +14,8 @@ export {
   type DownloadProgress,
   type FsEntry,
 } from "./fs";
-export { Haptics, ImpactStyle } from "./haptics";
+export { Haptics, ImpactStyle, vibrate } from "./haptics";
+export { httpFetch } from "./http";
 export { InAppBrowser, type UrlEvent } from "./inappbrowser";
-export { Keyboard } from "./keyboard";
 export { KeepAwake } from "./keepAwake";
 export { Network, type NetworkStatus } from "./network";

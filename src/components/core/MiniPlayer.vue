@@ -26,7 +26,7 @@ import { DEFAULT_COLOR_THEME } from "@/constants";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import usePlayerStore, { states } from "@/stores/PlayerStore";
 import type { ColorTheme } from "@/types";
-import { formatDuration, onImgError } from "@/utils";
+import { formatDuration, isLocalPath, onImgError } from "@/utils";
 import { convertFileSrc } from "@/platform";
 
 const layout = useLayout();
@@ -135,7 +135,7 @@ const toggleFavorite = (audio_id: string) => {
           <ion-thumbnail>
             <img
               :src="
-                player_store.current_audio!.thumbnail.startsWith('file')
+                isLocalPath(player_store.current_audio!.thumbnail)
                   ? convertFileSrc(
                       player_store.current_audio!.thumbnail,
                     )

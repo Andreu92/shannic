@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Keyboard } from "@/platform";
 import SpotifyIcon from "@iconify-vue/logos/spotify-icon";
 import SyncSavedLocallyRoundedIcon from "@iconify-vue/material-symbols/sync-saved-locally-rounded";
 import {
@@ -96,7 +95,6 @@ const search_results = computed(() => {
 });
 
 const search = (e: SearchbarCustomEvent) => {
-  Keyboard.hide();
   query.value = e.detail.value || "";
 };
 

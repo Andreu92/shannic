@@ -4,10 +4,6 @@ export interface NetworkStatus {
   connected: boolean;
 }
 
-/**
- * Web fallback for `@capacitor/network` based on the browser online/offline
- * events. Works in the Tauri WebView too.
- */
 export const Network = {
   async getStatus(): Promise<NetworkStatus> {
     return { connected: navigator.onLine };

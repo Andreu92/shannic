@@ -1,7 +1,7 @@
 import { toastController } from "@ionic/vue";
 import { alertOutline } from "ionicons/icons";
 import { BROWSER_USER_AGENT, FAKE_SRC, YT_BASE_URL } from "@/constants";
-import { httpFetch } from "@/platform";
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import iconLight from "@/assets/img/icon-light.png";
 
 export const formatDuration = (sec: number) => {
@@ -28,7 +28,7 @@ export const showToast = async (
     message: message,
     duration: 5000,
     color: color,
-    position: "bottom",
+    position: "top",
     swipeGesture: "vertical",
     icon: icon,
   });
@@ -38,7 +38,7 @@ export const showToast = async (
 
 export const fetchImage = async (url: string) => {
   try {
-    const response = await httpFetch(url, {
+    const response = await tauriFetch(url, {
       headers: {
         Origin: YT_BASE_URL,
         "User-Agent": BROWSER_USER_AGENT,

@@ -28,6 +28,10 @@ onBeforeMount(async () => {
 });
 
 onMounted(() => {
+  // Hide splash on android
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).SplashBridge?.hide();
+  
   favorites_store.init();
   player_store.initListeners();
 });

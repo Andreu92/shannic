@@ -1,4 +1,4 @@
-import type { YoutubeAudioItem } from "./youtube";
+import type { YoutubeAudioItem } from "../plugins/YoutubePlugin";
 
 export interface PlayerAudio {
   id: string;
@@ -22,7 +22,10 @@ export type PlayerEventData =
   | { code: number; name: string; message: string };
 
 export interface PlayerPlugin {
-  play(options: { audio_items: PlayerAudio[]; shuffle: boolean }): Promise<void>;
+  play(options: {
+    audio_items: PlayerAudio[];
+    shuffle: boolean;
+  }): Promise<void>;
   seekTo(options: { position: number }): Promise<void>;
   resume(): Promise<void>;
   pause(): Promise<void>;
@@ -123,7 +126,9 @@ const shuffle = (items: PlayerAudio[]): PlayerAudio[] => {
 
 export const player_plugin: PlayerPlugin = {
   async play(options) {
-    queue = options.shuffle ? shuffle(options.audio_items) : options.audio_items;
+    queue = options.shuffle
+      ? shuffle(options.audio_items)
+      : options.audio_items;
     index = 0;
     if (queue.length) {
       emit("onMediaItemChanged", { id: queue[0].id, index: 0 });

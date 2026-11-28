@@ -18,10 +18,9 @@ import {
   type YoutubeSearch,
   YoutubeSearchItem,
   youtube_plugin,
-} from "@/platform/youtube";
+} from "@/plugins/YoutubePlugin";
 import { useLayout } from "@/composables/useLayout";
 import useAudioService from "@/services/AudioService";
-import useNetworkStore from "@/stores/NetworkStore";
 import usePlayerStore from "@/stores/PlayerStore";
 import { formatDuration, onImgError, showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
@@ -33,7 +32,6 @@ const layout = useLayout();
 const audio_service = useAudioService();
 
 const player_store = usePlayerStore();
-const network_store = useNetworkStore();
 
 const search_query = ref<string | null | undefined>(null);
 const search_music = ref<boolean>(false);
@@ -47,7 +45,7 @@ const search = async (e?: SearchbarCustomEvent) => {
   search_results.value = [];
   has_next_page.value = false;
 
-  if (!network_store.is_online) {
+  if (!navigator.onLine) {
     showToast(t("network.offline"), "warning");
     return;
   }
@@ -72,6 +70,7 @@ const search = async (e?: SearchbarCustomEvent) => {
     if (error instanceof Error && error.message === "NO_RESULTS") {
       showToast(t("search.no_results"), "warning");
     } else {
+      console.error(error);
       showToast(t("search.error"));
     }
 
@@ -91,7 +90,7 @@ const clearSearch = () => {
 const fetchNextPage = async () => {
   if (fetching_next_page.value) return;
 
-  if (!network_store.is_online) {
+  if (!navigator.onLine) {
     showToast(t("network.offline"), "warning");
     return;
   }
@@ -120,7 +119,7 @@ const toggleSearchMusic = (e: SegmentCustomEvent) => {
 };
 
 const play = async (item: YoutubeSearchItem) => {
-  if (!network_store.is_online) {
+  if (!navigator.onLine) {
     showToast(t("network.offline"), "warning");
     return;
   }
@@ -164,7 +163,6 @@ const play = async (item: YoutubeSearchItem) => {
     >
       <template #item="{ item }">
         <div class="flex center w-full h-full" @click="play(item)">
-          
           <div class="audio-thumbnail">
             <ion-thumbnail>
               <img
@@ -174,7 +172,7 @@ const play = async (item: YoutubeSearchItem) => {
               />
             </ion-thumbnail>
           </div>
-          
+
           <div class="audio-info">
             <div ref="titles" class="audio-title">
               {{ item.title }}
@@ -183,15 +181,14 @@ const play = async (item: YoutubeSearchItem) => {
               {{ item.author }}
             </div>
           </div>
-          
+
           <div class="audio-duration">
             {{ formatDuration(item.duration) }}
           </div>
-          
+
           <div class="flex center-y">
             <slot name="actions" v-bind="item"></slot>
           </div>
-
         </div>
       </template>
     </VirtualList>

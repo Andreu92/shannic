@@ -18,8 +18,6 @@
 
 :root {
   --ion-font-family: "NotoSans", sans-serif;
-  --ion-safe-area-top: env(safe-area-inset-top);
-  --ion-safe-area-bottom: env(safe-area-inset-bottom);
 }
 
 .ion-palette-dark.ios,
@@ -46,7 +44,7 @@ ion-modal {
 }
 
 ion-toast::part(wrapper) {
-  margin-bottom: 70px;
+  margin-top: 40px;
 }
 
 .flex {

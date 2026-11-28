@@ -14,8 +14,4 @@ export { App, type AppState } from "./app";export {
   type DownloadProgress,
   type FsEntry,
 } from "./fs";
-export { Haptics, ImpactStyle, vibrate } from "./haptics";
-export { httpFetch } from "./http";
 export { InAppBrowser, type UrlEvent } from "./inappbrowser";
-export { KeepAwake } from "./keepAwake";
-export { Network, type NetworkStatus } from "./network";

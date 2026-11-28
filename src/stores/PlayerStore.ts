@@ -6,7 +6,7 @@ import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
 import { showToast } from "@/utils";
 import { useI18n } from "vue-i18n";
-import { type YoutubeAudioItem } from "@/platform/youtube";
+import { type YoutubeAudioItem } from "@/plugins/YoutubePlugin";
 import { AudioDocument } from "@/types";
 
 export const states = {
@@ -189,7 +189,7 @@ const usePlayerStore = defineStore("player", () => {
     seekTo,
     skipNext,
     skipPrevious,
-    toggleRepeat
+    toggleRepeat,
   };
 });
 

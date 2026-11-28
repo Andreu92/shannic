@@ -31,7 +31,6 @@ import iconDark from "@/assets/img/icon-dark.png";
 import iconLight from "@/assets/img/icon-light.png";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import { useLayout } from "@/composables/useLayout";
-import useNetworkStore from "@/stores/NetworkStore";
 import { showToast } from "@/utils";
 import VirtualList from "@/components/ui/VirtualList.vue";
 import { RxPlaylist } from "@/schemas/playlist";
@@ -43,8 +42,6 @@ import { FAVORITES_PLAYLIST_ID } from "@/constants";
 const { t } = useI18n();
 
 const layout = useLayout();
-
-const network_store = useNetworkStore();
 
 const playlist_service = usePlaylistService();
 const spotify_service = useSpotifyService();
@@ -71,7 +68,7 @@ const search = async (e?: SearchbarCustomEvent) => {
 };
 
 const onClickImportFromSpotify = async () => {
-  if (!network_store.is_online) {
+  if (!navigator.onLine) {
     showToast(t("network.offline"), "warning");
     return;
   }
@@ -138,11 +135,7 @@ onIonViewDidLeave(() => {
             >
               <ion-icon slot="icon-only" :icon="add_icon" color="dark" />
             </ion-button>
-            <ion-button
-              id="open-actions-popover"
-              shape="round"
-              fill="clear"
-            >
+            <ion-button id="open-actions-popover" shape="round" fill="clear">
               <ion-icon
                 slot="icon-only"
                 color="dark"
@@ -153,10 +146,7 @@ onIonViewDidLeave(() => {
 
           <VirtualList :estimate-size="49" :items="search_results">
             <template #item="{ item }">
-              <div
-                class="flex center-y between"
-                @click="() => {}"
-              >
+              <div class="flex center-y between" @click="() => {}">
                 <div>{{ item.name }}</div>
                 <div class="flex center-y">
                   <ion-button

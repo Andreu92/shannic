@@ -3,7 +3,7 @@ import {
   youtube_plugin,
   YoutubeAudioItem,
   YoutubeSearchItem,
-} from "@/platform/youtube";
+} from "@/plugins/YoutubePlugin";
 import type { RxAudio } from "@/schemas/audio";
 import type {
   AudioItem,

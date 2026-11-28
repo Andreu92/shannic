@@ -13,20 +13,22 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "android:dev": "tauri android dev",
-    "android:build": "tauri android build"
+    "android:build": "tauri android build -t aarch64 -t x86_64 --apk",
+    "android:build-fast": "tauri android build -t aarch64 --apk"
   },
   "dependencies": {
     "@iconify-vue/circle-flags": "^1.0.6",
     "@iconify-vue/logos": "^1.0.7",
     "@iconify-vue/material-symbols": "^1.0.50",
-    "@ionic/vue": "^9.0.13",
-    "@ionic/vue-router": "^9.0.13",
+    "@ionic/vue": "^9.0.14",
+    "@ionic/vue-router": "^9.0.14",
     "@tanstack/vue-virtual": "^3.13.54",
-    "@tauri-apps/api": "^2",
+    "@tauri-apps/api": "^2.12.5",
     "@tauri-apps/plugin-fs": "~2",
     "@tauri-apps/plugin-haptics": "~2",
     "@tauri-apps/plugin-http": "~2",
     "@vee-validate/valibot": "^4.15.1",
+    "@vueuse/core": "^15.1.0",
     "ionicons": "^8.1.1",
     "nanoid": "^6.0.2",
     "node-vibrant": "^4.0.4",
@@ -34,23 +36,23 @@
     "rxdb": "^17.6.0",
     "vee-validate": "^4.15.1",
     "vue": "^3.5.46",
-    "vue-i18n": "^11.4.23",
-    "vue-router": "^5.5.1"
+    "vue-i18n": "^11.4.24",
+    "vue-router": "^5.5.3"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2",
+    "@tauri-apps/cli": "^2.12.6",
     "@vitejs/plugin-vue": "^6.0.11",
     "@vue/test-utils": "^2.6.0",
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.15.0",
+    "eslint": "^10.16.0",
     "eslint-plugin-vue": "^10.12.1",
     "typescript-eslint": "^8.74.0",
-    "eslint-config-prettier": "^10.1.8",
+    "eslint-config-prettier": "^10.1.9",
     "globals": "^17.14.0",
     "prettier": "^3.10.1",
     "sass": "^1.108.2",
-    "vite": "^8.3.8",
-    "vitest": "^5.1.1",
+    "vite": "^8.4.0",
+    "vitest": "^5.1.2",
     "vue-tsc": "^3.3.14"
   }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Haptics, ImpactStyle } from "@/platform";
+import { impactFeedback } from "@tauri-apps/plugin-haptics";
 import {
   createGesture,
   type Gesture,
@@ -68,7 +68,7 @@ watch(player, (el) => {
       },
 
       onStart: () => {
-        Haptics.impact({ style: ImpactStyle.Light });
+        impactFeedback("medium");
         offsets.top = el.offsetTop;
         offsets.left = el.offsetLeft;
 

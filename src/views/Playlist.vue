@@ -44,7 +44,6 @@ import usePlayerStore from "@/stores/PlayerStore";
 import useAudioService from "@/services/AudioService";
 import { convertFileSrc } from "@/platform";
 import VirtualList from "@/components/ui/VirtualList.vue";
-import useNetworkStore from "@/stores/NetworkStore";
 import { showToast } from "@/utils";
 import { DeepReadonlyObject, RxChangeEvent } from "rxdb";
 import { Subscription } from "rxjs";
@@ -58,7 +57,6 @@ const layout = useLayout();
 const player_store = usePlayerStore();
 const favorites_store = useFavoritesStore();
 const download_store = useDownloadStore();
-const network_store = useNetworkStore();
 
 const audio_service = useAudioService();
 const spotify_service = useSpotifyService();
@@ -103,7 +101,7 @@ const clearIfEmpty = (e: SearchbarCustomEvent) => {
 };
 
 const play = (audio: RxAudio[]) => {
-  if (!network_store.is_online && !audio[0].src.startsWith("file")) {
+  if (!navigator.onLine && !audio[0].src.startsWith("file")) {
     showToast(t("network.offline"), "warning");
     return;
   }
@@ -114,7 +112,7 @@ const play = (audio: RxAudio[]) => {
 const playAll = async () => {
   if (search_results.value.length === 0) return;
 
-  if (network_store.is_online) {
+  if (navigator.onLine) {
     player_store.play([...search_results.value], shuffle.value);
   } else {
     const offline_results = search_results.value.filter((audio: RxAudio) => {
@@ -144,12 +142,12 @@ const showDownloadAllAlert = () => {
     return;
   }
 
-  if (network_store.is_online) show_download_all_alert.value = true;
+  if (navigator.onLine) show_download_all_alert.value = true;
   else showToast(t("network.offline"), "warning");
 };
 
 const downloadAll = () => {
-  if (network_store.is_online)
+  if (navigator.onLine)
     download_store.downloadMultiple(
       search_results.value
         .filter((a: RxAudio) => !a.src.startsWith("file"))
@@ -158,7 +156,7 @@ const downloadAll = () => {
 };
 
 const download = (audio_id: string) => {
-  if (network_store.is_online) download_store.addToQueue(audio_id);
+  if (navigator.onLine) download_store.addToQueue(audio_id);
   else showToast(t("network.offline"), "warning");
 };
 

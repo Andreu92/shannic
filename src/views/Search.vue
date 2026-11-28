@@ -1,19 +1,11 @@
 <script setup lang="ts">
-import {
-  IonContent,
-  IonIcon,
-  IonPage,
-  IonButton,
-} from "@ionic/vue";
+import { IonContent, IonIcon, IonPage, IonButton } from "@ionic/vue";
 import { heart, heartOutline } from "ionicons/icons";
 import { useI18n } from "vue-i18n";
-import {
-  YoutubeSearchItem,
-} from "@/platform/youtube";
+import { YoutubeSearchItem } from "@/plugins/YoutubePlugin";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import useAudioService from "@/services/AudioService";
 import useFavoritesStore from "@/stores/FavoritesStore";
-import useNetworkStore from "@/stores/NetworkStore";
 import { showToast } from "@/utils";
 import SearchTemplate from "@/components/core/SearchTemplate.vue";
 
@@ -22,13 +14,12 @@ const { t } = useI18n();
 const audio_service = useAudioService();
 
 const favorites_store = useFavoritesStore();
-const network_store = useNetworkStore();
 
 const toggleFavorite = async (search_item: YoutubeSearchItem) => {
   if (favorites_store.isFavorite(search_item.id)) {
     favorites_store.remove(search_item.id);
   } else {
-    if (!network_store.is_online) {
+    if (!navigator.onLine) {
       showToast(t("network.offline"), "warning");
       return;
     }

@@ -1,21 +1,16 @@
 <script setup lang="ts">
-import {
-  IonButtons,
-  IonHeader,
-  IonTitle,
-  IonToolbar,
-} from "@ionic/vue";
+import { IonButtons, IonHeader, IonTitle, IonToolbar } from "@ionic/vue";
 import { useRouter } from "vue-router";
 import logoDarkTheme from "@/assets/img/logo-dark-theme.png";
 import logoLightTheme from "@/assets/img/logo-light-theme.png";
 import { useLayout } from "@/composables/useLayout";
-import useNetworkStore from "@/stores/NetworkStore";
 import WifiOffIcon from "@iconify-vue/material-symbols/wifi-off";
 import SettingsIcon from "@iconify-vue/material-symbols/settings";
+import { useOnline } from "@vueuse/core"
 
 const router = useRouter();
 const layout = useLayout();
-const network_store = useNetworkStore();
+const online = useOnline();
 </script>
 
 <template>
@@ -36,7 +31,7 @@ const network_store = useNetworkStore();
             margin-right: 12px;
           "
         >
-          <WifiOffIcon v-if="!network_store.is_online" width="22" height="22" />
+          <WifiOffIcon v-if="!online" width="22" height="22" />
           <SettingsIcon
             width="22"
             height="22"
